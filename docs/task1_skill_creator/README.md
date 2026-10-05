@@ -8,7 +8,7 @@
 |---|---|---|
 | 三支 Skill 的完整資料夾 | [`git-conventional-commit`](../../.claude/skills/git-conventional-commit/) · [`trunk-based-development`](../../.claude/skills/trunk-based-development/) · [`double-diamond-principle`](../../.claude/skills/double-diamond-principle/)(`.agents/skills/` 內容相同) | 已就位 |
 | 同一個專案完成五到八個功能後的所有 git commits 紀錄 | [`git-log.txt`](./git-log.txt)(39 筆,含每一筆的完整訊息)· 線上:[BDGG_blog 的 commit 列表](https://github.com/YongRui0402/BDGG_blog/commits/main) | 已匯出 |
-| 人類觀察:哪些原則有被遵循、哪些沒有、從哪個實際結果看出來、優化空間 | [`觀察紀錄.md`](./觀察紀錄.md) | 已填寫,1 格待確認 |
+| 人類觀察:哪些原則有被遵循、哪些沒有、從哪個實際結果看出來、優化空間 | [`觀察紀錄.md`](./觀察紀錄.md) | 已填寫 |
 
 繳交版本:tag `task1-v1`(尚未建立)。
 
