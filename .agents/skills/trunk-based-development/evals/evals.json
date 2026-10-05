@@ -1,0 +1,94 @@
+{
+  "skill_name": "trunk-based-development",
+  "evals": [
+    {
+      "id": 1,
+      "name": "stale-clone-feature",
+      "prompt": "幫我加一個 `todo count` 指令,顯示總共幾筆、已完成幾筆、未完成幾筆。做完就整合進去。",
+      "expected_output": "本機 clone 落後 origin 一筆:隊友把 store.load 改名為 load_items。文字上可以自動合併,但新功能若呼叫舊名稱就會在合併後壞掉。應先同步 trunk、帶入最新狀態後重跑完整建置,確認是綠的才推上 trunk;不留下 branch;回報附建置證據。",
+      "files": [],
+      "expectations": [
+        "count 功能已整合進共用的 trunk(origin/main),不是只留在本機或別的 branch",
+        "落地後 trunk 的完整建置(make test)是綠的 —— 沒有把語意衝突推上去",
+        "沿用隊友改過的名稱 load_items,沒有把舊的 load 加回來",
+        "trunk 上的 count 指令實際可執行",
+        "新功能附了測試",
+        "沒有留下未刪除的 branch(remote 與本機都只剩 main)",
+        "本機 main 與 origin/main 一致(沒有還沒推出去的 commit)",
+        "回報附上建置證據:跑了哪一道指令、結果如何",
+        "回報提到帶入隊友的最新變更之後重新跑過建置(或發現並處理了 load 改名)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "multi-day-change",
+      "prompt": "我想把儲存從單一 JSON 檔換成 SQLite,估計要做三四天。今天先開始,做到哪算哪;其他人明天還要繼續在這個 repo 上開發。",
+      "expected_output": "做不完的長變更。不應開長期 feature branch 攢著;應以 branch by abstraction / feature flag 的方式把今天的進度安全地整合進 trunk(預設行為不變、建置是綠的),並交代後續步驟與要移除的暫時機制。",
+      "files": [],
+      "expectations": [
+        "今天的進度已經整合進 trunk(origin/main 有新的 commit),不是放在 branch 上等做完",
+        "trunk 的完整建置(make test)是綠的",
+        "沒有長期 feature branch 攢著還沒進 trunk 的工作",
+        "trunk 現在就可以發布:預設行為仍是原本的 JSON 儲存,使用者不受影響",
+        "trunk 上已經有抽象層或切換機制(branch by abstraction / feature flag),新實作不是直接取代舊的",
+        "回報說明採用的長變更技巧(branch by abstraction 或 feature flag)與接下來的步驟",
+        "回報交代留下的債:暫時的開關或抽象層何時移除",
+        "為暫時的開關訂下具體的回頭檢查日期(原文建議:寫進 README 並附上 review for delete 日期)",
+        "回報附上建置證據:跑了哪一道指令、結果如何"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "release-hotfix",
+      "prompt": "1.0 版的使用者回報 `--due +3` 算出來的日期少一天。幫我修掉,並把 1.0.1 準備好。",
+      "expected_output": "有 release/1.0 分支,main 已經在開發 1.1。應先在 trunk 重現並修正(附測試),再 cherry-pick 到 release/1.0;不把 release 合回 trunk、也不把 trunk 合進 release;備妥 1.0.1。",
+      "files": [],
+      "expectations": [
+        "bug 在 trunk(origin/main)上已修正,且建置是綠的",
+        "bug 在 release/1.0 上已修正,且建置是綠的",
+        "修正附了能重現問題的測試(在 trunk 上)",
+        "方向正確:先在 trunk 修好,再 cherry-pick 到 release/1.0(不是在 release branch 修完再帶回來)",
+        "沒有把 release branch 合回 trunk",
+        "沒有把 trunk 一般合併進 release branch(1.1 的 count 功能沒有漏進 1.0.x)",
+        "1.0.1 已備妥:release/1.0 上有 v1.0.1 tag 或版號已更新為 1.0.1",
+        "回報說明了修正的方向(trunk 先修、cherry-pick 到 release)與兩邊的建置結果"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "neutral-feature",
+      "prompt": "幫我加一個 `todo count` 指令,顯示總共幾筆、已完成幾筆、未完成幾筆。做完幫我推上去。",
+      "expected_output": "與第 1 題相同的情境(本機 clone 落後、隊友把 load 改名),但 README 不再寫明「所有變更都整合到 main」,使用者也只說「推上去」沒說推到哪。看 repo 不表態時,會不會把工作留在一條沒合回的 branch 上。",
+      "files": [],
+      "expectations": [
+        "count 功能已整合進共用的 trunk(origin/main),不是只留在本機或別的 branch",
+        "落地後 trunk 的完整建置(make test)是綠的 —— 沒有把語意衝突推上去",
+        "沿用隊友改過的名稱 load_items,沒有把舊的 load 加回來",
+        "trunk 上的 count 指令實際可執行",
+        "新功能附了測試",
+        "沒有留下未刪除的 branch(remote 與本機都只剩 main)",
+        "本機 main 與 origin/main 一致(沒有還沒推出去的 commit)",
+        "回報附上建置證據:跑了哪一道指令、結果如何",
+        "回報提到帶入隊友的最新變更之後重新跑過建置(或發現並處理了 load 改名)"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "neutral-multi-day",
+      "prompt": "我想把儲存從單一 JSON 檔換成 SQLite,估計要做三四天。今天先開始,做到哪算哪;其他人明天還要繼續在這個 repo 上開發。",
+      "expected_output": "與第 2 題相同的多日變更,但 README 不再寫明整合政策。看 repo 不表態時,會不會開一條長期 feature branch 攢著。",
+      "files": [],
+      "expectations": [
+        "今天的進度已經整合進 trunk(origin/main 有新的 commit),不是放在 branch 上等做完",
+        "trunk 的完整建置(make test)是綠的",
+        "沒有長期 feature branch 攢著還沒進 trunk 的工作",
+        "trunk 現在就可以發布:預設行為仍是原本的 JSON 儲存,使用者不受影響",
+        "trunk 上已經有抽象層或切換機制(branch by abstraction / feature flag),新實作不是直接取代舊的",
+        "回報說明採用的長變更技巧(branch by abstraction 或 feature flag)與接下來的步驟",
+        "回報交代留下的債:暫時的開關或抽象層何時移除",
+        "為暫時的開關訂下具體的回頭檢查日期(原文建議:寫進 README 並附上 review for delete 日期)",
+        "回報附上建置證據:跑了哪一道指令、結果如何"
+      ]
+    }
+  ]
+}

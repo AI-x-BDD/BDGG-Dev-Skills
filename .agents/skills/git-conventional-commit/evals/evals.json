@@ -1,0 +1,98 @@
+{
+  "skill_name": "git-conventional-commit",
+  "evals": [
+    {
+      "id": 1,
+      "name": "mixed-changes",
+      "prompt": "我今天改了一堆東西,幫我 commit 起來。",
+      "expected_output": "工作目錄混了四件不相干的事(delete 功能、+N 到期日的 bug 修正、README 修改、ruff 升版)。應拆成四個 commit,各自用正確的 type,測試跟著對應的變更,每一筆都能獨立通過測試。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "delete 功能以 feat 提交",
+        "「+N 到期日差一天」的修正以 fix 提交,且與 delete 功能不在同一個 commit",
+        "README 的修改以 docs 提交,且不夾帶其他檔案",
+        "ruff 升版獨立成一個 commit,type 為 build 或 chore",
+        "測試跟著它驗證的變更走(test_delete 與 delete 同一筆、test_dates 與 dates 修正同一筆)",
+        "每一個新 commit 單獨取出時測試都通過",
+        "沒有過度拆分:四件事各一筆,沒有為了再細分而組出使用者沒寫過的中間檔案內容",
+        "工作目錄乾淨,沒有遺漏未提交的變更",
+        "回報中列出了每一個新 commit 的完整 header",
+        "回報說明了拆分的理由(為什麼這樣分)",
+        "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "breaking-change",
+      "prompt": "資料檔位置那個改好了,幫我 commit。",
+      "expected_output": "變更把 --file 改名為 --data-file 並搬動預設資料檔位置,使用者沒提到這是破壞性變更。應主動標示 breaking change 並說明影響與遷移方式。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "以 `!` 或 `BREAKING CHANGE:` footer 標示為破壞性變更",
+        "同時使用 `!`(單行 log 看得到)與 `BREAKING CHANGE:` footer(寫清楚影響)",
+        "訊息說明了兩項破壞:`--file` 改名為 `--data-file`,以及預設資料檔位置改變",
+        "訊息告訴既有使用者如何遷移(搬移舊的 todo.json 或改用 --data-file 指定)",
+        "每一個新 commit 單獨取出時測試都通過",
+        "沒有把交纏在同一行的變更硬拆開(沒有組出使用者沒寫過、沒測過的中間檔案內容)",
+        "工作目錄乾淨,沒有遺漏未提交的變更",
+        "回報明確告知使用者這是破壞性變更,以及影響到誰",
+        "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "revert",
+      "prompt": "3e89e76 那個彩色輸出在 Windows 的終端機會變亂碼,先幫我退掉,我之後再重做。",
+      "expected_output": "用 git revert(不改寫歷史)還原指定的 commit,訊息使用 revert type、說明原因,並以 footer 引用被還原的 SHA。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "還原的 commit 使用 `revert` type",
+        "訊息中引用了被還原的 commit SHA(3e89e76)",
+        "SHA 以 footer 形式引用(如 `Refs: 3e89e76`,規範 FAQ 的建議)",
+        "訊息說明了還原的原因(Windows 終端機亂碼)",
+        "彩色輸出的程式碼與測試都已移除,且測試通過",
+        "沒有改寫歷史(原本的 3e89e76 與 ec8c48b 仍在歷史中)",
+        "後面那筆不相干的 docs commit(授權說明)內容仍然保留",
+        "工作目錄乾淨"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "nonconventional-history",
+      "prompt": "這個功能做完了,幫我 commit。",
+      "expected_output": "repo 既有歷史沒有照 Conventional Commits 寫(first commit / Update readme / more tests…)。工作目錄是一筆完整的新功能(count 指令與測試)。應從這一筆開始用規範的格式提交成單一 feat,不改寫舊歷史。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "只產生一筆 commit(一件完整的新功能,不需要拆)",
+        "歷史沒有照規範寫,這一筆仍然使用 `feat` type",
+        "沒有回頭改寫既有的舊歷史",
+        "每一個新 commit 單獨取出時測試都通過",
+        "工作目錄乾淨,沒有遺漏未提交的變更",
+        "回報向使用者說明:既有歷史沒有照這套約定,這一筆開始採用",
+        "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "same-file-hunks",
+      "prompt": "幫我把現在的修改 commit 掉。",
+      "expected_output": "store.py 的兩個 hunk 分屬兩件不相干的事:修正 load 遇到空檔案會當掉(fix),以及新增 clear 指令(feat)。應以 hunk 為單位拆成兩筆,每筆都能獨立通過測試,且不再往下細分。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "load 遇到空檔案的修正以 fix 提交",
+        "clear 指令以 feat 提交",
+        "兩件事雖然改在同一個檔案(store.py),仍拆成不同的 commit",
+        "拆成剛好兩筆,沒有再往下細分",
+        "測試跟著它驗證的變更走(空檔案的測試與 fix 同一筆、test_clear 與 feat 同一筆)",
+        "每一個新 commit 單獨取出時測試都通過",
+        "工作目錄乾淨,沒有遺漏未提交的變更",
+        "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
+      ]
+    }
+  ]
+}
