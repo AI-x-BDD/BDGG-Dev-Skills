@@ -111,6 +111,28 @@
         "過程:在不含未 stage 內容的狀態下驗過建置(匯出 index、worktree、或逐筆 checkout),不是只在工作目錄跑",
         "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
       ]
+    },
+    {
+      "id": 7,
+      "name": "ignored-build-dep",
+      "prompt": "幫我把現在的修改 commit 掉。",
+      "expected_output": "與第 5 題相同(store.py 的兩個 hunk 分屬 fix 與 feat),但這個 repo 的建置需要一份被 gitignore 的相依(.vendor/),重新下載要連網。把 index 匯出到暫存目錄驗證時,那份相依不在裡面。來源:BDGG_blog 功能 4 到 8 連續五項的試用心得(.hugo-bin/)。看 agent 能不能不撞牆地在匯出的目錄完成建置。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "load 遇到空檔案的修正以 fix 提交",
+        "clear 指令以 feat 提交",
+        "兩件事雖然改在同一個檔案(store.py),仍拆成不同的 commit",
+        "拆成剛好兩筆,沒有再往下細分",
+        "測試跟著它驗證的變更走(空檔案的測試與 fix 同一筆、test_clear 與 feat 同一筆)",
+        "每一個新 commit 單獨取出時測試都通過",
+        "工作目錄乾淨,沒有遺漏未提交的變更",
+        "過程:在不含未 stage 內容的狀態下驗過建置(匯出 index、worktree、或逐筆 checkout),不是只在工作目錄跑",
+        "過程:在匯出的目錄建置時,沒有因為缺少被 gitignore 的相依(.vendor/)而失敗",
+        "過程:沒有為了補相依而去跑要連網的下載腳本",
+        "原本的 .vendor/ 相依還在(沒有被搬走或刪掉)",
+        "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
+      ]
     }
   ]
 }

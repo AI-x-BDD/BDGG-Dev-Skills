@@ -5,7 +5,7 @@ description: 以主幹式開發(Trunk-Based Development)的方式切分與整合
 
 # Trunk-Based Development(主幹式開發)
 
-> 驗證狀態:**未驗證** —— 尚未經學員在真實專案上連續使用並觀察。已用 skill-creator 的評測機制做過三輪 agent 對照測試(2026-10-05,測試題在 `evals/evals.json`),並依結果修訂過;第三輪的修訂依據是 agent 在一個真實專案上連續做三項功能後自己記下的試用心得。那都是 agent 測 agent,不能取代人的觀察。
+> 驗證狀態:**未驗證** —— 尚未經學員在真實專案上連續使用並觀察。已用 skill-creator 的評測機制做過四輪 agent 對照測試(2026-10-05,測試題在 `evals/evals.json`),並依結果修訂過;第三、四輪的修訂依據是 agent 在一個真實專案上連續做八項功能時自己記下的試用心得。那都是 agent 測 agent,不能取代人的觀察。
 
 ## 這套做法在防什麼
 
@@ -159,7 +159,7 @@ remote 還是空的(第一次 push 之前)就沒有東西可以同步:trunk 是�
 |---|---|
 | 很高(每天或更頻繁) | **Release from trunk**:直接從 trunk 發布(打 tag)。production 出問題就在 trunk 上修,往前發布(fix forward / roll forward)。 |
 | 較低(例如每月) | **Branch for release**:發布前幾天才從 trunk 切出 release branch(just in time),在上面做最後的穩定化。 |
-| 每一次整合就是一次發布(push 到 trunk 就自動部署) | **Continuous Deployment**:整合與發布是同一個動作,中間沒有打 tag 或切 branch 這一道關卡可以攔。使用者會看到的變更,要不要公開得在 push **之前**決定;還不該公開的就藏在 flag 後面(內容型的專案用草稿狀態),而不是留在 branch 上。 |
+| 每一次整合就是一次發布(push 到 trunk 就自動部署) | **Continuous Deployment**:整合與發布是同一個動作,中間沒有打 tag 或切 branch 這一道關卡可以攔。使用者會看到的變更,要不要公開得在 push **之前**決定;還不該公開的就藏在 flag 後面,而不是留在 branch 上。 |
 
 Release branch 的規矩:
 
@@ -169,7 +169,12 @@ Release branch 的規矩:
 - 不必預先開:可以先從 trunk 上的 tag 發布,等真的需要 patch 時再從那個 tag 回頭開 branch。
 - 切點不必是 HEAD:可以從較早的、信得過的 commit 切。
 
-Continuous Deployment 的專案裡,哪些整合要先問人(本 skill 的詮釋,原文沒有規定):照既定規格做的程式與版面變更,建置為綠就照循環推;**以使用者名義對外的內容**(文章、公告、文案、價格)與難以收回的變更,推之前先讓使用者看過。
+Continuous Deployment 的專案另外要留意幾件事(本 skill 的詮釋,原文沒有規定):
+
+- **哪些整合要先問人**:照既定規格做的程式與版面變更,建置為綠就照循環推;**以使用者名義對外的內容**(文章、公告、文案、價格)與難以收回的變更,推之前先讓使用者看過。
+- **草稿不等於藏起來**:內容型的專案常用草稿狀態代替 flag,但那只在 repo 是私有的時候成立。公開的 repo 裡,草稿的原稿推上去一樣看得到 —— 還沒確認能公開的內容就先不要 commit。
+- **驗收用的假資料不進 repo**:把工作目錄複製到 repo 以外的地方,在那一份疊上假資料來驗。「先放進來、驗完再移除」只要忘一次就直接公開了。
+- **線上驗不到的驗收要講明**:CI 綠了,但線上的資料還不足以重現驗收條件時,回報裡寫清楚那一條是在哪裡驗的,不要寫成已經在線上驗過。
 
 ## 這些情況代表做錯了
 
