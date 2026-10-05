@@ -35,7 +35,7 @@
 
 | 道館 | 繳交版本 | 證據 |
 |---|---|---|
-| 組合三支 Skills(git / TBD / 雙菱形) | tag `task1-v1`(尚未建立) | [`docs/task1_skill_creator/`](./docs/task1_skill_creator/) |
+| 組合三支 Skills(git / TBD / 雙菱形) | tag [`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1) | [`docs/task1_skill_creator/`](./docs/task1_skill_creator/) |
 
 ### 組合三支 Skills(git / TBD / 雙菱形)
 
