@@ -93,6 +93,24 @@
         "工作目錄乾淨,沒有遺漏未提交的變更",
         "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
       ]
+    },
+    {
+      "id": 6,
+      "name": "adjacent-test-hunk",
+      "prompt": "幫我把現在的修改 commit 掉。",
+      "expected_output": "與第 5 題相同(store.py 的兩個 hunk 分屬 fix 與 feat),但兩件事的測試緊鄰寫在 tests/test_store.py 的同一個 hunk。整個 hunk 跟著 fix 走的話,fix 那一筆會帶著 clear 的測試,單獨取出時是壞的 —— 而在工作目錄跑測試看不出來。來源:BDGG_blog 功能 2 的試用心得。看 agent 有沒有驗「即將提交的那一筆」而不是工作目錄。",
+      "files": [],
+      "expectations": [
+        "所有新 commit 的訊息都符合 Conventional Commits 1.0.0(檢查腳本無 ERROR)",
+        "load 遇到空檔案的修正以 fix 提交",
+        "clear 指令以 feat 提交",
+        "兩件事雖然改在同一個檔案(store.py),仍拆成不同的 commit",
+        "測試跟著它驗證的變更走(兩個測試寫在同一個 hunk,仍各自跟著 fix 與 feat)",
+        "每一個新 commit 單獨取出時測試都通過",
+        "工作目錄乾淨,沒有遺漏未提交的變更",
+        "過程:在不含未 stage 內容的狀態下驗過建置(匯出 index、worktree、或逐筆 checkout),不是只在工作目錄跑",
+        "最終提交的內容與使用者原本的工作目錄完全一致(沒有漏掉、也沒有多改)"
+      ]
     }
   ]
 }

@@ -89,6 +89,28 @@
         "為暫時的開關訂下具體的回頭檢查日期(原文建議:寫進 README 並附上 review for delete 日期)",
         "回報附上建置證據:跑了哪一道指令、結果如何"
       ]
+    },
+    {
+      "id": 6,
+      "name": "init-remote-dirty",
+      "prompt": "幫我加一個 `todo count` 指令,顯示總共幾筆、已完成幾筆、未完成幾筆。做完幫我推上去。README 我改到一半,那個先不要提交。",
+      "expected_output": "與第 1 題相同的情境(本機落後、隊友把 load 改名),但 repo 是 git init 之後才 remote add 的(沒有 refs/remotes/origin/HEAD),而且 README 有使用者改到一半、不能提交的內容(git pull --rebase 會被擋)。來源:BDGG_blog 功能 1 到 3 的試用心得。看 agent 能不能不撞牆地找到 trunk、帶入最新變更,同時不動到使用者的 README。",
+      "files": [],
+      "expectations": [
+        "count 功能已整合進共用的 trunk(origin/main),不是只留在本機或別的 branch",
+        "落地後 trunk 的完整建置(make test)是綠的 —— 沒有把語意衝突推上去",
+        "沿用隊友改過的名稱 load_items,沒有把舊的 load 加回來",
+        "trunk 上的 count 指令實際可執行",
+        "新功能附了測試",
+        "沒有留下未刪除的 branch(remote 與本機都只剩 main)",
+        "本機 main 與 origin/main 一致(沒有還沒推出去的 commit)",
+        "回報附上建置證據:跑了哪一道指令、結果如何",
+        "回報提到帶入隊友的最新變更之後重新跑過建置(或發現並處理了 load 改名)",
+        "使用者改到一半的 README 沒有被提交、也沒有被推上 trunk",
+        "使用者改到一半的 README 仍原樣留在工作目錄(沒有弄丟,也沒有卡在 stash 裡)",
+        "過程:找 trunk 時沒有撞到 `origin/HEAD` 不存在的錯誤",
+        "過程:沒有因為未提交的變更被 `git pull --rebase` 拒絕"
+      ]
     }
   ]
 }

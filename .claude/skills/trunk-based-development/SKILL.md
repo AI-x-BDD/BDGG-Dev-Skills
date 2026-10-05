@@ -5,7 +5,7 @@ description: 以主幹式開發(Trunk-Based Development)的方式切分與整合
 
 # Trunk-Based Development(主幹式開發)
 
-> 驗證狀態:**未驗證** —— 尚未經學員在真實專案上連續使用並觀察。已用 skill-creator 的評測機制做過兩輪 agent 對照測試(2026-10-05,測試題在 `evals/evals.json`),並依結果修訂過;那是 agent 測 agent,不能取代人的觀察。
+> 驗證狀態:**未驗證** —— 尚未經學員在真實專案上連續使用並觀察。已用 skill-creator 的評測機制做過三輪 agent 對照測試(2026-10-05,測試題在 `evals/evals.json`),並依結果修訂過;第三輪的修訂依據是 agent 在一個真實專案上連續做三項功能後自己記下的試用心得。那都是 agent 測 agent,不能取代人的觀察。
 
 ## 這套做法在防什麼
 
@@ -28,9 +28,13 @@ Trunk-Based Development 是一種 branching model:所有開發者在同一條名
 ### 判斷一:trunk 是哪一條、「建置」是哪一道指令
 
 ```bash
-git symbolic-ref --short refs/remotes/origin/HEAD   # 或看 repo 的預設 branch
+git ls-remote --symref origin HEAD   # 直接問 remote 它的預設 branch;沒有任何輸出 = remote 還是空的
 git branch -a
 ```
+
+用 `ls-remote` 而不是讀本機的 `refs/remotes/origin/HEAD`:後者只有 `git clone` 出來的 repo 才有,`git init` 之後才 `git remote add` 的 repo 即使 push 過也沒有(2026-10-05 以 git 2.53 實測)。
+
+remote 還是空的(第一次 push 之前)就沒有東西可以同步:trunk 是本機目前這一條 branch,下面循環裡的同步步驟先跳過,第一次整合用 `git push -u origin <trunk>`。
 
 找出這個 repo 的完整建置指令(編譯 + 單元測試 + 整合測試),通常在 README、`Makefile`、`package.json` 的 scripts、或 CI 設定檔裡。**開發者提交前跑的建置,必須和 CI 跑的是同一套** —— 找 CI 設定檔對照。找不到任何自動化測試時,先告訴使用者:沒有測試就無法證明「沒弄壞建置」,這是這套做法的前提。
 
@@ -68,19 +72,20 @@ git branch -a
    ```bash
    git switch -c <簡短描述這一小步的名稱>
    ```
-3. **做一小步,連同測試**。
+3. **做一小步,連同測試,在本機 commit**。commit 還沒 push 之前只存在你的機器上,不影響任何人。
 4. **把 trunk 的最新狀態帶進來**。別人可能已經先推了。
    ```bash
    git pull --rebase origin main      # 或 git merge origin/main,依 repo 慣例
    ```
-5. **在本機跑完整建置,確認通過,才往外送**。
+   `pull --rebase` 要求工作目錄是乾淨的,有未提交的變更會直接被拒絕 —— 這就是第 3 步先 commit 的原因。工作目錄裡另有不屬於這一步、現在不該提交的修改時(例如使用者做到一半的東西),加上 `--autostash`,拉完會自動放回去;第 1 步的同步也一樣。
+5. **在本機跑完整建置,確認通過,才往外送**。沒過就修到過 —— 還沒 push 的 commit 可以直接改寫。
 6. **整合**:
    - 直接進 trunk:`git push origin main`。被拒絕(有人搶先)就回到第 4 步,**重新建置**後再推。
    - 短期 branch:推上去開 PR → review 與 CI 都通過 → 合併回 trunk → **立刻刪掉 branch**。
      ```bash
      git branch -d <branch> && git push origin --delete <branch>
      ```
-7. **確認落地後 trunk 的 CI 是綠的**。這一步做完才算整合完成。看不到 CI 結果時(repo 沒有接 CI、remote 不會觸發、或沒有權限查看),改用最接近的替代:從 remote 重新 clone 一份乾淨的 trunk,在上面跑同一道建置。並在回報裡說明這是替代驗證,不是 CI 本身的結果。
+7. **確認落地後 trunk 的 CI 是綠的**。這一步做完才算整合完成。一次推出好幾筆 commit 時,CI 通常只跑最後一筆;中間那幾筆只有本機驗過,所以每一筆都要在本機各自建置過,日後才有辦法單獨 revert。看不到 CI 結果時(repo 沒有接 CI、remote 不會觸發、或沒有權限查看),改用最接近的替代:從 remote 重新 clone 一份乾淨的 trunk,在上面跑同一道建置。並在回報裡說明這是替代驗證,不是 CI 本身的結果。
 
 ### 收工時只有兩種合格的狀態
 
@@ -154,6 +159,7 @@ git branch -a
 |---|---|
 | 很高(每天或更頻繁) | **Release from trunk**:直接從 trunk 發布(打 tag)。production 出問題就在 trunk 上修,往前發布(fix forward / roll forward)。 |
 | 較低(例如每月) | **Branch for release**:發布前幾天才從 trunk 切出 release branch(just in time),在上面做最後的穩定化。 |
+| 每一次整合就是一次發布(push 到 trunk 就自動部署) | **Continuous Deployment**:整合與發布是同一個動作,中間沒有打 tag 或切 branch 這一道關卡可以攔。使用者會看到的變更,要不要公開得在 push **之前**決定;還不該公開的就藏在 flag 後面(內容型的專案用草稿狀態),而不是留在 branch 上。 |
 
 Release branch 的規矩:
 
@@ -162,6 +168,8 @@ Release branch 的規矩:
 - release branch **不合回 trunk**;確定不再從它發布後刪除(Git 要先在已發布的 commit 上打 tag,否則 commit 會被回收)。
 - 不必預先開:可以先從 trunk 上的 tag 發布,等真的需要 patch 時再從那個 tag 回頭開 branch。
 - 切點不必是 HEAD:可以從較早的、信得過的 commit 切。
+
+Continuous Deployment 的專案裡,哪些整合要先問人(本 skill 的詮釋,原文沒有規定):照既定規格做的程式與版面變更,建置為綠就照循環推;**以使用者名義對外的內容**(文章、公告、文案、價格)與難以收回的變更,推之前先讓使用者看過。
 
 ## 這些情況代表做錯了
 
@@ -206,6 +214,8 @@ Release branch 的規矩:
 5. **留下的債**:新增了哪些 flag 或暫時的抽象層、預計何時移除。
 
 有任何一條規矩這次沒做到(例如 branch 活了三天、沒有可跑的測試),直接說出來並說明原因,不要略過。
+
+同一段工作裡還用了其他也要求回報的 skill 時,合成一份:同一件事(切法、建置證據、commit 清單)只講一次。
 
 ## 資料來源
 

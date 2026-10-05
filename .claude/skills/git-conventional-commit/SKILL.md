@@ -5,7 +5,7 @@ description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交�
 
 # Git Conventional Commit(慣例式提交)
 
-> 驗證狀態:**未驗證** —— 尚未經學員在真實專案上連續使用並觀察。已用 skill-creator 的評測機制做過兩輪 agent 對照測試(2026-10-05,測試題在 `evals/evals.json`),並依結果修訂過;那是 agent 測 agent,不能取代人的觀察。
+> 驗證狀態:**未驗證** —— 尚未經學員在真實專案上連續使用並觀察。已用 skill-creator 的評測機制做過三輪 agent 對照測試(2026-10-05,測試題在 `evals/evals.json`),並依結果修訂過;第三輪的修訂依據是 agent 在一個真實專案上連續做三項功能後自己記下的試用心得。那都是 agent 測 agent,不能取代人的觀察。
 
 Conventional Commits 是一套疊在 commit 訊息上的輕量約定。它要解決的事只有一件:**讓 commit 歷史同時讓人和工具都讀得懂** —— 人看得出每一筆變更的性質,工具可以據此自動產生 CHANGELOG、決定 SemVer 要升哪一位、觸發建置與發布。
 
@@ -68,6 +68,17 @@ git diff --staged
 `git add -p` 是互動式指令,在沒有終端機互動的環境(包括 agent)用不了,所以第二種情況用「匯出 patch、刪減、`git apply --cached`」代替。
 
 拆完的每一個 commit 都要能獨立通過建置與測試 —— 否則日後 `git bisect` 或 revert 單一 commit 時會落在壞掉的狀態。
+
+要驗的是**即將提交的那一筆**,不是工作目錄。只要還有東西沒 stage(上面兩種拆法都一樣),工作目錄就比 index 多了後面幾筆的內容;在工作目錄跑建置會通過,不代表這一筆單獨取出時也會通過。提交前把 index 匯出到暫存目錄,在那裡建置:
+
+```bash
+rm -rf /tmp/staged && git checkout-index -a --prefix=/tmp/staged/   # 結尾的斜線不能省
+(cd /tmp/staged && <這個 repo 的建置指令>)
+```
+
+匯出的只有 index 裡的檔案,不會動到工作目錄。在這裡失敗,多半代表這一筆用到了還沒 stage 的東西:把它一起帶進來、調換提交的順序,或承認這兩件事其實分不開。
+
+不要改用 `git stash --keep-index` 清出同樣的狀態:建置產物沒被 gitignore 時,`git stash pop` 會因為未追蹤的檔案已經存在而失敗,變更卡在 stash 裡(2026-10-05 以 git 2.53 實測)。
 
 這支 skill 只管「怎麼切、訊息怎麼寫」。要提交在哪一條 branch,依使用者的指示或 repo 既有的整合方式,不要因為要 commit 就另外開 branch;實際提交在哪裡,寫進回報。
 
@@ -203,6 +214,8 @@ Refs: 676104e, a215868
 2. 每個 commit 的完整 header,以及選這個 type 的理由。
 3. 有沒有 breaking change;有的話怎麼標示、影響誰。
 4. 檢查腳本(或 commitlint)的結果;有 WARN 而決定保留的,說明原因。
+
+同一段工作裡還用了其他也要求回報的 skill 時,合成一份:同一件事只講一次。
 
 ## 延伸閱讀
 
