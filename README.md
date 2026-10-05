@@ -1,5 +1,17 @@
 # BDGG-Dev-Skills
 
+## 道館審查導覽
+
+道館「組合三支 Skills(git / TBD / 雙菱形)」要的三樣東西:
+
+| 題目要的 | 位置 |
+|---|---|
+| 三支 Skill 的完整資料夾 | [`git-conventional-commit`](./.claude/skills/git-conventional-commit/) · [`trunk-based-development`](./.claude/skills/trunk-based-development/) · [`double-diamond-principle`](./.claude/skills/double-diamond-principle/) |
+| 同一個專案完成 8 項功能後的所有 git commits 紀錄 | [`git-log.txt`](./docs/task1_skill_creator/git-log.txt)(39 筆)· 專案 repo:[BDGG_blog](https://github.com/YongRui0402/BDGG_blog) |
+| 人類觀察:遵循了什麼、沒遵循什麼、依據、優化空間 | [`觀察紀錄.md`](./docs/task1_skill_creator/觀察紀錄.md)(尚未填寫) |
+
+每一項功能對得上哪幾筆 commit、當時用的是哪一版 skill、依題目「你要觀察什麼」的四點各要看哪裡,整理在 [`docs/task1_skill_creator/`](./docs/task1_skill_creator/)。各支 skill 的設計想法與驗證狀態在本頁的 [Skills 與設計想法](#skills-與設計想法)。
+
 ## 關於這個 repo
 
 我在這個 repo 整理開發流程相關的 skills,用來解決「每次都要重新跟 Agent 交代同一套做事方法」的問題:動手前怎麼釐清問題、變更怎麼切小並整合回主幹、commit 訊息怎麼寫。
@@ -32,7 +44,7 @@
 3. 匯出專案的所有 git commits,由我逐一對照:哪些原則有被遵循、哪些沒有、從哪個實際結果看出來、還有什麼優化空間。
 4. 錄一段約一分鐘的影片介紹產出,連同這個 repo 的網址貼到課程平台的道館頁。
 
-進度(2026-10-05):三支 skill 已建立,並用 `/skill-creator` 的評測機制各做過四輪 agent 對照測試與修訂。專案選定為 BDGG_blog(一個 Hugo 部落格),八項功能與收尾都已完成:功能 1 到 3 用的是 `a18acf7` 的版本,功能 4 到 8 與收尾用依前三項心得修訂後的 `f2e8761`。之後又依後五項的心得修訂成 `1055ab8`,這一版還沒有在專案上用過。commit 紀錄尚未匯出,由我逐筆對照的觀察紀錄尚未開始。
+進度(2026-10-05):三支 skill 已建立,並用 `/skill-creator` 的評測機制各做過四輪 agent 對照測試與修訂。專案選定為 BDGG_blog(一個 Hugo 部落格),八項功能與收尾都已完成:功能 1 到 3 用的是 `a18acf7` 的版本,功能 4 到 8 與收尾用依前三項心得修訂後的 `f2e8761`。之後又依後五項的心得修訂成 `1055ab8`,這一版還沒有在專案上用過。commit 紀錄已匯出(39 筆,[`git-log.txt`](./docs/task1_skill_creator/git-log.txt)),由我逐筆對照的觀察紀錄尚未開始。
 
 ## Skills 與設計想法
 

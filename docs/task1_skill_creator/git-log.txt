@@ -1,0 +1,467 @@
+* 8cc3b6d 2026-10-05 20:15:26 +0800  (HEAD -> main, origin/main, origin/HEAD)
+|     docs: 記下站主在收尾之後的決定
+|     首頁那一句已拿掉、repo 的說明與網站欄位已填、三支 skill 先不修;
+|     其餘五件事仍然只是記著。驗收第 1 項補上這次的計時(push 後 24 秒生效)。
+|     
+|     README 的部署次數改成寫明統計的時間點,之後不會隨著每次 push 過時。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* e3b8720 2026-10-05 20:14:26 +0800 
+|     fix: 首頁拿掉「這個站還在搭建中」
+|     8 項功能都上線之後,這一句和實際情況對不上(站主決定拿掉)。
+|     首頁現在是站名與標語之後直接接最新文章;內文是空的時候版型不輸出那個區塊。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 19f43be 2026-10-05 20:08:08 +0800 
+|     docs: 記錄收尾的驗收結果
+|     requirements.md 補上 Deliver 段:八項功能共用的測法、淘汰掉的做法與原因、
+|     最後的樣子,以及 13 項驗收條件逐項的結果與證據(第 10 項已取消)。
+|     每一項都是收尾當天重新量的;第 1、4 項沒有照原本的驗法重做
+|     (再發一篇文、再弄壞一次 main),改查 GitHub 上當時的執行紀錄,表裡有寫明。
+|     
+|     另外把還是假設的三件事標上結果,「下一步」改成等站主決定的事。
+|     features.md 的進度表填上收尾,並記下之後要再驗收時可以沿用的做法。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 519489b 2026-10-05 20:07:11 +0800 
+|     docs: 彙整三支 skill 的試用心得
+|     8 項功能各自記的心得原文不動,前面加一段彙整:重複出現的問題、
+|     依前三項心得修訂的第三版之後還有沒有再出現,以及給下一版的建議
+|     (依遇到的次數排)。開頭先寫明這份心得測到與沒測到的範圍。
+|     
+|     最後加上收尾這一次的一筆。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 8c7afe9 2026-10-05 20:01:14 +0800 
+|     docs: README 補成完整版
+|     8 項功能都上線了,原本「站還在搭建中」的那一段改寫成這個站有什麼。
+|     另外補上三段:repo 裡每個目錄放什麼、make check 實際檢查哪些事、
+|     開發紀錄各自記了什麼。
+|     
+|     本機預覽與發文的說明不變,只把「一分鐘內」改成實際量到的範圍
+|     (27 次部署,22 到 94 秒)。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 4293b8c 2026-10-05 19:42:35 +0800 
+|     docs: 更正功能 8 試用心得裡進度回報被提醒的次數
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* d945f0d 2026-10-05 19:41:49 +0800 
+|     docs: 記錄功能 8 的結果與搜尋索引、搜尋框、成品檢查定下的做法
+|     進度表的第 8 項打勾。「已定下的做法」多一段「站內搜尋(功能 8)」,
+|     並改掉先前替這一項預告、後來沒有照做的地方:索引檔的位置由版型
+|     交給腳本(data-index),沒有用 data-baseurl。
+|     
+|     requirements.md 補上這一項的回頭修正;skill-notes.md 記一筆試用心得。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 5fd403a 2026-10-05 19:35:12 +0800 
+|     feat: 404 頁加上搜尋框
+|     走錯網址的讀者可以直接在 404 頁搜尋。網址的最後一段會先被當成關鍵字
+|     帶進去(/learning/git-rebse/ → 「git rebse」),因為那通常就是讀者
+|     手上僅有的線索;有 ?q= 的時候以它為準。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* e5641ee 2026-10-05 19:35:12 +0800 
+|     feat: 加入站內搜尋
+|     /search/ 有一個搜尋框:輸入關鍵字(中文或英文,空白隔開多個詞)就列出
+|     符合的文章,標題、標籤、說明與內文都會搜。可以用分類快選縮小範圍,
+|     結果寫回網址(?q=…&s=…),可以分享、重新整理之後還在。選單多一項「搜尋」。
+|     
+|     索引是首頁的 JSON 輸出(/index.json),收的文章和首頁、「最新」頁、RSS
+|     是同一批。內文用讀者在頁面上看到的字,不是 Markdown 原稿:原稿裡的
+|     粗體與連結語法會把一句話切斷,照頁面上的字搜反而找不到。
+|     
+|     索引檔的網址由版型交給腳本(搜尋框的 data-index),腳本不自己組。
+|     站台在子路徑底下;而且 [outputs] 少了 json 時建置會直接失敗,
+|     不會等到讀者按下搜尋才發現。
+|     
+|     成品檢查多看三件事:data-index 指向存在的檔案;索引是合法的 JSON、
+|     每一篇的網址從網域根寫起而且打得開;索引裡沒有草稿。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 5dbc145 2026-10-05 19:25:50 +0800 
+|     refactor: 把「有文章的分類」抽成 partials/sections.html
+|     首頁的分類卡片原本自己從選單項目裡挑出分類頁。搜尋頁的分類快選
+|     要用同一份清單,先抽出來,兩處才不會各寫一份。
+|     
+|     成品和改之前逐位元相同(31 個檔案)。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 60f4067 2026-10-05 19:17:44 +0800 
+|     docs: 記錄功能 7 的結果與關於頁、選單、成品檢查定下的做法
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 98777b8 2026-10-05 19:12:30 +0800 
+|     refactor: 拿掉沒有用到的技能標籤樣式
+|     .btn-inline 與 .btn-outline 是原版型關於頁的技能標籤,要在 Markdown
+|     裡直接寫 HTML 才用得到。關於頁改用一般的 Markdown 清單,整個成品
+|     沒有任何地方引用這兩個 class。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* f8ffcf0 2026-10-05 19:12:29 +0800 
+|     feat: 加入關於頁
+|     content/about.md 是根目錄的單頁,沿用文章的版型:沒有分區的頁面
+|     不輸出日期、過期提示與上下篇。選單多一項「關於」,404 頁的連結
+|     跟著選單一起多出來。
+|     
+|     內容(簡介、工作技能、這個站、聯絡方式)經站主確認;工作經歷
+|     這一次先不放。頁面上以筆名 BDGG 自稱。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 30146cd 2026-10-05 19:08:08 +0800 
+|     fix: 成品檢查擋下沒有值的 href 與 src
+|     --minify 會把 href="" 縮成沒有值的 href。檢查器原本跳過沒有值的屬性,
+|     所以選單的 pageRef 指向草稿或不存在的頁面時,成品裡是 <a href></a>,
+|     檢查卻照樣通過 —— 既有的測試只餵了帶引號的 href=""。
+|     
+|     實測:關於頁設成草稿並掛上選單,修正前 make check 通過,
+|     修正後回報 14 個檔案各有一個空的連結。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 095dd3d 2026-10-05 19:01:59 +0800 
+|     docs: 記錄功能 6 的結果與標籤名稱、連結、寫法衝突定下的做法
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 4b71f0a 2026-10-05 18:56:35 +0800 
+|     feat: 文章與摘要卡上的標籤可以點進標籤頁
+|     連結用 .GetTerms 向 Hugo 要標籤頁,不照原版型用 urlize 自己組網址:
+|     C# 的頁面在 /tags/c%23/,urlize 組出來的是 /tags/c/(404)。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 84550ff 2026-10-05 18:56:35 +0800 
+|     feat: 加入標籤頁與標籤總覽
+|     每個標籤有自己的頁面(/tags/<標籤>/),只列用了這個標籤的文章;
+|     全部的標籤在 /tags/,頁尾有連結過去。文章與摘要卡上的標籤下一筆才變成連結。
+|     
+|     標籤名稱照作者寫的樣子顯示,用的是 Hugo 的設定 capitalizeListTitles = false,
+|     沒有搬原版型的 term-name.html:在 0.165.0 實測,關掉這個設定之後標籤頁的標題
+|     就是 front matter 裡的寫法(mod、iOS 不會變成 Mod、IOS)。
+|     
+|     兩種寫法落在同一個標籤頁時(MCP 與 mcp、A B 與 a-b、a&b 與 ab),
+|     頁面上顯示哪一種每次建置不一定相同,實測連建三次出現兩種結果。
+|     所以 partials/tag-conflicts.html 讓建置失敗並指出是哪兩篇,不替作者挑一個。
+|     
+|     標籤頁會分頁,head.html 的分頁判斷加上 term:不加的話第 2 頁的 canonical
+|     指向第 1 頁(成品檢查擋得住,用 12 篇同標籤的假文章驗過)。
+|     
+|     標籤總覽上很長、沒有空白的標籤在 360px 寬會把頁面撐出橫向捲軸(366 / 360),
+|     加上 overflow-wrap: anywhere。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 95b0760 2026-10-05 18:43:27 +0800 
+|     docs: 記錄功能 5 的結果與選單、分頁、排序定下的做法
+|     進度表、「已定下的做法」的功能 5 一節(選單由 partials/menu.html 決定、
+|     空的分區自動不顯示、首頁與 RSS 收同一批文章、分頁與排序不會同時出現、
+|     和原版型不同的地方、成品檢查多看的東西、之後各項要接的地方)、
+|     前幾節裡已經過時的現況、需求紀錄的回頭修正,以及三支 skill 這一項的試用心得。
+|     
+|     README:六個分區都可以直接發文、分區的介紹寫在哪裡、
+|     內文不要直接寫 HTML 標籤(建置會失敗)。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 1bab068 2026-10-05 18:37:45 +0800 
+|     feat: 加入「最新」頁
+|     /latest/ 把六個分區的文章依日期列在同一頁,選單多一項「最新」。
+|     這一頁刻意不分頁,所以排序按鈕在這裡永遠可用:分區的文章多到要分頁之後,
+|     想依標題或從最舊的看起,就到這一頁。
+|     
+|     它是 content/ 根目錄的單頁,不進 RSS,會進 sitemap。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 165c530 2026-10-05 18:36:55 +0800 
+|     feat: 首頁列出最新的文章與分區卡片
+|     首頁原本暫時的文章清單換成正式的版本:最新的 10 篇(每篇有分區、日期、
+|     說明文字與標籤),底下是各分區的卡片與篇數。404 頁多了通往各分區的連結。
+|     
+|     卡片與 404 的連結都跟著選單走:順序相同,還沒有文章的分區同樣不出現。
+|     
+|     和原版型不同的地方:
+|     - 首頁收六個分區的文章,和 RSS 是同一批。原版型把「速查」排除在首頁之外;
+|       這裡不排除,免得作者在那個分區發了文,首頁卻看不到
+|     - 卡片直接從分區的頁面取網址與名稱。原寫法從選單的網址切出分區名稱,
+|       站台在子路徑底下時切出來的是 BDGG_blog/learning,一張卡片都對不上
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 8f9830a 2026-10-05 18:35:47 +0800 
+|     feat: 加入六個分區的列表頁、分頁與排序
+|     六個分區(踩坑、架構決策、專案、速查、學習筆記、生活紀錄)各有自己的列表頁,
+|     只列該分區的文章,一頁 10 篇。文章頁上的分區名稱從文字變成連到列表頁的連結。
+|     只有一頁的列表可以依日期或標題排序;超過一頁時排序按鈕不出現,
+|     因為它只能重排當頁的項目,會排出看起來對、其實是錯的順序。
+|     
+|     選單掛上六個分區,但還沒有文章的不顯示(partials/menu.html):某個分區發出
+|     第一篇文章時它會自己出現,不必回頭改設定。空的分區頁面仍然存在,
+|     顯示「還沒有文章」與回首頁的連結。原本暫時放著的「首頁」一項拿掉 ——
+|     站名本身就是回首頁的連結。
+|     
+|     和原版型不同的地方:
+|     - 摘要卡拿掉封面;標籤先顯示成文字,標籤頁做好之後再變成連結
+|     - 摘要卡的說明文字改用 partials/description.html,和 meta、RSS 同一個來源
+|     - 排序比的是發布時間的秒數。原本只比日期,同一天發的兩篇在「最舊在前」時
+|       仍然是下午的排在早上的前面(瀏覽器裡實測)
+|     - 分頁第 2 頁以後的 canonical、og:url 是它自己的網址,標題加上「第 N 頁」。
+|       原寫法每一頁都宣告自己是第 1 頁
+|     - 文章頁上,選單裡所屬的分區是 aria-current="true",不是 "page"
+|     
+|     成品檢查多一項:一頁的 canonical 與 og:url 要等於它在成品裡實際的位置
+|     (Hugo 產生的轉址頁例外)。指到別頁的網址確實存在,原本的連結檢查看不出來。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* e4fd861 2026-10-05 18:03:35 +0800 
+|     docs: 記錄功能 4 的結果與 feed、分享 meta 定下的做法
+|     進度表、「已定下的做法」的功能 4 一節(說明文字的單一來源、只有首頁出 feed、
+|     robots.txt 在子路徑下沒有作用與 sitemap 要由站主提交、和原版型不同的地方、
+|     成品檢查多看的東西、之後各項要接的地方)、需求紀錄的回頭修正,
+|     以及三支 skill 這一項的試用心得。
+|     
+|     README 補上 RSS 的網址與 description 的用途;文章範本裡 description 的說明
+|     改成現在實際的用途。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* f02894e 2026-10-05 17:58:58 +0800 
+|     feat: 加入 sitemap 與 robots.txt
+|     /sitemap.xml 列出首頁與每一篇已發布的文章(Hugo 內建的版型),
+|     /robots.txt 允許所有爬蟲並指出 sitemap 的位置。草稿與日期在未來的文章不在裡面。
+|     
+|     robots.txt 的非正式建置分支沒有搬:原本是給舊產線的預覽環境擋爬蟲用的,
+|     這個 repo 沒有那個環境。
+|     
+|     要知道的限制:爬蟲只讀網域根的 robots.txt(RFC 9309 第 2.3 節),
+|     這個站在 /BDGG_blog/ 底下,所以這個檔現在不會被讀到;
+|     sitemap 要到搜尋引擎的站長工具裡提交。說明寫在版型的註解裡。
+|     
+|     成品檢查跟著擴充:sitemap 的每個 <loc> 與 robots.txt 裡的每個網址
+|     都要是 https、在子路徑底下、而且指向存在的檔案。
+|     檢查的是這些值,不是在檔案裡找 http:// —— sitemap 的 xmlns 本身就是 http:// 開頭。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 419ca0d 2026-10-05 17:58:04 +0800 
+|     feat: 加入 RSS feed
+|     讀者可以用閱讀器訂閱:/index.xml 給最新的 30 篇,每篇附說明與全文。
+|     頁尾有 RSS 連結;feed 的宣告每一頁都放,把任何一篇的網址貼進閱讀器都找得到。
+|     只有首頁出 feed —— 分區頁與標籤頁明寫成只出 HTML,否則之後打開時
+|     每個分區會各出一份內容相同的全站 feed(實測)。
+|     
+|     和原版型不同的地方(原樣搬的話 W3C Feed Validator 是 3 個錯誤):
+|     - 拿掉 managingEditor 與 webMaster:規範要求是電子郵件,作者改放 dc:creator
+|     - 摘要先還原成純文字、再照 HTML 跳脫。原寫法在內文開頭有引號時
+|       會輸出沒宣告過的實體,整份 XML 解析不了
+|     - feed 自己的網址(atom:link rel="self")原本寫成首頁的網址
+|     - 收所有分區的文章(原本只收三個分區,這個站的第一篇不在裡面)
+|     - 全文裡的站內連結與圖片換成完整網址,閱讀器不必自己補網域
+|     - 分類用分區的中文名稱
+|     
+|     成品檢查跟著擴充:feed 要是合法的 XML,裡面的網址都是站台底下的完整網址
+|     而且指向存在的檔案,自己的網址要等於實際的位置。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* bbe543b 2026-10-05 17:56:55 +0800 
+|     feat: 頁首加上說明文字、canonical 與社群分享的 meta
+|     搜尋結果與社群分享的預覽現在有標題、說明與圖:文章用 front matter 的
+|     description,沒寫就取內文開頭;其他頁面用站台的說明。分享圖固定用預設那一張。
+|     404 頁沒有自己的網址,不輸出 canonical 與分享用的 meta。
+|     
+|     和原版型不同的地方:
+|     - 首頁的說明固定用站台的說明。原寫法會先取首頁的內文,
+|       於是首頁的說明變成「這個站還在搭建中。」
+|     - 說明文字先還原成純文字再輸出。原寫法在內文開頭有引號或 & 時,
+|       會輸出跳脫兩次的 &rsquo; 這類字串
+|     - 分享的標題不加站名(站名另外在 og:site_name);
+|       發布時間只有文章才輸出,原寫法連首頁都有
+|     
+|     成品檢查跟著擴充:og:url 與 og:image 必須是站台底下的完整網址而且檔案存在;
+|     寫了主機的站內連結(canonical)不能是 http://。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* f72ddec 2026-10-05 17:13:04 +0800 
+|     docs: 記錄功能 3 的結果與文章頁定下的做法
+|     進度表、「已定下的做法」的文章頁一節(網址規則、站內連結與圖片的寫法、
+|     和原版型不同的地方、之後各項要接的地方)、需求紀錄的回頭修正,
+|     以及三支 skill 這一項的試用心得。README 的上線時間改成實測值。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 5cf28ba 2026-10-05 17:09:50 +0800 
+|     post: Claude mod 簡易測試與說明
+|     第一篇文章。用一個擋下「直接改 public/ 成品」的小 mod,記錄
+|     claude plugin validate、claude plugin test 與 --plugin-dir 實際載入
+|     三種檢查各看到什麼。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* cc65de4 2026-10-05 17:07:49 +0800 
+|     feat: 加入文章範本、make new 與發文說明
+|     make new POST=<分區>/<檔名> 依範本開一篇新文章;Hugo 是下載到 .hugo-bin/
+|     的,不在 PATH 上,少了這個指令範本就用不到。
+|     
+|     範本預設 draft: true,欄位旁的註解改寫成這個 repo 的流程。
+|     README 補上「怎麼發一篇文」:分區、網址、草稿、站內連結與圖片的寫法。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* e1dbe9d 2026-10-05 17:07:41 +0800 
+|     feat: 加入文章頁 —— 目錄、文首重點、過期提示、程式碼上色與複製鈕
+|     文章頁顯示分區、日期、閱讀時間、文首重點、目錄、文末一句話與標籤,
+|     超過設定月數沒更新的文章會自動掛上過期提示。程式碼區塊改由樣式表上色,
+|     跟著深色模式切換,並有一鍵複製。首頁暫時列出文章連結。
+|     
+|     文章網址是 /<分區>/<slug>/,沒寫 slug 時用檔名。內文的站內連結與圖片
+|     由 Hugo 解析成帶子路徑的網址,作者照一般的 Markdown 寫法即可。
+|     
+|     分區列表頁與標籤頁還沒做,所以文章上的分區與標籤先顯示成文字,
+|     section 這一種頁面先關掉。
+|     
+|     和原版型不同的地方:
+|     
+|     - 深色模式下程式碼的標點是深色字,在深色底上看不見:淺色那份語法樣式
+|       沒有包在媒體查詢裡,深色那份又沒有定義標點的顏色。兩份各自包起來
+|     - 複製鈕用 innerText 取文字,上色後每一行中間會多一個空行;
+|       改用 textContent,並拿掉結尾的換行
+|     - 窄螢幕的表格欄位會被擠到一行一兩個字;欄位設了最小寬度,
+|       放不下時表格自己橫向捲
+|     - 開啟 hasCJKLanguage,不然中文文章的閱讀時間一律是 1 分鐘
+|     - 沒有 h2、h3 的文章不輸出空的目錄框;沒有上下篇時不輸出空的導覽列
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* c4017a1 2026-10-05 16:48:19 +0800 
+|     docs: 記錄功能 2 的結果與版面定下的做法
+|     - features.md:進度表勾掉功能 2;「已定下的做法」新增「版面」一段 ——
+|       站主這一項的三個決定、各份版型目前缺什麼與哪一項要補、main.css
+|       刪了什麼與留了什麼、實測到的行為、分享圖怎麼重畫、360px 怎麼量
+|     - requirements.md:GA4 的假設改成實測結果,「回頭修正」記下這次和
+|       規格不一樣的四件事
+|     - skill-notes.md:三支 skill 在這一項的試用心得
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 5ce4506 2026-10-05 16:44:48 +0800 
+|     feat: 加入預設的社群分享圖與重畫它的腳本
+|     原架構的分享圖上印著舊網域與舊標語,不能直接搬。照同一個版面與配色
+|     重畫一張,字換成這個站的站名、標語與網址。
+|     
+|     圖上的字都取自 hugo.toml,所以附上 scripts/make_og_image.py:改了
+|     站名、標語或 baseURL 之後重跑一次,把新的圖一起提交。腳本需要 Pillow
+|     與 Noto Sans CJK 字型,不在 make check 裡,建置與 CI 不依賴它。
+|     
+|     圖要到功能 4 才會被社群分享的 meta 引用,這裡先讓它在子路徑下載得到。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* de38387 2026-10-05 16:44:37 +0800 
+|     feat: 加入 404 頁
+|     打開 Hugo 的 404 頁面種類,用和其他頁面相同的版面:一句說明加上回首頁
+|     的連結。原版型放在這一頁的搜尋框留到功能 8,分區連結等分區頁存在
+|     (功能 5)再加,免得連到不存在的頁面。
+|     
+|     分頁標題用中文的「找不到這個頁面」,不用 Hugo 內建的英文字串。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* d7fb342 2026-10-05 16:44:37 +0800 
+|     feat: 加入基本版面 —— 頁首選單、頁尾、深色模式與手機版面
+|     從原架構搬進 baseof、head、header、footer 與兩份樣式,站台參數(標語、
+|     說明、作者、GitHub 帳號)與 GA4 欄位寫進 hugo.toml,GA4 的 ID 留空。
+|     
+|     和原版型不同的地方:
+|     
+|     - 站內連結改成子路徑下能用的寫法:首頁用 site.Home.RelPermalink,
+|       favicon 用 "favicon.ico" | relURL,選單直接用 pageRef 產生的 .URL
+|     - 不在範圍內的功能整段不搬:進度條、分享、封面、留言、相關文章、
+|       圖片 shortcode、穿插照片、系列文導覽,以及頁尾的本機預覽標記;
+|       main.css 裡對應的樣式一併刪掉,文章列表的樣式改成沒有縮圖的版本
+|     - 之後才輪到的引用先不帶:說明文字、canonical、社群分享與 feed 的
+|       meta(功能 4)、複製程式碼的腳本(功能 3)、data-baseurl(功能 8)
+|     - body 加上 overflow-wrap: break-word。實測 360px 寬時,內文裡一個
+|       很長的網址會把整頁撐出橫向捲軸,原樣式沒有處理
+|     - 選單是空的時候不輸出 <nav>
+|     
+|     功能 1 的連結測試頁與它的選單項目拿掉;草稿標記從 baseof 移到文章頁。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* e454680 2026-10-05 16:27:31 +0800 
+|     docs: 記錄功能 1 的結果與定下的全站連結寫法
+|     - features.md:進度表勾掉功能 1;「已定下的做法」補上子路徑下各種連結
+|       寫法的實測結果、之後搬版型要照的寫法,以及建置與成品檢查的做法
+|     - requirements.md:子路徑的假設改成實測結果,「回頭修正」記下這次推翻
+|       與新發現的事
+|     - skill-notes.md:三支 skill 在這一項的試用心得
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* fb80377 2026-10-05 16:26:05 +0800 
+|     revert: 故意寫錯站內連結,驗證建置失敗時不會部署
+|     驗證完成:該筆的 make check 在 CI 失敗,deploy 被跳過,公開站仍是
+|     上一版。還原首頁的連結。
+|     
+|     Refs: 1e09eca
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 1e09eca 2026-10-05 16:24:32 +0800 
+|     test: 故意寫錯站內連結,驗證建置失敗時不會部署
+|     把首頁的連結寫成 "/link-test/" | relURL,在子路徑下會指到網域根目錄,
+|     成品檢查會擋下來。用來確認 make check 沒過時 deploy 不會跑、線上的站
+|     停在上一版。驗完下一筆就還原。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 43672b8 2026-10-05 16:23:13 +0800 
+|     ci: push 到 main 時建置並部署到 GitHub Pages
+|     build 跑 make check,通過才把 public/ 交給 deploy;沒過就不部署,線上
+|     的站停在上一版。只用 GitHub 官方的 action 與 GitHub 代管的 runner,
+|     不依賴任何自有主機。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 886fd2d 2026-10-05 16:23:13 +0800 
+|     feat: 加入最小的 Hugo 站台、建置指令與成品檢查
+|     用最小的骨架把「建置 → 成品檢查」走通,不含樣式,也不含原架構的版型:
+|     
+|     - .hugo-version 釘住 Hugo extended 0.165.0;Makefile 依它下載同一版
+|       (核對 checksum)到 .hugo-bin/,提供 preview、build、check
+|     - hugo.toml 只有 baseURL、站名、語系與兩個選單項目
+|     - 兩個互相連結的頁面,用來確認連結在 /BDGG_blog/ 子路徑底下是通的
+|     - scripts/check_public.py 檢查成品:站內連結都在子路徑底下且指向存在
+|       的檔案、沒有草稿標記、不含 192.168.
+|     - scripts/test_check_public.py 用假成品確認每一種情況真的會擋
+|     
+|     make check 是本機與 CI 共用的那一道指令。
+|     
+|     Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+| 
+* 7beca00 2026-10-05 16:12:38 +0800 
+      chore: 加入開發紀錄、授權與忽略清單
+      鋪路用的一筆,讓這個 repo 可以開始收 commit:
+      
+      - docs/requirements.md 記錄這個站為什麼這樣做,docs/features.md 是
+        8 項功能的開發入口
+      - 程式碼採 MIT(LICENSE),文章採 CC BY 4.0(LICENSE-content.md)
+      - .gitignore 排除建置成品、下載的 Hugo 與本機工具設定
+      
+      Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+  
