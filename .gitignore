@@ -1,0 +1,10 @@
+# /skill-creator 跑評測時的工作區與打包檔,不可進平台抓取的 skills 路徑
+*-workspace/
+*.skill
+*.zip
+
+# Claude Code 的本機權限設定
+.claude/settings.local.json
+
+.env
+__pycache__/
