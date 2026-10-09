@@ -9,7 +9,7 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 1. Read 問題發生時的對話與當時用到的每一支 Skill 的整個資料夾;若要創建的是全新的 Skill → 跳至 Phase 2 Step 1;若對話裡有那一次交給 Skill 的輸入與它交出的產出 → 跳至 Phase 1 Step 3。
 2. Ask 問使用者那一次交給 Skill 的輸入與它交出的產出。
 3. Think 依 `rules/根因-規範.md` 用當時的輸入逐步演練每一支 Skill 的 SOP 找出根因。
-4. Ask 依骨架 `templates/根因報告.md` 與範例 `templates/根因報告.example.md` 提出根因報告,問使用者是否同意;若使用者不同意 → 跳至 Phase 1 Step 3。
+4. Ask 依骨架 `templates/根因報告.md` 與範例 `templates/根因報告.example.md` 提出根因報告,問使用者是否同意;若使用者不同意 → 跳至 Phase 1 Step 3;若使用者同意,而每一個落差都不歸類 → 結束。
 
 ## Phase 2: 提出藍圖
 1. Think 依 `rules/藍圖-規範.md` 決定目標 Skill 的藍圖:產出鏈、主幹、變更與新掛部位的樣子。
