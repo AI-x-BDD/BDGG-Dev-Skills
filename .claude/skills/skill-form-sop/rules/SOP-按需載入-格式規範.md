@@ -95,3 +95,43 @@
 ```
 3. Ask 依 `rules/確認-規範.md` 與 `templates/class-diagram.*` 用 Mermaid 提出設計,問使用者是否可以進入開發。
 ```
+
+# Rule 3 [must] - 委派給腳本的步驟照固定寫法
+- 把職責交給目標 skill `scripts/` 底下腳本的步驟,照下面的寫法
+
+```
+<M>. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/<腳本名>.py <參數>` <取得什麼或留下什麼>
+```
+
+- 指令寫完整:`uv run`、腳本的完整路徑、每一個參數;執行時才知道的值寫成 `<說明>`
+- `rules/腳本執行-規範.md` 照〈資源只在用到它的那一步點名〉只寫在第一個執行腳本的步驟,之後的步驟省略「依 `rules/腳本執行-規範.md`」
+- 腳本是每次都要執行的,不是載入一次就好的資源,不受〈資源只在用到它的那一步點名〉限制:同一支腳本可以在不同的步驟各執行一次,每一次都寫完整的指令
+- 為什麼:執行的人是照步驟裡那一行去跑的;少了 `uv run`,他會改用 `python` 直接跑,腳本檔頭宣告的套件就沒有人裝。每一步的寫法都一樣,掃一眼 SOP 才找得到哪幾步在跑腳本
+
+## good example
+- **`uv run`、完整路徑與參數都在**,照抄就能執行
+```
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得每個 Rule File 的 Rule 條數與各條的強度。
+```
+
+## bad example
+- 同一步,但**只點了腳本的路徑**;執行的人得自己決定用什麼跑、猜它要什麼參數
+```
+2. Delegate 依 `rules/腳本執行-規範.md` 用 `scripts/count_rules.py` 統計每個 Rule File 的 Rule 條數與各條的強度。
+```
+
+## good example
+- 邊界:修改前後各要數一次,兩步跑的是同一支腳本,**兩步都寫了完整的指令**
+```
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改前每個 Rule File 的 Rule 條數與各條的強度。
+3. Write 依使用者選的處理改寫 Rule File。
+4. Delegate 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改後每個 Rule File 的 Rule 條數與各條的強度。
+```
+
+## bad example
+- 邊界:同一段流程,第二次比照資源「只點名一次」而省略了指令;看起來比較精簡,但**腳本是要再執行一次的**,執行的人得回頭找第 2 步才知道要跑什麼
+```
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改前每個 Rule File 的 Rule 條數與各條的強度。
+3. Write 依使用者選的處理改寫 Rule File。
+4. Delegate 再執行一次同一支腳本,取得修改後每個 Rule File 的 Rule 條數與各條的強度。
+```
