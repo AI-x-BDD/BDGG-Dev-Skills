@@ -1,6 +1,6 @@
 ---
 name: skill-engineering-ex
-description: 建立新的 Skill，或依使用者對既有 Skill／一組相關 Skills 的不滿意結果，分析根因並重構 SOP、規則、樣板與腳本。需要整體設計、跨步驟優化、刪減重複要求或編排 skill-form-*、skill-derive-* 時使用；已指定單一步驟的局部轉換可直接使用對應 Deriver。未驗證。
+description: 建立新的 Skill，或依使用者對既有 Skill／一組相關 Skills 的不滿意結果，分析根因並重構 SOP、規則、樣板與腳本。需要整體設計、跨步驟優化、刪減重複要求或編排 skill-form-*、skill-derive-* 時使用；已指定單一步驟的局部轉換可直接使用對應 Deriver。由 Codex 開發，作為 skill-engineering 的對照組，用來比較模型能力與架構差異。未驗證。
 ---
 
 # SOP
