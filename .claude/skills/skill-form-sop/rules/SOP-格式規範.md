@@ -163,7 +163,7 @@
 ```
 
 # Rule 6 [must] - 一步只有一行
-- 一行放不下的細節放到 SOP 以外的 section 或 `rules/`,步驟裡只留指過去的名稱
+- 一行放不下的細節放到 SOP 以外的 section、`rules/` 或 `templates/`,步驟裡只留指過去的名稱
 - 為什麼:細節掛在步驟底下,流程就被淹沒,SOP 沒辦法一眼掃完
 
 ## good example
@@ -223,43 +223,7 @@
 3. Think 用 Mermaid 提出設計,等使用者說可以再進入開發。
 ```
 
-# Rule 9 [must] - Rule File 只在用到它的那一步點名
-- 每個 Rule File 的路徑在 SOP 裡只出現一次,寫在用到它的那一步,寫成「依 `rules/<檔名>`」
-- 不另立 Read 步驟去讀 Rule File,其他步驟也不再提它
-- 為什麼:路徑出現在哪一步,就是告訴執行的人「走到這裡才去讀」;每一步都提,就分不出哪一步才需要載入
-
-## good example
-- 路徑**只出現在 Write 那一步**,走到那裡才需要載入
-```
-## Phase 1: 寫出 SOP
-1. Read 目標 skill 已有的 SKILL.md。
-2. Write 依 `rules/SOP-格式規範.md` 把使用者要的流程寫成目標 skill 的 `# SOP`。
-```
-
-## bad example
-- 同一段流程,但**一開始就先讀 Rule File,後面又用「規範」再提一次**,看不出到底哪一步才需要它
-```
-## Phase 1: 寫出 SOP
-1. Read `rules/SOP-格式規範.md`。
-2. Read 目標 skill 已有的 SKILL.md。
-3. Write 依規範的每條 Rule,把使用者要的流程寫成目標 skill 的 `# SOP`。
-```
-
-## good example
-- 邊界:Write 和 Think 兩步都用得到同一個 Rule File,但**只在第一個用到的步驟點名**
-```
-2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成 Rule File。
-3. Think 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
-```
-
-## bad example
-- 邊界:第二個用到的步驟也寫上路徑,看起來比較清楚,但**讀的人會以為這裡要再載入一次**
-```
-2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成 Rule File。
-3. Think 依 `rules/RuleFile-格式規範.md` 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
-```
-
-# Rule 10 [must] - SOP 走最短可執行路徑
+# Rule 9 [must] - SOP 走最短可執行路徑
 - 拿掉某一步之後流程仍然做得完、產出也不變,那一步就不該存在
 - 為什麼:每多一步,執行的人就多一個要判斷「這裡要做什麼」的地方,真正必要的步驟也更容易被淹沒
 

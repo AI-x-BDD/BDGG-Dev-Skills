@@ -1,0 +1,18 @@
+classDiagram
+    class OrderService {
+        <<修改>>
+        +placeOrder(Cart cart) Order
+    }
+    note for OrderService "接受購物車並建立訂單"
+    class InventoryChecker {
+        <<新增>>
+        +isAvailable(Cart cart) bool
+    }
+    note for InventoryChecker "判斷購物車裡的商品庫存夠不夠"
+    class StockRepository {
+        <<既有>>
+        +findQuantity(ProductId id) int
+    }
+    note for StockRepository "查詢商品的庫存數量"
+    OrderService --> InventoryChecker
+    InventoryChecker --> StockRepository

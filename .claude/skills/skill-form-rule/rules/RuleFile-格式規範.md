@@ -1,6 +1,6 @@
 # Rule 1 [must] - Rule File 只由 Rule 組成
 - 檔案裡每個 `#` 標題都是一條 Rule,沒有其他種類的 section
-- 表格、格式模板這類定義也寫成一條 Rule,內容放進它的 desc
+- 表格、片段的格式定義也寫成一條 Rule,內容放進它的 desc;整份生成內容的樣板不放進 Rule File,放 `templates/`
 - 為什麼:逐條對照只會走過 Rule,放在 Rule 以外的內容不會被檢查,也沒有 example 示範
 
 ## good example

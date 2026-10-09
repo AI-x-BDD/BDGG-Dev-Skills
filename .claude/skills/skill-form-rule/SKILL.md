@@ -1,5 +1,5 @@
 ---
-name: skill-form-rules
+name: skill-form-rule
 description: 當要撰寫 Skill 時 只要涉及到規則部分 規則的撰寫 `rules/` 底下 Rule File 的撰寫 就必須使用此 Skill(未驗證)
 ---
 
