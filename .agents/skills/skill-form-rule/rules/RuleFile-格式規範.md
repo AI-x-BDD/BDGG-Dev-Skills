@@ -358,3 +358,62 @@ rules/
 ├── SOP-Phase-格式規範.md      ← 同一個步驟要讀
 └── SOP-步驟-格式規範.md       ← 同一個步驟也要讀
 ```
+
+# Rule 11 [should] - good example 不違反同檔的其他 Rule
+- 每條 Rule 的 good example 也要符合同一個 Rule File 裡的其他 Rule
+- 為什麼:讀的人會把每一個 good example 當成可以照抄的示範;這一條的 good example 違反了另一條,照抄的人就違反了那一條,而且同一段內容在這一條是好示範、在那一條是壞示範
+
+## good example
+- 〈步驟以動詞表的動詞開頭〉的 good example **每一步也都只做一件事**,同時符合同檔的〈一步只做一件事〉
+````markdown
+# Rule 1 [must] - 步驟以動詞表的動詞開頭
+- 每一步的第一個詞必須是動詞表的動詞之一
+
+## good example
+- 兩步的第一個詞都查得到動詞表
+```
+2. Think 設計這次開發的類別組織。
+3. Ask 問使用者是否可以進入開發。
+```
+
+# Rule 2 [must] - 一步只做一件事
+- 要兩個動詞才講得完,就拆成兩步
+````
+
+## bad example
+- 同樣兩條 Rule,但〈步驟以動詞表的動詞開頭〉的 good example **把設計與提問塞在同一步**;它符合自己這一條,卻正好是〈一步只做一件事〉要擋的寫法
+````markdown
+# Rule 1 [must] - 步驟以動詞表的動詞開頭
+- 每一步的第一個詞必須是動詞表的動詞之一
+
+## good example
+- 這一步的第一個詞查得到動詞表
+```
+2. Think 設計這次開發的類別組織,並問使用者是否可以進入開發。
+```
+
+# Rule 2 [must] - 一步只做一件事
+- 要兩個動詞才講得完,就拆成兩步
+````
+
+## good example
+- 邊界:這個 good example 只節錄了一條 Rule 的標題與 desc,沒有「為什麼」也沒有 example;**它要示範的只是引用的寫法,節錄是為了聚焦**,有正當理由不照做
+````markdown
+## good example
+- **指向名稱**,之後在前面插入新的 Rule 也不會指錯
+```markdown
+# Rule 2 [must] - 一步只做一件事
+- 要兩個〈步驟以動詞表的動詞開頭〉裡的動詞才講得完,就拆成兩步
+```
+````
+
+## bad example
+- 邊界:同一段內容,但說明把它當成**一條完整的 Rule 的示範**;照抄的人寫出來的 Rule 沒有「為什麼」,也沒有 example
+````markdown
+## good example
+- **一條完整的 Rule 長這樣**
+```markdown
+# Rule 2 [must] - 一步只做一件事
+- 要兩個〈步驟以動詞表的動詞開頭〉裡的動詞才講得完,就拆成兩步
+```
+````
