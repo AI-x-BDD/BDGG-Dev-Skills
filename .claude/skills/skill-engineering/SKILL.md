@@ -28,4 +28,5 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 1. Write 替藍圖的每一列驗收輸入,把實跑會改到的檔複製到 `tmp/verify/` 底下各自的資料夾。
 2. Delegate 依骨架 `templates/實跑指示.md` 與範例 `templates/實跑指示.example.md` 把每一列驗收輸入與它的複本交給不帶這場對話脈絡的 subagent,實跑寫完的目標 Skill。
 3. Read 每一份複本和原本的差異與交出的腳本執行的結果。
-4. Think 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡列出驗收紀錄;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1。
+4. Think 比對每一份實跑結果;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1。
+5. Ask 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡列出驗收紀錄。
