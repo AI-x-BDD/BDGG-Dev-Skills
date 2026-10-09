@@ -8,4 +8,5 @@ description: 當要撰寫 Skill 時 只要涉及到規則部分 規則的撰寫 
 ## Phase 1: 寫出 Rule File
 1. Read 目標 skill 的 SKILL.md 與已有的 Rule File。
 2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成目標 skill `rules/` 底下的 Rule File。
-3. Think 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
+3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_rule_file.py --file <Rule File 的路徑>` 取得結構檢查的結果;若有不過 → 跳至 Phase 1 Step 2。
+4. Think 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
