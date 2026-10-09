@@ -1,6 +1,6 @@
 ---
 name: skill-form-rule
-description: 當要撰寫 Skill 時 只要涉及到規則部分 規則的撰寫 `rules/` 底下 Rule File 的撰寫 就必須使用此 Skill(未驗證)
+description: 當要撰寫 Skill 時 只要涉及到規則部分 規則的撰寫 `rules/` 底下 Rule File 的撰寫 就必須使用此 Skill。使用者因既有 Skill 的產出不符預期而要求修改時,先用 skill-engineering 分析根因,即使已指定步驟或修法亦同;依已確認方案轉交本 Skill 執行時,直接承接。(未驗證)
 ---
 
 # SOP

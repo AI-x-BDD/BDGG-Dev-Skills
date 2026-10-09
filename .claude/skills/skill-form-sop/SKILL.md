@@ -1,6 +1,6 @@
 ---
 name: skill-form-sop
-description: 撰寫或修改 Skill 的 SKILL.md 中 SOP 流程（Phase、步驟與按需載入步驟）時，必須使用此 Skill；使用者提到 SOP、流程、Phase、workflow steps 時使用。
+description: 撰寫或修改 Skill 的 SKILL.md 中 SOP 流程（Phase、步驟與按需載入步驟）時，必須使用此 Skill；使用者提到 SOP、流程、Phase、workflow steps 時使用。使用者因既有 Skill 的產出不符預期而要求修改時，先用 skill-engineering 分析根因，即使已指定步驟或修法亦同；依已確認方案轉交本 Skill 執行時，直接承接。
 ---
 
 # SOP

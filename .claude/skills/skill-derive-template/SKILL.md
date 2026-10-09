@@ -1,6 +1,6 @@
 ---
 name: skill-derive-template
-description: 給定一支已經寫好的 SOP skill,使用者想針對其中某個步驟,把該步驟生成內容的格式抽成樣板時,就必須使用此 Skill(未驗證)
+description: 給定一支已經寫好的 SOP skill,使用者想針對其中某個步驟,把該步驟生成內容的格式抽成樣板時,就必須使用此 Skill。使用者因既有 Skill 的產出不符預期而要求修改時,先用 skill-engineering 分析根因,即使已指定步驟或修法亦同;依已確認方案轉交本 Skill 執行時,直接承接。(未驗證)
 ---
 
 # SOP
