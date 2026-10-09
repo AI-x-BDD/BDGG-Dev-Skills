@@ -67,6 +67,53 @@ def clean_label(text: str, max_len: int = 50) -> str:
     return text
 
 
+def simplify_action_label(verb: str, action: str, max_len: int = 30) -> str:
+    """過濾路徑與指令雜訊，提煉動詞與核心受詞。"""
+    text = action.strip()
+    # 剝離資源指標：依 rules/..., 依骨架 templates/...
+    text = re.sub(r"^依\s*`?rules/[^`\s]+`?\s*", "", text)
+    text = re.sub(r"^依骨架\s*`?templates/[^`\s]+`?\s*與範例\s*`?templates/[^`\s]+`?\s*", "", text)
+    text = re.sub(r"^依骨架\s*`?templates/[^`\s]+`?\s*", "", text)
+    text = re.sub(r"^依\s*`?[^`\s]+`?\s*與\s*`?[^`\s]+`?\s*", "", text)
+    # 剝離腳本與指令前綴
+    text = re.sub(r"^執行\s*`uv run scripts/[^`]+`\s*", "", text)
+    text = re.sub(r"^執行\s*uv run scripts/\S+\s*", "", text)
+    text = re.sub(
+        r"^執行\s*([a-zA-Z0-9_-]+)\s+[a-zA-Z0-9_-]+\s*指令傳入任務指示檔並將最後輸出寫入紀錄檔",
+        r"執行 \1",
+        text,
+    )
+    # 簡化常見贅詞
+    text = re.sub(r"^把使用者要的流程寫成", "寫出", text)
+    text = re.sub(r"^把使用者要的規則寫成", "寫出", text)
+    text = re.sub(r"^把使用者要的", "寫出", text)
+    text = re.sub(r"^剛寫進目標 skill 的", "讀回", text)
+    text = clean_label(text, max_len=max_len)
+    return f"{verb}：{text}"
+
+
+def simplify_condition_label(condition: str, max_len: int = 20) -> str:
+    """精煉條件分支文字，提煉核心提問。"""
+    cond = condition.strip().replace("`", "")
+    cond = re.sub(r"[;。？?]+$", "", cond)
+    mappings = [
+        (r"沒有步驟用得到.*", "無使用資源"),
+        (r"對話裡有那一次交給.*", "已有輸入與產出"),
+        (r"要創建的是全新的.*", "創建全新 Skill"),
+        (r"使用者同意.*每一個落差都不歸類", "落差皆不歸類"),
+        (r"驗收紀錄裡有一列判定為對不上", "驗收對不上"),
+        (r"寫出來的內容和藍圖不同", "內容與藍圖不同"),
+        (r"掛上去的內容和藍圖不同", "內容與藍圖不同"),
+        (r"指定那一步的寫法不變", "步驟寫法不變"),
+        (r"結果不符預期且需要.*修正", "驗收不符預期"),
+        (r".*未安裝或環境不支援", "未安裝或不支援"),
+    ]
+    for pattern, replacement in mappings:
+        if re.search(pattern, cond):
+            return clean_label(replacement, max_len=max_len) + "？"
+    return clean_label(cond, max_len=max_len) + "？"
+
+
 def parse_sop(content: str) -> tuple[str, list[Phase], str]:
     """從 SKILL.md 內容解析 SOP 結構。
 
@@ -184,12 +231,12 @@ def generate_flowchart(phases: list[Phase]) -> str:
     for p in phases:
         lines.append(f'    subgraph P{p.num}["Phase {p.num}: {clean_label(p.title)}"]')
         for s in p.steps:
-            desc = clean_label(s.action_text, max_len=40)
-            lines.append(f'        {s.node_id}["{s.step_num}. {s.verb}：{desc}"]')
+            action_display = simplify_action_label(s.verb, s.action_text)
+            lines.append(f'        {s.node_id}["{s.step_num}. {action_display}"]')
             for g_idx, g in enumerate(s.guards, start=1):
-                cond = clean_label(g.condition, max_len=25)
+                cond_display = simplify_condition_label(g.condition)
                 g_id = f"G_{s.node_id}_{g_idx}"
-                lines.append(f'        {g_id}{{"{cond}？"}}')
+                lines.append(f'        {g_id}{{"{cond_display}"}}')
         lines.append("    end")
 
     lines.append('    End["結束"]')
