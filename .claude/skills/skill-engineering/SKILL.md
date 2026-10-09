@@ -25,5 +25,7 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 3. Delegate 替藍圖裡每一個新掛的部位轉交 skill-derive-rule、skill-derive-template 或 skill-derive-script,一次掛一步;若掛上去的內容和藍圖不同 → 跳至 Phase 2 Step 1。
 
 ## Phase 5: 列出驗收紀錄
-1. Read 寫完的目標 Skill 的整個資料夾。
-2. Think 用藍圖的驗收輸入逐步演練寫完的 SOP 列出驗收紀錄;若最後交出的不是驗收產出 → 跳至 Phase 2 Step 1。
+1. Write 替藍圖的每一列驗收輸入,把實跑會改到的檔複製到 `tmp/verify/` 底下各自的資料夾。
+2. Delegate 依骨架 `templates/實跑指示.md` 與範例 `templates/實跑指示.example.md` 把每一列驗收輸入與它的複本交給不帶這場對話脈絡的 subagent,實跑寫完的目標 Skill。
+3. Read 每一份複本和原本的差異與交出的腳本執行的結果。
+4. Think 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡列出驗收紀錄;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1。
