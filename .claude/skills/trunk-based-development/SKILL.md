@@ -10,20 +10,20 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 
 ```mermaid
 flowchart TD
-    subgraph P1["Phase 1: 判定策略與同步環境"]
+    subgraph P1["Phase 1: 同步開工環境"]
         P1S1["1. Read：檢查目前 repo 的 remote 狀態、預設 bran…"]
         P1S2["2. Think：評估變更規模與選擇整合風格(直接進 trunk 或短期 b…"]
         P1S3["3. Write：同步 trunk 的最新狀態"]
         G_P1S3_1{"整合風格是直接進 trunk？"}
         P1S4["4. Write：由最新 trunk 開出短期 branch"]
     end
-    subgraph P2["Phase 2: 小步開發與本機驗證"]
+    subgraph P2["Phase 2: 完成通過本機建置的變更"]
         P2S1["1. Write：實作功能或修復並編寫測試,在本機形成 commit;長變更…"]
         P2S2["2. Write：以 --autostash 從 trunk 拉取最新變更並…"]
         P2S3["3. Write：在本機執行完整建置指令(編譯與所有測試),確認全部通過"]
         G_P2S3_1{"建置或測試失敗？"}
     end
-    subgraph P3["Phase 3: 整合進 trunk"]
+    subgraph P3["Phase 3: 把變更整合進 trunk"]
         P3S1["1. Write：將變更推送到 remote"]
         G_P3S1_1{"整合風格是直接進 trunk？"}
         P3S2["2. Write：發起 PR,通過 review 與 CI 後合併回 tru…"]
@@ -58,18 +58,18 @@ flowchart TD
 ```
 </details>
 
-## Phase 1: 判定策略與同步環境
+## Phase 1: 同步開工環境
 1. Read 檢查目前 repo 的 remote 狀態、預設 branch、工作目錄是否有未提交變更,以及 CI 與本機建置指令。
 2. Think 依 `rules/開工判斷-規範.md` 評估變更規模與選擇整合風格(直接進 trunk 或短期 branch)。
 3. Write 同步 trunk 的最新狀態;若整合風格是直接進 trunk → 跳至 Phase 2 Step 1。
 4. Write 由最新 trunk 開出短期 branch。
 
-## Phase 2: 小步開發與本機驗證
+## Phase 2: 完成通過本機建置的變更
 1. Write 依 `rules/分支與變更-規範.md` 實作功能或修復並編寫測試,在本機形成 commit;長變更使用 feature flag 或 branch by abstraction 隔絕未完成功能。
 2. Write 以 `--autostash` 從 trunk 拉取最新變更並帶入本機,並在本機解決衝突。
 3. Write 在本機執行完整建置指令(編譯與所有測試),確認全部通過;若建置或測試失敗 → 跳至 Phase 2 Step 1。
 
-## Phase 3: 整合進 trunk
+## Phase 3: 把變更整合進 trunk
 1. Write 將變更推送到 remote;若整合風格是直接進 trunk → 跳至 Phase 3 Step 3。
 2. Write 發起 PR,通過 review 與 CI 後合併回 trunk,並立刻刪除短期 branch。
 3. Read 確認 remote trunk 上最新 commit 的建置或 CI 狀態;若狀態為綠 → 跳至 Phase 4 Step 1。
