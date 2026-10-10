@@ -111,27 +111,27 @@
 ## good example
 - **`uv run`、完整路徑與參數都在**,照抄就能執行
 ```
-2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得每個 Rule File 的 Rule 條數與各條的強度。
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` **取得每個 Rule File 的統計**:Rule 條數與各條的強度。
 ```
 
 ## bad example
 - 同一步,但**只點了腳本的路徑**;執行的人得自己決定用什麼跑、猜它要什麼參數
 ```
-2. Delegate 依 `rules/腳本執行-規範.md` 用 `scripts/count_rules.py` 統計每個 Rule File 的 Rule 條數與各條的強度。
+2. Delegate 依 `rules/腳本執行-規範.md` 用 `scripts/count_rules.py` **統計每個 Rule File 的 Rule**:條數與各條的強度。
 ```
 
 ## good example
 - 邊界:修改前後各要數一次,兩步跑的是同一支腳本,**兩步都寫了完整的指令**
 ```
-2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改前每個 Rule File 的 Rule 條數與各條的強度。
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` **取得修改前每個 Rule File 的統計**:Rule 條數與各條的強度。
 3. Write **依使用者選的處理改寫 Rule File**。
-4. Delegate 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改後每個 Rule File 的 Rule 條數與各條的強度。
+4. Delegate 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` **取得修改後每個 Rule File 的統計**:Rule 條數與各條的強度。
 ```
 
 ## bad example
 - 邊界:同一段流程,第二次比照資源「只點名一次」而省略了指令;看起來比較精簡,但**腳本是要再執行一次的**,執行的人得回頭找第 2 步才知道要跑什麼
 ```
-2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改前每個 Rule File 的 Rule 條數與各條的強度。
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` **取得修改前每個 Rule File 的統計**:Rule 條數與各條的強度。
 3. Write **依使用者選的處理改寫 Rule File**。
-4. Delegate 再執行一次同一支腳本,取得修改後每個 Rule File 的 Rule 條數與各條的強度。
+4. Delegate 再執行一次同一支腳本,**取得修改後每個 Rule File 的統計**:Rule 條數與各條的強度。
 ```
