@@ -85,7 +85,7 @@ def check_skill(skill: Path, checkers: dict[str, Path], write_diagram: bool) -> 
                 "SKILL.md",
                 0,
                 "",
-                "流程視覺圖缺失、不在 `# SOP` 正下方,或與 `# SOP` 不一致;SOP 的格式全過,可以用 --write-diagrams 直接注入",
+                "流程視覺圖缺失、不在檔尾,或與 `# SOP` 不一致;SOP 的格式全過,可以用 --write-diagrams 直接注入",
             )
         )
 

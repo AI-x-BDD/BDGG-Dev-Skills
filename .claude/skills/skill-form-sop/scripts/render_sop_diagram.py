@@ -2,16 +2,19 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""檢查 SKILL.md 的 # SOP 格式,並由 # SOP 產生 Mermaid 流程視覺圖(flowchart TD,有轉交別支 Skill 時加 sequenceDiagram)。
+"""檢查 SKILL.md 的 # SOP 格式,並由 # SOP 產生 Mermaid 流程視覺圖(flowchart TD,有轉交別支 Skill 時加 sequenceDiagram),放在 SKILL.md 的檔尾。
 
-格式檢查判 SOP-格式規範.md 與 SOP-按需載入-格式規範.md 裡結果只由 SOP 文字決定的 7 條 Rule。
+格式檢查判 SOP-格式規範.md 與 SOP-按需載入-格式規範.md 裡結果只由 SOP 文字決定的 8 條 Rule。
+步驟裡用 ** 標出的核心動作就是圖上的標籤;沒有標的步驟顯示整句,並列為候選。
 --write 與 --check 把檢查結果以 JSON 寫到 stdout;有任何一條不過時 exit code 是 1,而且不產圖、不寫檔。
 """
 
 import argparse
 import json
 import re
+import string
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -33,6 +36,12 @@ class Step:
     guards: list[Guard] = field(default_factory=list)
     raw_line: str = ""
     line: int = 0
+    core: str = ""  # 用 ** 標出的核心動作;沒有標就是空字串
+
+    @property
+    def plain_text(self) -> str:
+        """拿掉 ** 記號的動作描述。"""
+        return self.action_text.replace("**", "")
 
     @property
     def node_id(self) -> str:
@@ -82,11 +91,53 @@ def clean_label(text: str, max_len: int = 50) -> str:
     return text
 
 
-def simplify_action_label(verb: str, action: str, max_len: int = 30) -> str:
-    """過濾路徑與指令雜訊，提煉動詞與核心受詞。"""
+LABEL_ESCAPES = {'"': "#quot;", "[": "&#91;", "]": "&#93;", "<": "&lt;", ">": "&gt;", "{": "&#123;", "}": "&#125;"}
+WRAP_TOKEN = re.compile(r"[A-Za-z0-9_./\-]+|.")
+NO_LINE_START = ",、。:;?!)」』》,:;?!)"
+
+
+def display_width(text: str) -> int:
+    """全形字算 2、半形字算 1。"""
+    return sum(2 if ord(char) > 0x2E7F else 1 for char in text)
+
+
+def wrap_label(text: str, width: int) -> str:
+    """流程圖節點的標籤:整句都留著,依顯示寬度折成多行。
+
+    英數字連成的詞(Skill 名稱、路徑、指令)不從中間斷開,標點不放在行首。
+    """
+    text = text.replace("`", "").strip()
+    text = re.sub(r"[;。]+$", "", text)
+    tokens = WRAP_TOKEN.findall(text)
+
+    def fold(limit: int) -> list[str]:
+        folded: list[str] = []
+        current = ""
+        for token in tokens:
+            if current.strip() and token not in NO_LINE_START and display_width(current) + display_width(token) > limit:
+                folded.append(current.strip())
+                current = ""
+            current += token
+        if current.strip():
+            folded.append(current.strip())
+        return folded
+
+    # 行數由 width 決定,再把每行的寬度收到剛好排得下,最後一行才不會只剩一兩個字
+    lines = fold(width)
+    for limit in range(-(-display_width(text) // max(len(lines), 1)), width):
+        balanced = fold(limit)
+        if len(balanced) <= len(lines):
+            lines = balanced
+            break
+    return "<br/>".join("".join(LABEL_ESCAPES.get(char, char) for char in line) for line in lines)
+
+
+def strip_pointer(action: str) -> str:
+    """剝掉動作描述開頭的資源指標與腳本指令,只留這一步做的事。"""
     text = action.strip()
     # 剝離資源指標：依 rules/..., 依骨架 templates/...
     text = re.sub(r"^依\s*`?rules/[^`\s]+`?\s*", "", text)
+    text = re.sub(r"^、\s*骨架\s*`?templates/[^`\s]+`?\s*與範例\s*`?templates/[^`\s]+`?\s*", "", text)
     text = re.sub(r"^依骨架\s*`?templates/[^`\s]+`?\s*與範例\s*`?templates/[^`\s]+`?\s*", "", text)
     text = re.sub(r"^依骨架\s*`?templates/[^`\s]+`?\s*", "", text)
     text = re.sub(r"^依\s*`?[^`\s]+`?\s*與\s*`?[^`\s]+`?\s*", "", text)
@@ -98,17 +149,21 @@ def simplify_action_label(verb: str, action: str, max_len: int = 30) -> str:
         r"執行 \1",
         text,
     )
-    # 簡化常見贅詞
-    text = re.sub(r"^把使用者要的流程寫成", "寫出", text)
-    text = re.sub(r"^把使用者要的規則寫成", "寫出", text)
-    text = re.sub(r"^把使用者要的", "寫出", text)
-    text = re.sub(r"^剛寫進目標 skill 的", "讀回", text)
-    text = clean_label(text, max_len=max_len)
-    return f"{verb}：{text}"
+    return text
 
 
-def simplify_condition_label(condition: str, max_len: int = 20) -> str:
-    """精煉條件分支文字，提煉核心提問。"""
+def step_label(step: Step, action: str | None = None) -> str:
+    """圖上顯示的那一步:有標粗體就只顯示那一段,沒有就顯示剝掉指標的整句。
+
+    action 是時序圖把「轉交 A、B 或 C」換成單一對象之後的句子;沒有標粗體時才用得到。
+    """
+    body = step.core or strip_pointer(step.plain_text if action is None else action)
+    body = re.sub(r"[;。]+$", "", body.replace("`", "").strip())
+    return f"{step.step_num}. {step.verb}：{body}"
+
+
+def simplify_condition_label(condition: str, width: int = 24) -> str:
+    """精煉條件分支文字，提煉核心提問;整句都留著,依寬度折行。"""
     cond = condition.strip().replace("`", "")
     cond = re.sub(r"[;。？?]+$", "", cond)
     mappings = [
@@ -125,9 +180,39 @@ def simplify_condition_label(condition: str, max_len: int = 20) -> str:
     ]
     for pattern, replacement in mappings:
         if re.search(pattern, cond):
-            return clean_label(replacement, max_len=max_len) + "？"
-    return clean_label(cond, max_len=max_len) + "？"
+            return wrap_label(replacement + "？", width)
+    return wrap_label(cond + "？", width)
 
+
+SEQUENCE_ESCAPES = {"#": "#35;", ";": "#59;", "<": "#lt;", ">": "#gt;", '"': "#quot;"}
+
+
+def sequence_label(text: str) -> str:
+    """時序圖的訊息不截字。
+
+    訊息裡的 # 與 ; 會讓 Mermaid 把後面的字整段丟掉,所以連同 < > " 一起轉成實體。
+    """
+    text = re.sub(r"[;。]+$", "", text.replace("`", "").strip())
+    return re.sub(r'[#;<>"]', lambda m: SEQUENCE_ESCAPES[m.group()], text)
+
+
+HANDOFF = re.compile(r"轉交\s*([^,;。]+)")
+
+
+def handoff_candidates(action: str) -> tuple[re.Match | None, list[str]]:
+    """找出「轉交 A、B 或 C」裡的每一個對象;排除「對應 Derivers」這類通用說明詞。"""
+    match = HANDOFF.search(action)
+    if not match:
+        return None, []
+    names: list[str] = []
+    for part in re.split(r"、|或|,", match.group(1)):
+        name = part.strip()
+        if name and name not in names and not name.startswith("對應"):
+            names.append(name)
+    return match, names
+
+
+STEP_LABEL_WIDTH = 36  # 流程圖步驟節點一行的顯示寬度(約 18 個中文字)
 
 VERBS = ("Read", "Write", "Think", "Ask", "Delegate")
 
@@ -138,13 +223,16 @@ R_BRANCH = "分支與回頭只寫在行尾"
 R_ONCE = "資源只在用到它的那一步點名"
 R_POINTER = "指標接在動詞後面並照固定寫法"
 R_SCRIPT = "委派給腳本的步驟照固定寫法"
+R_BOLD = "粗體照固定寫法"
+R_CORE = "核心動作用粗體標出"  # 標得對不對要靠人判,腳本只把沒標的步驟列為候選
 
-# (Rule 名稱, 所在的規範檔);7 條的強度都是 must
+# (Rule 名稱, 所在的規範檔);8 條的強度都是 must
 RULES = [
     (R_SKELETON, "SOP-格式規範.md"),
     (R_VERB, "SOP-格式規範.md"),
     (R_ONE_LINE, "SOP-格式規範.md"),
     (R_BRANCH, "SOP-格式規範.md"),
+    (R_BOLD, "SOP-格式規範.md"),
     (R_ONCE, "SOP-按需載入-格式規範.md"),
     (R_POINTER, "SOP-按需載入-格式規範.md"),
     (R_SCRIPT, "SOP-按需載入-格式規範.md"),
@@ -160,6 +248,8 @@ GUARD = re.compile(r"^(\S.*?)\s*→\s*(?:跳至\s*Phase\s*(\d+)\s*Step\s*(\d+)|�
 RESOURCE = re.compile(r"`((?:rules|templates)/[^`\s]+)`")
 SCRIPT_REF = re.compile(r"scripts/[\w.\-]+\.py")
 NEGATIVE = re.compile(r"^(沒有|無|不|未)")
+BOLD = re.compile(r"\*\*(.+?)\*\*")
+BOLD_MAX_WIDTH = 32  # 粗體的顯示寬度上限(16 個中文字)
 DIAGRAM_BLOCK = re.compile(
     r"<details[^>]*>\s*<summary>.*?流程視覺圖.*?</summary>.*?</details>",
     re.DOTALL,
@@ -179,13 +269,54 @@ SCRIPT_STEP = re.compile(
 )
 
 
+def is_punctuation(char: str) -> bool:
+    """Markdown 判斷粗體有沒有效時當成標點的字:ASCII 標點,以及 Unicode 的標點與符號。"""
+    return char in string.punctuation or unicodedata.category(char)[0] in "PS"
+
+
+def check_bold(step: Step, conditions: list[str], bad) -> None:
+    """判〈粗體照固定寫法〉,並把合格的那一段記到 step.core。"""
+    where = step.position
+    if any("**" in condition for condition in conditions):
+        bad(R_BOLD, step.line, f"{where} 的行尾條件裡有 `**`;粗體只標動作描述裡的核心動作,條件裡的要拿掉")
+    spans = list(BOLD.finditer(step.action_text))
+    if "**" in BOLD.sub("", step.action_text):
+        bad(R_BOLD, step.line, f"{where} 的 `**` 沒有成對;粗體要寫成 `**<核心動作>**`")
+        return
+    if len(spans) > 1:
+        bad(R_BOLD, step.line, f"{where} 標了 {len(spans)} 段粗體;一步只標一段,留下最能說明這一步在做什麼的那一段")
+        return
+    if not spans:
+        return
+    span = spans[0]
+    core = span.group(1)
+    shown = core.replace("`", "")
+    problems = []
+    if core != core.strip() or not shown.strip():
+        problems.append("粗體的開頭或結尾是空白,Markdown 不會把它當成粗體;把空白移到 `**` 外面")
+    if display_width(shown) > BOLD_MAX_WIDTH:
+        problems.append(f"粗體「{shown}」寬 {display_width(shown)} 個半形字,超過 {BOLD_MAX_WIDTH};改標短一點的一段")
+    if RESOURCE.search(core) or SCRIPT_REF.search(core) or "uv run" in core:
+        problems.append("粗體裡有資源路徑或指令;指標與指令放在 `**` 外面")
+    before = step.action_text[: span.start()][-1:]
+    after = step.action_text[span.end() :][:1]
+    if shown.strip() and is_punctuation(core.strip()[0]) and before and not (before.isspace() or is_punctuation(before)):
+        problems.append(f"粗體以「{core.strip()[0]}」開頭而前面緊接「{before}」,Markdown 不會把它當成粗體;在 `**` 前面加一個空白,或把「{core.strip()[0]}」移到粗體外面")
+    if shown.strip() and is_punctuation(core.strip()[-1]) and after and not (after.isspace() or is_punctuation(after)):
+        problems.append(f"粗體以「{core.strip()[-1]}」結尾而後面緊接「{after}」,Markdown 不會把它當成粗體;在 `**` 後面加一個空白,或把「{core.strip()[-1]}」移到粗體外面")
+    for problem in problems:
+        bad(R_BOLD, step.line, f"{where} 的{problem}")
+    if not problems:
+        step.core = shown.strip()
+
+
 def skill_name_of(content: str) -> str:
     name_match = re.search(r"^name:\s*([a-zA-Z0-9_-]+)", content, re.MULTILINE)
     return name_match.group(1).strip() if name_match else "Skill"
 
 
 def parse_and_check(content: str) -> tuple[list[Phase], list[Violation], list[dict]]:
-    """逐行解析 # SOP 並判 7 條 Rule。
+    """逐行解析 # SOP 並判 8 條 Rule。
 
     回傳 (phases, violations, candidates);violations 是空的時候 phases 才能拿去產圖。
     """
@@ -299,6 +430,7 @@ def parse_and_check(content: str) -> tuple[list[Phase], list[Violation], list[di
             bad(R_BRANCH, step.line, f"{step.position} 的「；若」用了全形分號,要寫成半形的 `;若`")
         parts = body.split(";若")
         step.action_text = parts[0].strip()
+        check_bold(step, parts[1:], bad)
         if "→" in step.action_text:
             bad(R_BRANCH, step.line, f"{step.position} 的「→」前面沒有 `;若 <條件>`;要寫成 `;若 <條件> → 跳至 Phase N Step M。` 或 `;若 <條件> → 結束。`")
         for index, part in enumerate(parts[1:], start=1):
@@ -326,6 +458,17 @@ def parse_and_check(content: str) -> tuple[list[Phase], list[Violation], list[di
                         "reason": f"{step.position} 的條件「{condition}」以否定詞開頭;請判斷它是不是替天然冪等的下一步設的防禦性跳轉",
                     }
                 )
+
+    unmarked = [step for step in steps if not BOLD.search(step.action_text)]
+    if unmarked:
+        candidates.append(
+            {
+                "rule": R_CORE,
+                "line": unmarked[0].line,
+                "text": unmarked[0].raw_line,
+                "reason": f"{len(unmarked)} 步沒有標出核心動作({'、'.join(step.position for step in unmarked)}),圖上顯示整句;請判斷每一步能不能在原句裡用 `**` 標出連續的一段",
+            }
+        )
 
     # 4. 資源的指標
     first_seen: dict[str, Step] = {}
@@ -369,6 +512,10 @@ def build_checks(phases: list[Phase], violations: list[Violation]) -> list[dict]
     resources = list(dict.fromkeys(path for step in steps for path in RESOURCE.findall(step.action_text)))
     pointed = [step for step in steps if RESOURCE.findall(step.action_text)]
     scripted = [step for step in steps if SCRIPT_REF.search(step.raw_line)]
+    marked = [step for step in steps if step.core]
+    bold_evidence = f"{len(marked)} 步各標了一段粗體,都在動作描述裡、不超過 {BOLD_MAX_WIDTH} 個半形字寬" if marked else "沒有步驟標粗體"
+    if marked and len(marked) < len(steps):
+        bold_evidence += f";{len(steps) - len(marked)} 步沒有標"
 
     passed_evidence = {
         R_SKELETON: f"`# SOP` 底下是 Phase {_ranges([p.num for p in phases])},共 {len(steps)} 個編號步驟" if phases else "",
@@ -383,6 +530,7 @@ def build_checks(phases: list[Phase], violations: list[Violation]) -> list[dict]
             if guarded
             else "沒有分支與回頭"
         ),
+        R_BOLD: bold_evidence,
         R_ONCE: f"{len(resources)} 個資源路徑各出現一次" if resources else "沒有寫資源的指標",
         R_POINTER: (
             f"{'、'.join(s.position for s in pointed)} 的指標都緊接在動詞後面"
@@ -413,13 +561,13 @@ def build_checks(phases: list[Phase], violations: list[Violation]) -> list[dict]
 
 
 def inject(content: str, diagram_block: str) -> str:
-    """回傳把流程視覺圖放到 # SOP 正下方之後的整份內容;重複執行結果不變。"""
+    """回傳把流程視覺圖放到檔尾之後的整份內容;原本在別處的圖會先拿掉,重複執行結果不變。"""
     match = re.search(r"^# SOP[ \t]*$", content, re.MULTILINE)
     if not match:
         return content
     before = content[: match.end()]
-    after = DIAGRAM_BLOCK.sub("", content[match.end() :], count=1).lstrip()
-    return f"{before}\n\n{diagram_block}\n{after}"
+    after = DIAGRAM_BLOCK.sub("", content[match.end() :], count=1).strip()
+    return f"{before}\n\n{after}\n\n{diagram_block}"
 
 
 def generate_flowchart(phases: list[Phase]) -> str:
@@ -437,8 +585,8 @@ def generate_flowchart(phases: list[Phase]) -> str:
     for p in phases:
         lines.append(f'    subgraph P{p.num}["Phase {p.num}: {clean_label(p.title)}"]')
         for s in p.steps:
-            action_display = simplify_action_label(s.verb, s.action_text)
-            lines.append(f'        {s.node_id}["{s.step_num}. {action_display}"]')
+            action_display = wrap_label(step_label(s), STEP_LABEL_WIDTH)
+            lines.append(f'        {s.node_id}["{action_display}"]')
             for g_idx, g in enumerate(s.guards, start=1):
                 cond_display = simplify_condition_label(g.condition)
                 g_id = f"G_{s.node_id}_{g_idx}"
@@ -498,17 +646,9 @@ def generate_sequence(skill_name: str, phases: list[Phase]) -> str | None:
     # 規則：只在 Delegate 步驟的轉交語法中解析 Skill 目標
     sub_skills: list[str] = []
     for s in external_delegations:
-        # 尋找 "轉交" 後面的文字
-        m = re.search(r"轉交\s*([^,;。]+)", s.action_text)
-        if m:
-            raw_target = m.group(1).strip()
-            # 依頓號、逗號或「或」切分候選
-            candidates = re.split(r"、|或|,", raw_target)
-            for c in candidates:
-                cand = c.strip()
-                # 排除通用說明詞如「對應 Derivers」
-                if cand and cand not in sub_skills and not cand.startswith("對應"):
-                    sub_skills.append(cand)
+        for name in handoff_candidates(s.plain_text)[1]:
+            if name not in sub_skills:
+                sub_skills.append(name)
 
     lines = ["```mermaid", "sequenceDiagram"]
     if has_user_interaction:
@@ -522,29 +662,36 @@ def generate_sequence(skill_name: str, phases: list[Phase]) -> str | None:
         lines.append(f"    participant {alias} as {sub}")
 
     # 繪製主要互動摘要
+    span = ("User" if has_user_interaction else "Main") + "," + (list(sub_aliases.values())[-1] if sub_aliases else "Main")
     for p in phases:
+        if any(s.verb == "Ask" or s.is_external_delegation for s in p.steps):
+            # 讓讀圖的人知道底下的「N.」是哪一個 Phase 的第幾步
+            lines.append(f"    Note over {span}: Phase {p.num}: {sequence_label(p.title)}")
         for s in p.steps:
             if s.verb == "Ask":
-                prompt = clean_label(s.action_text, max_len=30)
-                lines.append(f"    Main->>User: {s.node_id} {prompt}")
+                lines.append(f"    Main->>User: {sequence_label(step_label(s))}")
                 lines.append("    User-->>Main: 回覆確認")
             elif s.is_external_delegation:
-                m = re.search(r"轉交\s*([^,;。]+)", s.action_text)
-                target_desc = m.group(1).strip() if m else "子技能"
-                # 檢查是否為單一已知 alias
-                matched_alias = None
-                for sub, alias in sub_aliases.items():
-                    if sub == target_desc:
-                        matched_alias = alias
-                        break
-
-                action_summary = clean_label(s.action_text, max_len=35)
-                if matched_alias:
-                    lines.append(f"    Main->>{matched_alias}: {s.node_id} {action_summary}")
-                    lines.append(f"    {matched_alias}-->>Main: 完成並交回產出")
-                else:
-                    # 多候選或動態反覆，使用 Note 標註
-                    lines.append(f"    Note over Main: {s.node_id} 委派分流：{clean_label(target_desc, max_len=40)}")
+                plain = s.plain_text
+                match, names = handoff_candidates(plain)
+                if not names:
+                    # 一個對象都認不出來(例如只寫了「對應 Derivers」),用 Note 標註
+                    target_desc = match.group(1).strip() if match else "子技能"
+                    lines.append(f"    Note over Main: {s.step_num}. 委派分流：{sequence_label(target_desc)}")
+                    continue
+                # 「A、B 或 C」是擇一,畫成 alt / else;沒有「或」的多個對象依序各畫一組
+                branching = len(names) > 1 and "或" in match.group(1)
+                indent = "        " if branching else "    "
+                for index, name in enumerate(names):
+                    if branching:
+                        lines.append(f"    {'else' if index else 'alt'} {name}")
+                    # 訊息是原句把對象清單換成這一段的對象,其餘的字不動
+                    text = plain[: match.start(1)] + name + plain[match.end(1) :]
+                    alias = sub_aliases[name]
+                    lines.append(f"{indent}Main->>{alias}: {sequence_label(step_label(s, text))}")
+                    lines.append(f"{indent}{alias}-->>Main: 完成並交回產出")
+                if branching:
+                    lines.append("    end")
 
     lines.append("```")
     return "\n".join(lines)
@@ -573,7 +720,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--file", required=True, type=Path, help="目標 skill 的 SKILL.md 路徑(含檔名)")
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--write", action="store_true", help="格式檢查全過時把流程視覺圖注入目標檔的 # SOP 正下方;有不過時不寫檔。檢查結果以 JSON 寫到 stdout")
+    mode.add_argument("--write", action="store_true", help="格式檢查全過時把流程視覺圖注入目標檔的檔尾;有不過時不寫檔。檢查結果以 JSON 寫到 stdout")
     mode.add_argument("--check", action="store_true", help="只檢查不寫檔:格式檢查,加上檔案裡的流程視覺圖是否與 # SOP 一致。檢查結果以 JSON 寫到 stdout")
     mode.add_argument("--stdout", action="store_true", help="格式檢查全過時把流程視覺圖的 Markdown 寫到 stdout,不寫檔(沒有指定模式時也是這個行為)")
     args = parser.parse_args()
@@ -616,13 +763,13 @@ def main() -> int:
             consistent = updated == content
             report["diagram"] = {
                 "result": "一致" if consistent else "不一致",
-                "evidence": "檔案裡的流程視覺圖與 # SOP 一致" if consistent else "流程視覺圖缺失、不在 # SOP 正下方,或與 # SOP 不一致;執行 --write 重新注入",
+                "evidence": "檔案裡的流程視覺圖與 # SOP 一致" if consistent else "流程視覺圖缺失、不在檔尾,或與 # SOP 不一致;執行 --write 重新注入",
             }
             report["passed"] = consistent
         else:
             if updated != content:
                 args.file.write_text(updated, encoding="utf-8")
-                report["diagram"] = {"result": "已注入", "evidence": "流程視覺圖已寫到 # SOP 正下方"}
+                report["diagram"] = {"result": "已注入", "evidence": "流程視覺圖已寫到檔尾"}
                 print(f"已把流程視覺圖注入 {args.file}", file=sys.stderr)
             else:
                 report["diagram"] = {"result": "一致", "evidence": "檔案裡的流程視覺圖已經與 # SOP 一致,沒有改檔"}

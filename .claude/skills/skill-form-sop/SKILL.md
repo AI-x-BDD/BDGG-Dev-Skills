@@ -5,6 +5,16 @@ description: 撰寫或修改 Skill 的 SKILL.md 中 SOP 流程（Phase、步驟�
 
 # SOP
 
+## Phase 1: 寫出 SOP
+1. Read **目標 skill 已有的 SKILL.md**。
+2. Write 依 `rules/SOP-格式規範.md` 把使用者要的流程**寫成目標 skill 的 `# SOP`**。
+3. Write 依 `rules/SOP-按需載入-格式規範.md` **替用得到的步驟寫上指標**。
+4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/render_sop_diagram.py --write --file <目標 SKILL.md 的路徑>` **取得格式檢查的結果**並產生流程視覺圖注入目標 skill 的 `SKILL.md` 檔尾;若檢查有不過 → 跳至 Phase 1 Step 2。
+
+## Phase 2: 列出把關紀錄
+1. Read **剛寫進目標 skill 的 `# SOP`**。
+2. Think 依 `rules/把關紀錄-格式規範.md` **列出把關紀錄**;若有 must 不過 → 跳至 Phase 1 Step 2。
+
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
 
@@ -12,13 +22,13 @@ description: 撰寫或修改 Skill 的 SKILL.md 中 SOP 流程（Phase、步驟�
 flowchart TD
     subgraph P1["Phase 1: 寫出 SOP"]
         P1S1["1. Read：目標 skill 已有的 SKILL.md"]
-        P1S2["2. Write：寫出目標 skill 的 # SOP"]
+        P1S2["2. Write：寫成目標 skill 的 # SOP"]
         P1S3["3. Write：替用得到的步驟寫上指標"]
-        P1S4["4. Delegate：取得格式檢查的結果並產生流程視覺圖注入目標 skill 的…"]
+        P1S4["4. Delegate：取得格式檢查的結果"]
         G_P1S4_1{"檢查有不過？"}
     end
     subgraph P2["Phase 2: 列出把關紀錄"]
-        P2S1["1. Read：讀回 # SOP"]
+        P2S1["1. Read：剛寫進目標 skill 的 # SOP"]
         P2S2["2. Think：列出把關紀錄"]
         G_P2S2_1{"有 must 不過？"}
     end
@@ -35,13 +45,3 @@ flowchart TD
     G_P2S2_1 -->|否| End
 ```
 </details>
-
-## Phase 1: 寫出 SOP
-1. Read 目標 skill 已有的 SKILL.md。
-2. Write 依 `rules/SOP-格式規範.md` 把使用者要的流程寫成目標 skill 的 `# SOP`。
-3. Write 依 `rules/SOP-按需載入-格式規範.md` 替用得到的步驟寫上指標。
-4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/render_sop_diagram.py --write --file <目標 SKILL.md 的路徑>` 取得格式檢查的結果並產生流程視覺圖注入目標 skill 的 `# SOP`;若檢查有不過 → 跳至 Phase 1 Step 2。
-
-## Phase 2: 列出把關紀錄
-1. Read 剛寫進目標 skill 的 `# SOP`。
-2. Think 依 `rules/把關紀錄-格式規範.md` 列出把關紀錄;若有 must 不過 → 跳至 Phase 1 Step 2。

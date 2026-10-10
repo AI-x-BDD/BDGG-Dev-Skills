@@ -5,27 +5,39 @@ description: 給定一支已經寫好的 SOP skill,使用者想針對其中某�
 
 # SOP
 
+## Phase 1: 提出抽出後的樣子
+1. Read 目標 skill 的 SKILL.md 與已有的樣板;若使用者已講明要抽哪一步、那一步生成的內容要長什麼樣子 → 跳至 Phase 1 Step 3。
+2. Ask 依 `rules/提問-規範.md` 問使用者要抽哪一步(Phase N Step M)、那一步生成的內容要長什麼樣子。
+3. Think 依 `rules/抽出-規範.md` 決定抽出後的樣子:樣板名字與格式、骨架有哪些填位符號、指定那一步改成什麼寫法;若決定不抽出 → 結束;若符合〈沿用已確認的具體轉換〉 → 跳至 Phase 2 Step 1。
+4. Ask 提出抽出後的樣子,問使用者是否可以寫入;若使用者要修改 → 跳至 Phase 1 Step 3。
+
+## Phase 2: 寫出樣板
+1. Delegate 轉交 skill-form-template,把那一步生成內容的格式寫成骨架與範例;若指定那一步的寫法不變 → 結束。
+
+## Phase 3: 改寫指定步驟
+1. Delegate 轉交 skill-form-sop,把指定那一步改成抽出後的寫法。
+
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
 
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 提出抽出後的樣子"]
-        P1S1["1. Read：目標 skill 的 SKILL.md 與已有的樣板"]
-        G_P1S1_1{"使用者已講明要抽哪一步、那一步生成的內…？"}
-        P1S2["2. Ask：問使用者要抽哪一步(Phase N Step M)、那一步…"]
-        P1S3["3. Think：決定抽出後的樣子:樣板名字與格式、骨架有哪些填位符號、指定…"]
+        P1S1["1. Read：目標 skill 的<br/>SKILL.md 與已有的樣板"]
+        G_P1S1_1{"使用者已講明要抽哪<br/>一步、那一步生成的<br/>內容要長什麼樣子？"}
+        P1S2["2. Ask：問使用者要抽哪一<br/>步(Phase N Step M)、那一<br/>步生成的內容要長什麼樣子"]
+        P1S3["3. Think：決定抽出後的樣子:樣<br/>板名字與格式、骨架有哪些填位<br/>符號、指定那一步改成什麼寫法"]
         G_P1S3_1{"決定不抽出？"}
-        G_P1S3_2{"符合〈沿用已確認的具體轉換〉？"}
-        P1S4["4. Ask：提出抽出後的樣子,問使用者是否可以寫入"]
+        G_P1S3_2{"符合〈沿用已確認<br/>的具體轉換〉？"}
+        P1S4["4. Ask：提出抽出後的樣<br/>子,問使用者是否可以寫入"]
         G_P1S4_1{"使用者要修改？"}
     end
     subgraph P2["Phase 2: 寫出樣板"]
-        P2S1["1. Delegate：轉交 skill-form-template,把那一步生成…"]
+        P2S1["1. Delegate：轉交<br/>skill-form-template,把那一步<br/>生成內容的格式寫成骨架與範例"]
         G_P2S1_1{"步驟寫法不變？"}
     end
     subgraph P3["Phase 3: 改寫指定步驟"]
-        P3S1["1. Delegate：轉交 skill-form-sop,把指定那一步改成抽出後…"]
+        P3S1["1. Delegate：轉交 skill-form-sop,<br/>把指定那一步改成抽出後的寫法"]
     end
     End["結束"]
     P1S1 --> G_P1S1_1
@@ -52,25 +64,16 @@ sequenceDiagram
     participant Main as skill-derive-template
     participant Sub_1 as skill-form-template
     participant Sub_2 as skill-form-sop
-    Main->>User: P1S2 依 rules/提問-規範.md 問使用者要抽哪一步(Ph…
+    Note over User,Sub_2: Phase 1: 提出抽出後的樣子
+    Main->>User: 2. Ask：問使用者要抽哪一步(Phase N Step M)、那一步生成的內容要長什麼樣子
     User-->>Main: 回覆確認
-    Main->>User: P1S4 提出抽出後的樣子,問使用者是否可以寫入
+    Main->>User: 4. Ask：提出抽出後的樣子,問使用者是否可以寫入
     User-->>Main: 回覆確認
-    Main->>Sub_1: P2S1 轉交 skill-form-template,把那一步生成內容的格式…
+    Note over User,Sub_2: Phase 2: 寫出樣板
+    Main->>Sub_1: 1. Delegate：轉交 skill-form-template,把那一步生成內容的格式寫成骨架與範例
     Sub_1-->>Main: 完成並交回產出
-    Main->>Sub_2: P3S1 轉交 skill-form-sop,把指定那一步改成抽出後的寫法
+    Note over User,Sub_2: Phase 3: 改寫指定步驟
+    Main->>Sub_2: 1. Delegate：轉交 skill-form-sop,把指定那一步改成抽出後的寫法
     Sub_2-->>Main: 完成並交回產出
 ```
 </details>
-
-## Phase 1: 提出抽出後的樣子
-1. Read 目標 skill 的 SKILL.md 與已有的樣板;若使用者已講明要抽哪一步、那一步生成的內容要長什麼樣子 → 跳至 Phase 1 Step 3。
-2. Ask 依 `rules/提問-規範.md` 問使用者要抽哪一步(Phase N Step M)、那一步生成的內容要長什麼樣子。
-3. Think 依 `rules/抽出-規範.md` 決定抽出後的樣子:樣板名字與格式、骨架有哪些填位符號、指定那一步改成什麼寫法;若決定不抽出 → 結束;若符合〈沿用已確認的具體轉換〉 → 跳至 Phase 2 Step 1。
-4. Ask 提出抽出後的樣子,問使用者是否可以寫入;若使用者要修改 → 跳至 Phase 1 Step 3。
-
-## Phase 2: 寫出樣板
-1. Delegate 轉交 skill-form-template,把那一步生成內容的格式寫成骨架與範例;若指定那一步的寫法不變 → 結束。
-
-## Phase 3: 改寫指定步驟
-1. Delegate 轉交 skill-form-sop,把指定那一步改成抽出後的寫法。
