@@ -7,8 +7,8 @@
 - 路徑**只出現在 Write 那一步**,走到那裡才需要載入
 ```
 ## Phase 1: 寫出 SOP
-1. Read 目標 skill 已有的 SKILL.md。
-2. Write 依 `rules/SOP-格式規範.md` 把使用者要的流程寫成目標 skill 的 `# SOP`。
+1. Read **目標 skill 已有的 SKILL.md**。
+2. Write 依 `rules/SOP-格式規範.md` 把使用者要的流程**寫成目標 skill 的 `# SOP`**。
 ```
 
 ## bad example
@@ -16,36 +16,36 @@
 ```
 ## Phase 1: 寫出 SOP
 1. Read `rules/SOP-格式規範.md`。
-2. Read 目標 skill 已有的 SKILL.md。
-3. Write 依規範的每條 Rule,把使用者要的流程寫成目標 skill 的 `# SOP`。
+2. Read **目標 skill 已有的 SKILL.md**。
+3. Write 依規範的每條 Rule,把使用者要的流程**寫成目標 skill 的 `# SOP`**。
 ```
 
 ## good example
 - 邊界:Write 和 Think 兩步都用得到同一個 Rule File,但**只在第一個用到的步驟點名**
 ```
-2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成 Rule File。
-3. Think 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
+2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則**寫成 Rule File**。
+3. Think **逐條對照**;若有不過 → 跳至 Phase 1 Step 2。
 ```
 
 ## bad example
 - 邊界:第二個用到的步驟也寫上路徑,看起來比較清楚,但**讀的人會以為這裡要再載入一次**
 ```
-2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成 Rule File。
-3. Think 依 `rules/RuleFile-格式規範.md` 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
+2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則**寫成 Rule File**。
+3. Think 依 `rules/RuleFile-格式規範.md` **逐條對照**;若有不過 → 跳至 Phase 1 Step 2。
 ```
 
 ## good example
 - 樣板的骨架與範例**兩個路徑都只出現在 Ask 那一步**,走到那裡才需要載入
 ```
-2. Think 設計這次開發的類別組織。
-3. Ask 依骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid 提出設計,問使用者是否可以進入開發。
+2. Think **設計這次開發的類別組織**。
+3. Ask 依骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid **提出設計**,問使用者是否可以進入開發。
 ```
 
 ## bad example
 - 同一段流程,但**設計那一步也先提了骨架**;同一個路徑出現兩次,看不出哪一步才需要載入
 ```
-2. Think 依骨架 `templates/class-diagram.mmd` 設計這次開發的類別組織。
-3. Ask 依骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid 提出設計,問使用者是否可以進入開發。
+2. Think 依骨架 `templates/class-diagram.mmd` **設計這次開發的類別組織**。
+3. Ask 依骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid **提出設計**,問使用者是否可以進入開發。
 ```
 
 # Rule 2 [must] - 指標接在動詞後面並照固定寫法
@@ -63,37 +63,37 @@
 ## good example
 - 指標**緊接在 Think 後面,而且是完整的路徑**
 ```
-2. Think 依 `rules/類別圖-規範.md` 設計這次開發的類別組織。
+2. Think 依 `rules/類別圖-規範.md` **設計這次開發的類別組織**。
 ```
 
 ## bad example
 - 同一步,但**指標放在句尾,又只寫了代稱**;執行的人得自己去 `rules/` 找是哪個檔
 ```
-2. Think 設計這次開發的類別組織,細節見類別圖規範。
+2. Think **設計這次開發的類別組織**,細節見類別圖規範。
 ```
 
 ## good example
 - 樣板**骨架與範例兩個路徑都寫出來**,各自標明是哪一個
 ```
-3. Ask 依骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid 提出設計,問使用者是否可以進入開發。
+3. Ask 依骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid **提出設計**,問使用者是否可以進入開發。
 ```
 
 ## bad example
 - 同一步,但**只寫了骨架**;範例明明存在,卻沒有任何一步會去讀它
 ```
-3. Ask 依骨架 `templates/class-diagram.mmd` 用 Mermaid 提出設計,問使用者是否可以進入開發。
+3. Ask 依骨架 `templates/class-diagram.mmd` 用 Mermaid **提出設計**,問使用者是否可以進入開發。
 ```
 
 ## good example
 - 邊界:這一步同時用到 Rule File 與樣板,行變長了,但**三個路徑仍然各自寫完整**
 ```
-3. Ask 依 `rules/確認-規範.md`、骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid 提出設計,問使用者是否可以進入開發。
+3. Ask 依 `rules/確認-規範.md`、骨架 `templates/class-diagram.mmd` 與範例 `templates/class-diagram.example.mmd` 用 Mermaid **提出設計**,問使用者是否可以進入開發。
 ```
 
 ## bad example
 - 邊界:同一步為了縮短,用萬用字元一次帶過樣板;看起來涵蓋了兩個檔,但**沒有任何一個完整的樣板路徑**,執行的人得自己去列目錄猜
 ```
-3. Ask 依 `rules/確認-規範.md` 與 `templates/class-diagram.*` 用 Mermaid 提出設計,問使用者是否可以進入開發。
+3. Ask 依 `rules/確認-規範.md` 與 `templates/class-diagram.*` 用 Mermaid **提出設計**,問使用者是否可以進入開發。
 ```
 
 # Rule 3 [must] - 委派給腳本的步驟照固定寫法
@@ -124,7 +124,7 @@
 - 邊界:修改前後各要數一次,兩步跑的是同一支腳本,**兩步都寫了完整的指令**
 ```
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改前每個 Rule File 的 Rule 條數與各條的強度。
-3. Write 依使用者選的處理改寫 Rule File。
+3. Write **依使用者選的處理改寫 Rule File**。
 4. Delegate 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改後每個 Rule File 的 Rule 條數與各條的強度。
 ```
 
@@ -132,6 +132,6 @@
 - 邊界:同一段流程,第二次比照資源「只點名一次」而省略了指令;看起來比較精簡,但**腳本是要再執行一次的**,執行的人得回頭找第 2 步才知道要跑什麼
 ```
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/count_rules.py --skill <目標 skill 路徑>` 取得修改前每個 Rule File 的 Rule 條數與各條的強度。
-3. Write 依使用者選的處理改寫 Rule File。
+3. Write **依使用者選的處理改寫 Rule File**。
 4. Delegate 再執行一次同一支腳本,取得修改後每個 Rule File 的 Rule 條數與各條的強度。
 ```
