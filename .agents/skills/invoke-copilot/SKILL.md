@@ -7,17 +7,17 @@ description: 只要準備在指令列執行 `copilot -p`,不論是委派開發�
 
 ## Phase 1: 產生任務指示檔
 1. Read 使用者的委派任務需求、當前工作目錄與 git 狀態;若 copilot 未安裝或環境不支援 → 結束。
-2. Write 依骨架 `templates/task-prompt.md` 與範例 `templates/task-prompt.example.md` 把任務背景、修改範圍、操作限制與預期產出寫成任務指示檔。
+2. Write 依骨架 `templates/task-prompt.md` 與範例 `templates/task-prompt.example.md` 把任務背景、修改範圍、操作限制與預期產出**寫成任務指示檔**。
 
 ## Phase 2: 判定調用結果
-1. Think 依 `rules/調用-規範.md` 決定非互動調用參數與權限審批旗標。
-2. Delegate 執行 copilot -p 指令傳入任務指示檔並將最後輸出寫入紀錄檔。
-3. Read Copilot 執行紀錄與工作目錄的 git diff。
-4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/judge_invocation.py --jsonl <JSONL 紀錄檔> --stderr <stderr 紀錄檔> --exit <結束碼紀錄檔>` 判定這次調用是成功還是失敗;若判定不是成功 → 跳至 Phase 3 Step 2。
+1. Think 依 `rules/調用-規範.md` **決定非互動調用參數與權限審批旗標**。
+2. Delegate **執行 copilot -p 指令**傳入任務指示檔並將最後輸出寫入紀錄檔。
+3. Read Copilot **執行紀錄與工作目錄的 git diff**。
+4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/judge_invocation.py --jsonl <JSONL 紀錄檔> --stderr <stderr 紀錄檔> --exit <結束碼紀錄檔>` **判定這次調用**是成功還是失敗;若判定不是成功 → 跳至 Phase 3 Step 2。
 
 ## Phase 3: 驗收成果並回報變更
-1. Think 對照任務指示檔的驗收條件判定是否通過;若結果不符預期且需要 Copilot 修正,而這次還沒有修正過 → 跳至 Phase 1 Step 2。
-2. Ask 向使用者回報執行結果、變更內容與驗收依據。
+1. Think **對照任務指示檔的驗收條件判定是否通過**;若結果不符預期且需要 Copilot 修正,而這次還沒有修正過 → 跳至 Phase 1 Step 2。
+2. Ask **向使用者回報**執行結果、變更內容與驗收依據。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -27,19 +27,19 @@ flowchart TD
     subgraph P1["Phase 1: 產生任務指示檔"]
         P1S1["1. Read：使用者的委派任務需<br/>求、當前工作目錄與 git 狀態"]
         G_P1S1_1{"未安裝或不支援？"}
-        P1S2["2. Write：把任務背景、修改範圍、<br/>操作限制與預期產出寫成任務指示檔"]
+        P1S2["2. Write：寫成任務指示檔"]
     end
     subgraph P2["Phase 2: 判定調用結果"]
         P2S1["1. Think：決定非互動調<br/>用參數與權限審批旗標"]
-        P2S2["2. Delegate：執行 copilot"]
-        P2S3["3. Read：Copilot 執行紀<br/>錄與工作目錄的 git diff"]
-        P2S4["4. Delegate：判定這<br/>次調用是成功還是失敗"]
+        P2S2["2. Delegate：執行 copilot -p 指令"]
+        P2S3["3. Read：執行紀錄與<br/>工作目錄的 git diff"]
+        P2S4["4. Delegate：判定這次調用"]
         G_P2S4_1{"判定不是成功？"}
     end
     subgraph P3["Phase 3: 驗收成果並回報變更"]
         P3S1["1. Think：對照任務指示檔<br/>的驗收條件判定是否通過"]
         G_P3S1_1{"驗收不符預期？"}
-        P3S2["2. Ask：向使用者回報執行<br/>結果、變更內容與驗收依據"]
+        P3S2["2. Ask：向使用者回報"]
     end
     End["結束"]
     P1S1 --> G_P1S1_1

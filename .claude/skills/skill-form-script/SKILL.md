@@ -7,13 +7,13 @@ description: 當要撰寫 Skill 時,只要涉及腳本的部分(`scripts/` 底�
 
 ## Phase 1: 補上腳本執行規範
 1. Read 目標 skill 的 SKILL.md、`rules/` 與 `scripts/` 底下已有的檔;若目標 skill 已有 `rules/腳本執行-規範.md` → 跳至 Phase 2 Step 1。
-2. Write 依 `rules/腳本執行規範-格式規範.md` 在目標 skill 的 `rules/` 補上 `腳本執行-規範.md`。
+2. Write 依 `rules/腳本執行規範-格式規範.md` 在目標 skill 的 `rules/` **補上 `腳本執行-規範.md`**。
 
 ## Phase 2: 寫出腳本
-1. Write 依 `rules/腳本-格式規範.md` 把使用者要的處理寫成目標 skill `scripts/` 底下的 Python 腳本。
-2. Read 這支腳本以 `uv run` 執行 `--help` 與一筆實際輸入的輸出;若與使用者要的結果不符 → 跳至 Phase 2 Step 1。
-3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_scripts.py --skill <目標 skill 的根目錄>` 取得結構檢查的結果;若〈腳本執行規範照固定內容寫〉不過 → 跳至 Phase 1 Step 2;若其他 Rule 有不過 → 跳至 Phase 2 Step 1。
-4. Think 逐條對照腳本沒有判的 Rule;若有不過 → 跳至 Phase 2 Step 1。
+1. Write 依 `rules/腳本-格式規範.md` 把使用者要的處理寫成目標 skill **`scripts/` 底下的 Python 腳本**。
+2. Read 這支腳本以 `uv run` 執行 **`--help` 與一筆實際輸入的輸出**;若與使用者要的結果不符 → 跳至 Phase 2 Step 1。
+3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_scripts.py --skill <目標 skill 的根目錄>` **取得結構檢查的結果**;若〈腳本執行規範照固定內容寫〉不過 → 跳至 Phase 1 Step 2;若其他 Rule 有不過 → 跳至 Phase 2 Step 1。
+4. Think **逐條對照腳本沒有判的 Rule**;若有不過 → 跳至 Phase 2 Step 1。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -23,11 +23,11 @@ flowchart TD
     subgraph P1["Phase 1: 補上腳本執行規範"]
         P1S1["1. Read：目標 skill 的 SKILL.md、<br/>rules/ 與 scripts/ 底下已有的檔"]
         G_P1S1_1{"目標 skill 已有 rules/<br/>腳本執行-規範.md？"}
-        P1S2["2. Write：在目標 skill 的<br/>rules/ 補上 腳本執行-規範.md"]
+        P1S2["2. Write：補上 腳本執行-規範.md"]
     end
     subgraph P2["Phase 2: 寫出腳本"]
-        P2S1["1. Write：把使用者要的處理寫成目標<br/>skill scripts/ 底下的 Python 腳本"]
-        P2S2["2. Read：這支腳本以 uv run 執<br/>行 --help 與一筆實際輸入的輸出"]
+        P2S1["1. Write：scripts/<br/>底下的 Python 腳本"]
+        P2S2["2. Read：--help 與一筆實際輸入的輸出"]
         G_P2S2_1{"與使用者要的結果不符？"}
         P2S3["3. Delegate：取得結構檢查的結果"]
         G_P2S3_1{"〈腳本執行規範照固<br/>定內容寫〉不過？"}
