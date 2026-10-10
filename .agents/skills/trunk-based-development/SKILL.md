@@ -14,13 +14,14 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 ## Phase 2: 完成通過本機建置的變更
 1. Write 依 `rules/分支與變更-規範.md` **實作功能或修復並編寫測試**,在本機形成 commit;長變更使用 feature flag 或 branch by abstraction 隔絕未完成功能。
 2. Write 以 `--autostash` **從 trunk 拉取最新變更**並帶入本機,並在本機解決衝突。
-3. Write 在本機**執行完整建置指令**(編譯與所有測試),確認全部通過;若建置或測試失敗 → 跳至 Phase 2 Step 1。
+3. Read 在本機執行完整建置指令的**編譯與所有測試的結果**;若建置或測試失敗 → 跳至 Phase 2 Step 1。
 
 ## Phase 3: 把變更整合進 trunk
 1. Write **將變更推送到 remote**;若整合風格是直接進 trunk → 跳至 Phase 3 Step 3。
 2. Write 發起 PR,**通過 review 與 CI 後合併回 trunk**,並立刻刪除短期 branch。
 3. Read 確認 remote trunk 上**最新 commit 的建置或 CI 狀態**;若狀態為綠 → 跳至 Phase 4 Step 1。
 4. Write **立刻 revert 或緊急修復**,讓 remote trunk 回到綠燈。
+5. Read **修復後 remote trunk 的建置或 CI 狀態**;若狀態仍是紅 → 跳至 Phase 3 Step 4。
 
 ## Phase 4: 交付整合回報
 1. Ask 依骨架 `templates/整合回報.md` 與範例 `templates/整合回報.example.md` **向使用者回報整合結果**,列出切法、整合風格、本機建置證據、trunk 狀態與留下的開關或技術債。
@@ -40,7 +41,7 @@ flowchart TD
     subgraph P2["Phase 2: 完成通過本機建置的變更"]
         P2S1["1. Write：實作功能或修復並編寫測試"]
         P2S2["2. Write：從 trunk 拉取最新變更"]
-        P2S3["3. Write：執行完整建置指令"]
+        P2S3["3. Read：編譯與所有測試的結果"]
         G_P2S3_1{"建置或測試失敗？"}
     end
     subgraph P3["Phase 3: 把變更整合進 trunk"]
@@ -50,6 +51,8 @@ flowchart TD
         P3S3["3. Read：最新 commit<br/>的建置或 CI 狀態"]
         G_P3S3_1{"狀態為綠？"}
         P3S4["4. Write：立刻 revert 或緊急修復"]
+        P3S5["5. Read：修復後 remote<br/>trunk 的建置或 CI 狀態"]
+        G_P3S5_1{"狀態仍是紅？"}
     end
     subgraph P4["Phase 4: 交付整合回報"]
         P4S1["1. Ask：向使用者回報整合結果"]
@@ -73,7 +76,10 @@ flowchart TD
     P3S3 --> G_P3S3_1
     G_P3S3_1 -->|是| P4S1
     G_P3S3_1 -->|否| P3S4
-    P3S4 --> P4S1
+    P3S4 --> P3S5
+    P3S5 --> G_P3S5_1
+    G_P3S5_1 -->|是| P3S4
+    G_P3S5_1 -->|否| P4S1
     P4S1 --> End
 ```
 </details>
