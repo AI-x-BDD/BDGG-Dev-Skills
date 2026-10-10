@@ -5,7 +5,7 @@
 """檢查 SKILL.md 的 # SOP 格式,並由 # SOP 產生 Mermaid 流程視覺圖(flowchart TD,有轉交別支 Skill 時加 sequenceDiagram),放在 SKILL.md 的檔尾。
 
 格式檢查判 SOP-格式規範.md 與 SOP-按需載入-格式規範.md 裡結果只由 SOP 文字決定的 8 條 Rule。
-步驟裡用 ** 標出的核心動作就是圖上的標籤;沒有標的步驟顯示整句,並列為候選。
+步驟裡用 ** 標出的核心動作就是圖上的標籤;每一步剛好標一段,沒有標的步驟判〈粗體照固定寫法〉不過。
 --write 與 --check 把檢查結果以 JSON 寫到 stdout;有任何一條不過時 exit code 是 1,而且不產圖、不寫檔。
 """
 
@@ -36,7 +36,7 @@ class Step:
     guards: list[Guard] = field(default_factory=list)
     raw_line: str = ""
     line: int = 0
-    core: str = ""  # 用 ** 標出的核心動作;沒有標就是空字串
+    core: str = ""  # 用 ** 標出的核心動作;〈粗體照固定寫法〉不過時是空字串
 
     @property
     def plain_text(self) -> str:
@@ -132,34 +132,9 @@ def wrap_label(text: str, width: int) -> str:
     return "<br/>".join("".join(LABEL_ESCAPES.get(char, char) for char in line) for line in lines)
 
 
-def strip_pointer(action: str) -> str:
-    """剝掉動作描述開頭的資源指標與腳本指令,只留這一步做的事。"""
-    text = action.strip()
-    # 剝離資源指標：依 rules/..., 依骨架 templates/...
-    text = re.sub(r"^依\s*`?rules/[^`\s]+`?\s*", "", text)
-    text = re.sub(r"^、\s*骨架\s*`?templates/[^`\s]+`?\s*與範例\s*`?templates/[^`\s]+`?\s*", "", text)
-    text = re.sub(r"^依骨架\s*`?templates/[^`\s]+`?\s*與範例\s*`?templates/[^`\s]+`?\s*", "", text)
-    text = re.sub(r"^依骨架\s*`?templates/[^`\s]+`?\s*", "", text)
-    text = re.sub(r"^依\s*`?[^`\s]+`?\s*與\s*`?[^`\s]+`?\s*", "", text)
-    # 剝離腳本與指令前綴
-    text = re.sub(r"^執行\s*`uv run scripts/[^`]+`\s*", "", text)
-    text = re.sub(r"^執行\s*uv run scripts/\S+\s*", "", text)
-    text = re.sub(
-        r"^執行\s*([a-zA-Z0-9_-]+)\s+[a-zA-Z0-9_-]+\s*指令傳入任務指示檔並將最後輸出寫入紀錄檔",
-        r"執行 \1",
-        text,
-    )
-    return text
-
-
-def step_label(step: Step, action: str | None = None) -> str:
-    """圖上顯示的那一步:有標粗體就只顯示那一段,沒有就顯示剝掉指標的整句。
-
-    action 是時序圖把「轉交 A、B 或 C」換成單一對象之後的句子;沒有標粗體時才用得到。
-    """
-    body = step.core or strip_pointer(step.plain_text if action is None else action)
-    body = re.sub(r"[;。]+$", "", body.replace("`", "").strip())
-    return f"{step.step_num}. {step.verb}：{body}"
+def step_label(step: Step) -> str:
+    """圖上顯示的那一步:動詞加上用 ** 標出的核心動作。"""
+    return f"{step.step_num}. {step.verb}：{step.core}"
 
 
 def simplify_condition_label(condition: str, width: int = 24) -> str:
@@ -224,7 +199,6 @@ R_ONCE = "資源只在用到它的那一步點名"
 R_POINTER = "指標接在動詞後面並照固定寫法"
 R_SCRIPT = "委派給腳本的步驟照固定寫法"
 R_BOLD = "粗體照固定寫法"
-R_CORE = "核心動作用粗體標出"  # 標得對不對要靠人判,腳本只把沒標的步驟列為候選
 
 # (Rule 名稱, 所在的規範檔);8 條的強度都是 must
 RULES = [
@@ -287,6 +261,7 @@ def check_bold(step: Step, conditions: list[str], bad) -> None:
         bad(R_BOLD, step.line, f"{where} 標了 {len(spans)} 段粗體;一步只標一段,留下最能說明這一步在做什麼的那一段")
         return
     if not spans:
+        bad(R_BOLD, step.line, f"{where} 沒有標粗體;把這一步的核心動作寫成連續的一段並用 `**` 包起來,一長串並列時先寫一個總稱標成粗體、冒號後面列細項")
         return
     span = spans[0]
     core = span.group(1)
@@ -459,17 +434,6 @@ def parse_and_check(content: str) -> tuple[list[Phase], list[Violation], list[di
                     }
                 )
 
-    unmarked = [step for step in steps if not BOLD.search(step.action_text)]
-    if unmarked:
-        candidates.append(
-            {
-                "rule": R_CORE,
-                "line": unmarked[0].line,
-                "text": unmarked[0].raw_line,
-                "reason": f"{len(unmarked)} 步沒有標出核心動作({'、'.join(step.position for step in unmarked)}),圖上顯示整句;請判斷每一步能不能在原句裡用 `**` 標出連續的一段",
-            }
-        )
-
     # 4. 資源的指標
     first_seen: dict[str, Step] = {}
     for step in steps:
@@ -512,10 +476,6 @@ def build_checks(phases: list[Phase], violations: list[Violation]) -> list[dict]
     resources = list(dict.fromkeys(path for step in steps for path in RESOURCE.findall(step.action_text)))
     pointed = [step for step in steps if RESOURCE.findall(step.action_text)]
     scripted = [step for step in steps if SCRIPT_REF.search(step.raw_line)]
-    marked = [step for step in steps if step.core]
-    bold_evidence = f"{len(marked)} 步各標了一段粗體,都在動作描述裡、不超過 {BOLD_MAX_WIDTH} 個半形字寬" if marked else "沒有步驟標粗體"
-    if marked and len(marked) < len(steps):
-        bold_evidence += f";{len(steps) - len(marked)} 步沒有標"
 
     passed_evidence = {
         R_SKELETON: f"`# SOP` 底下是 Phase {_ranges([p.num for p in phases])},共 {len(steps)} 個編號步驟" if phases else "",
@@ -530,7 +490,7 @@ def build_checks(phases: list[Phase], violations: list[Violation]) -> list[dict]
             if guarded
             else "沒有分支與回頭"
         ),
-        R_BOLD: bold_evidence,
+        R_BOLD: f"{len(steps)} 步各標了一段粗體,都在動作描述裡、不超過 {BOLD_MAX_WIDTH} 個半形字寬",
         R_ONCE: f"{len(resources)} 個資源路徑各出現一次" if resources else "沒有寫資源的指標",
         R_POINTER: (
             f"{'、'.join(s.position for s in pointed)} 的指標都緊接在動詞後面"
@@ -685,10 +645,8 @@ def generate_sequence(skill_name: str, phases: list[Phase]) -> str | None:
                 for index, name in enumerate(names):
                     if branching:
                         lines.append(f"    {'else' if index else 'alt'} {name}")
-                    # 訊息是原句把對象清單換成這一段的對象,其餘的字不動
-                    text = plain[: match.start(1)] + name + plain[match.end(1) :]
                     alias = sub_aliases[name]
-                    lines.append(f"{indent}Main->>{alias}: {sequence_label(step_label(s, text))}")
+                    lines.append(f"{indent}Main->>{alias}: {sequence_label(step_label(s))}")
                     lines.append(f"{indent}{alias}-->>Main: 完成並交回產出")
                 if branching:
                     lines.append("    end")
