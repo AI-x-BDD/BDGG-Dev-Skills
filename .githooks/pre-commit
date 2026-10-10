@@ -1,37 +1,122 @@
 #!/usr/bin/env python3
-"""提交前檢查:這次提交動到 .claude/skills 或 .agents/skills 時,.claude/skills 底下每一支 Skill 都要通過 form 系列的檢查。
+"""提交前:把這次提交裡 .claude/skills 的變更鏡像到 .agents/skills,再檢查每一支 Skill 是否通過 form 系列的檢查。
+
+- 只改 .claude/skills 那一份;.agents/skills 底下同一個路徑由這支 hook 在提交時跟著更新並一起提交。
+- 直接改了 .agents/skills 而 .claude/skills 沒有對應變更時,提交會被擋下。
+- 這次提交沒有動到這兩個目錄時什麼都不做。
 
 啟用(每個 clone 做一次):git config core.hooksPath .githooks
 臨時略過一次:git commit --no-verify
-檢查的是工作目錄裡的檔,不是 index 裡的。
+鏡像與 Skill 檢查都依 index(這次要提交的內容),工作目錄裡還沒 stage 的修改不算。
 """
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+
+SOURCE = ".claude/skills/"
+MIRROR = ".agents/skills/"
 
 
 def git(*arguments: str) -> str:
-    return subprocess.run(["git", *arguments], capture_output=True, text=True, encoding="utf-8").stdout
+    done = subprocess.run(["git", *arguments], capture_output=True, text=True, encoding="utf-8")
+    if done.returncode != 0:
+        print(f"pre-commit: git {' '.join(arguments)} 失敗:{done.stderr.strip()}", file=sys.stderr)
+        sys.exit(1)
+    return done.stdout
 
 
-def main() -> int:
-    root = Path(git("rev-parse", "--show-toplevel").strip())
-    staged = git("diff", "--cached", "--name-only", "-z").split("\0")
-    if not any(path.startswith((".claude/skills/", ".agents/skills/")) for path in staged):
-        return 0
+def in_skill(path: str, prefix: str) -> bool:
+    """只算 Skill 資料夾裡的檔(<prefix><skill 名稱>/...),不含直接放在 skills/ 底下的檔。"""
+    return path.startswith(prefix) and "/" in path[len(prefix) :]
 
-    checker = root / ".claude" / "skills" / "skill-conform" / "scripts" / "check_skills.py"
-    try:
-        done = subprocess.run(
-            ["uv", "run", "--quiet", str(checker), "--skills", str(root / ".claude" / "skills")],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
+
+def index_entries(prefix: str) -> dict[str, tuple[str, str]]:
+    """回傳 index 裡 <prefix> 底下每個檔的 {相對路徑: (mode, blob)}。"""
+    entries = {}
+    for record in git("ls-files", "-s", "-z", "--", prefix).split("\0"):
+        if not record:
+            continue
+        meta, path = record.split("\t", 1)
+        mode, blob, _stage = meta.split(" ")
+        if in_skill(path, prefix):
+            entries[path[len(prefix) :]] = (mode, blob)
+    return entries
+
+
+def staged_changes() -> list[tuple[str, str]]:
+    fields = git("diff", "--cached", "--name-status", "--no-renames", "-z").split("\0")
+    return [(fields[i], fields[i + 1]) for i in range(0, len(fields) - 1, 2)]
+
+
+def mirror(root: Path, changes: list[tuple[str, str]]) -> int:
+    """把 index 裡 .claude/skills 的變更鏡像到 .agents/skills;回傳非零表示要擋下提交。"""
+    source = index_entries(SOURCE)
+    mirrored = index_entries(MIRROR)
+    touched = {path[len(SOURCE) :] for _status, path in changes if in_skill(path, SOURCE)}
+
+    direct = []
+    for _status, path in changes:
+        if not in_skill(path, MIRROR):
+            continue
+        relative = path[len(MIRROR) :]
+        if relative not in touched and source.get(relative) != mirrored.get(relative):
+            direct.append(relative)
+    if direct:
+        print("提交被擋下:這幾個檔直接改了 .agents/skills,但 .claude/skills 沒有對應的變更", file=sys.stderr)
+        for relative in direct:
+            print(f"  {MIRROR}{relative}", file=sys.stderr)
+        print("只改 .claude/skills 那一份,.agents/skills 會在提交時自動跟上。臨時略過一次:git commit --no-verify", file=sys.stderr)
+        return 1
+
+    for relative in sorted(touched):
+        target = MIRROR + relative
+        if relative in source:
+            mode, blob = source[relative]
+            git("update-index", "--add", "--cacheinfo", f"{mode},{blob},{target}")
+            git("checkout-index", "-f", "--", target)
+        else:
+            git("rm", "-q", "--cached", "--ignore-unmatch", "--", target)
+            (root / target).unlink(missing_ok=True)
+    if touched:
+        print(f"pre-commit: 已把 {len(touched)} 個檔鏡像到 {MIRROR}", file=sys.stderr)
+
+    source = index_entries(SOURCE)
+    mirrored = index_entries(MIRROR)
+    # 只比對 .claude/skills 有的 Skill;只存在於 .agents/skills 的 Skill 不歸這支 hook 管
+    names = {relative.split("/", 1)[0] for relative in source}
+    different = sorted(
+        relative
+        for relative in source.keys() | mirrored.keys()
+        if relative.split("/", 1)[0] in names and source.get(relative) != mirrored.get(relative)
+    )
+    if different:
+        print(f"提交被擋下:{SOURCE} 與 {MIRROR} 有 {len(different)} 個檔不一致", file=sys.stderr)
+        for relative in different[:20]:
+            print(f"  {relative}", file=sys.stderr)
+        print("先讓兩份一致(以 .claude/skills 為準)再提交。臨時略過一次:git commit --no-verify", file=sys.stderr)
+        return 1
+    return 0
+
+
+def check_skills() -> int:
+    """把 index 裡的 .claude/skills 匯出到暫存目錄再檢查,工作目錄裡還沒 stage 的修改不會影響結果。"""
+    with tempfile.TemporaryDirectory() as temporary:
+        paths = git("ls-files", "-z", "--", SOURCE)
+        exported = subprocess.run(
+            ["git", "checkout-index", "-z", "--stdin", f"--prefix={temporary}/"], input=paths, capture_output=True, text=True, encoding="utf-8"
         )
-    except FileNotFoundError:
-        print("pre-commit: 找不到 uv,這次沒有檢查 Skill。", file=sys.stderr)
-        return 0
+        if exported.returncode != 0:
+            print(f"pre-commit: 匯出 index 失敗,這次沒有檢查 Skill。\n{exported.stderr.strip()[-600:]}", file=sys.stderr)
+            return 0
+        skills = Path(temporary) / ".claude" / "skills"
+        checker = skills / "skill-conform" / "scripts" / "check_skills.py"
+        try:
+            done = subprocess.run(["uv", "run", "--quiet", str(checker), "--skills", str(skills)], capture_output=True, text=True, encoding="utf-8")
+        except FileNotFoundError:
+            print("pre-commit: 找不到 uv,這次沒有檢查 Skill。", file=sys.stderr)
+            return 0
     if done.returncode == 0:
         return 0
     if done.returncode != 1:
@@ -52,6 +137,14 @@ def main() -> int:
         file=sys.stderr,
     )
     return 1
+
+
+def main() -> int:
+    root = Path(git("rev-parse", "--show-toplevel").strip())
+    changes = staged_changes()
+    if not any(in_skill(path, SOURCE) or in_skill(path, MIRROR) for _status, path in changes):
+        return 0
+    return mirror(root, changes) or check_skills()
 
 
 if __name__ == "__main__":
