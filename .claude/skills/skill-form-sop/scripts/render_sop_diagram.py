@@ -330,7 +330,8 @@ def parse_and_check(content: str) -> tuple[list[Phase], list[Violation], list[di
     # 4. 資源的指標
     first_seen: dict[str, Step] = {}
     for step in steps:
-        for path in RESOURCE.findall(step.raw_line):
+        # 只算動作描述裡的路徑;行尾條件裡提到的是在講別的檔在不在,不是這支 skill 的指標
+        for path in RESOURCE.findall(step.action_text):
             if path not in first_seen:
                 first_seen[path] = step
             elif first_seen[path] is step:
@@ -365,7 +366,7 @@ def build_checks(phases: list[Phase], violations: list[Violation]) -> list[dict]
     """把違規整理成每條 Rule 一列;過的列也寫出看了哪裡、看到什麼。"""
     steps = [step for phase in phases for step in phase.steps]
     guarded = [step for step in steps if step.guards]
-    resources = list(dict.fromkeys(path for step in steps for path in RESOURCE.findall(step.raw_line)))
+    resources = list(dict.fromkeys(path for step in steps for path in RESOURCE.findall(step.action_text)))
     pointed = [step for step in steps if RESOURCE.findall(step.action_text)]
     scripted = [step for step in steps if SCRIPT_REF.search(step.raw_line)]
 
