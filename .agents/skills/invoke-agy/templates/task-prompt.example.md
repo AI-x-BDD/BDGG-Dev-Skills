@@ -20,6 +20,10 @@ Your goal is to implement a new notification service module with email provider 
 - Implement the NotifierInterface and ensure async send methods handle connection errors gracefully.
 - Do not run interactive commands or launch long-running daemon servers.
 - Keep all existing comments, docstrings, and formatting intact unless requested otherwise.
+- You are running headless: any shell command that needs a permission prompt is auto-denied, which ends the whole turn with no output.
+- Read, create and edit files with your built-in file tools, never through the shell.
+- Run only the shell commands listed below, one plain command per call: no `cd`, `&&`, `;`, pipes, redirects, heredocs, `$( )` or `bash -c`.
+  - pytest tests/test_notifier.py
 
 # Expected Deliverables & Verification
 - Deliverables:
