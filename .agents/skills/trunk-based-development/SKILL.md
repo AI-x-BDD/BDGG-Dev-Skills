@@ -5,19 +5,75 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 
 # SOP
 
+<details open>
+<summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
+
+```mermaid
+flowchart TD
+    subgraph P1["Phase 1: 判定策略與同步環境"]
+        P1S1["1. Read：檢查目前 repo 的 remote 狀態、預設 bran…"]
+        P1S2["2. Think：評估變更規模與選擇整合風格(直接進 trunk 或短期 b…"]
+        P1S3["3. Write：同步 trunk 的最新狀態"]
+        G_P1S3_1{"整合風格是直接進 trunk？"}
+        P1S4["4. Write：由最新 trunk 開出短期 branch"]
+    end
+    subgraph P2["Phase 2: 小步開發與本機驗證"]
+        P2S1["1. Write：實作功能或修復並編寫測試,在本機形成 commit;長變更…"]
+        P2S2["2. Write：以 --autostash 從 trunk 拉取最新變更並…"]
+        P2S3["3. Write：在本機執行完整建置指令(編譯與所有測試),確認全部通過"]
+        G_P2S3_1{"建置或測試失敗？"}
+    end
+    subgraph P3["Phase 3: 整合進 trunk"]
+        P3S1["1. Write：將變更推送到 remote"]
+        G_P3S1_1{"整合風格是直接進 trunk？"}
+        P3S2["2. Write：發起 PR,通過 review 與 CI 後合併回 tru…"]
+        P3S3["3. Read：確認 remote trunk 上最新 commit 的建…"]
+        G_P3S3_1{"狀態為綠？"}
+        P3S4["4. Write：立刻 revert 或緊急修復,讓 remote trun…"]
+    end
+    subgraph P4["Phase 4: 交付整合回報"]
+        P4S1["1. Ask：向使用者回報整合結果,列出切法、整合風格、本機建置證據、t…"]
+    end
+    End["結束"]
+    P1S1 --> P1S2
+    P1S2 --> P1S3
+    P1S3 --> G_P1S3_1
+    G_P1S3_1 -->|是| P2S1
+    G_P1S3_1 -->|否| P1S4
+    P1S4 --> P2S1
+    P2S1 --> P2S2
+    P2S2 --> P2S3
+    P2S3 --> G_P2S3_1
+    G_P2S3_1 -->|是| P2S1
+    G_P2S3_1 -->|否| P3S1
+    P3S1 --> G_P3S1_1
+    G_P3S1_1 -->|是| P3S3
+    G_P3S1_1 -->|否| P3S2
+    P3S2 --> P3S3
+    P3S3 --> G_P3S3_1
+    G_P3S3_1 -->|是| P4S1
+    G_P3S3_1 -->|否| P3S4
+    P3S4 --> P4S1
+    P4S1 --> End
+```
+</details>
+
 ## Phase 1: 判定策略與同步環境
 1. Read 檢查目前 repo 的 remote 狀態、預設 branch、工作目錄是否有未提交變更,以及 CI 與本機建置指令。
 2. Think 依 `rules/開工判斷-規範.md` 評估變更規模與選擇整合風格(直接進 trunk 或短期 branch)。
-3. Write 同步 trunk 的最新狀態;若採短期 branch 則由最新 trunk 開出短期 branch。
+3. Write 同步 trunk 的最新狀態;若整合風格是直接進 trunk → 跳至 Phase 2 Step 1。
+4. Write 由最新 trunk 開出短期 branch。
 
 ## Phase 2: 小步開發與本機驗證
 1. Write 依 `rules/分支與變更-規範.md` 實作功能或修復並編寫測試,在本機形成 commit;長變更使用 feature flag 或 branch by abstraction 隔絕未完成功能。
-2. Write 從 trunk 拉取最新變更並帶入本機;若有未提交變更則加 `--autostash`,並在本機解決衝突。
-3. Write 在本機執行完整建置指令(編譯與所有測試),確認全部通過;若失敗則修復至全部通過。
+2. Write 以 `--autostash` 從 trunk 拉取最新變更並帶入本機,並在本機解決衝突。
+3. Write 在本機執行完整建置指令(編譯與所有測試),確認全部通過;若建置或測試失敗 → 跳至 Phase 2 Step 1。
 
 ## Phase 3: 整合進 trunk
-1. Write 將變更推送到 remote trunk;若走短期 branch 則發起 PR、通過 review 與 CI 後合併回 trunk,並立刻刪除短期 branch。
-2. Read 確認 remote trunk 上最新 commit 的建置或 CI 狀態為綠;若為紅燈則立刻 revert 或緊急修復。
+1. Write 將變更推送到 remote;若整合風格是直接進 trunk → 跳至 Phase 3 Step 3。
+2. Write 發起 PR,通過 review 與 CI 後合併回 trunk,並立刻刪除短期 branch。
+3. Read 確認 remote trunk 上最新 commit 的建置或 CI 狀態;若狀態為綠 → 跳至 Phase 4 Step 1。
+4. Write 立刻 revert 或緊急修復,讓 remote trunk 回到綠燈。
 
 ## Phase 4: 交付整合回報
 1. Ask 依骨架 `templates/整合回報.md` 與範例 `templates/整合回報.example.md` 向使用者回報整合結果,列出切法、整合風格、本機建置證據、trunk 狀態與留下的開關或技術債。
