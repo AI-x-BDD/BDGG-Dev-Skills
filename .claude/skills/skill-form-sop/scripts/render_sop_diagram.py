@@ -57,7 +57,7 @@ class Step:
 
     @property
     def is_user_interaction(self) -> bool:
-        return self.verb == "Ask"
+        return self.verb in ("Ask", "Report")
 
 
 @dataclass
@@ -189,7 +189,7 @@ def handoff_candidates(action: str) -> tuple[re.Match | None, list[str]]:
 
 STEP_LABEL_WIDTH = 36  # 流程圖步驟節點一行的顯示寬度(約 18 個中文字)
 
-VERBS = ("Read", "Write", "Think", "Ask", "Delegate")
+VERBS = ("Read", "Write", "Think", "Ask", "Report", "Delegate")
 
 R_SKELETON = "SOP 照固定骨架寫"
 R_VERB = "步驟以動詞表的動詞開頭"
@@ -377,7 +377,7 @@ def parse_and_check(content: str) -> tuple[list[Phase], list[Violation], list[di
             rest = step_match.group(3).strip()
             if verb not in VERBS:
                 shown = verb if len(verb) <= 8 else verb[:8] + "…"
-                bad(R_VERB, number, f"Phase {current.num} Step {expected} 開頭是「{shown}」,不在動詞表(Read、Write、Think、Ask、Delegate)")
+                bad(R_VERB, number, f"Phase {current.num} Step {expected} 開頭是「{shown}」,不在動詞表({'、'.join(VERBS)})")
                 rest = f"{verb} {rest}".strip()
             current.steps.append(
                 Step(phase_num=current.num, step_num=expected, verb=verb, action_text=rest, raw_line=line.strip(), line=number)
@@ -624,13 +624,15 @@ def generate_sequence(skill_name: str, phases: list[Phase]) -> str | None:
     # 繪製主要互動摘要
     span = ("User" if has_user_interaction else "Main") + "," + (list(sub_aliases.values())[-1] if sub_aliases else "Main")
     for p in phases:
-        if any(s.verb == "Ask" or s.is_external_delegation for s in p.steps):
+        if any(s.is_user_interaction or s.is_external_delegation for s in p.steps):
             # 讓讀圖的人知道底下的「N.」是哪一個 Phase 的第幾步
             lines.append(f"    Note over {span}: Phase {p.num}: {sequence_label(p.title)}")
         for s in p.steps:
-            if s.verb == "Ask":
+            if s.is_user_interaction:
                 lines.append(f"    Main->>User: {sequence_label(step_label(s))}")
-                lines.append("    User-->>Main: 回覆確認")
+                # Report 只把結果交出去,流程不等使用者回答
+                if s.verb == "Ask":
+                    lines.append("    User-->>Main: 回覆確認")
             elif s.is_external_delegation:
                 plain = s.plain_text
                 match, names = handoff_candidates(plain)

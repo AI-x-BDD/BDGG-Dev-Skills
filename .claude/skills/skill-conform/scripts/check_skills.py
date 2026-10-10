@@ -32,7 +32,7 @@ FENCE = re.compile(r"^(`{3,})(.*)$")
 RULE_TITLE = re.compile(r"^# Rule \d+ \[(must|should)\] - (\S.*)$")
 # 範例裡的 SOP 步驟:編號前面只能是空白或一個標籤(「after」「終態」「掛上之後的步驟:」),編號後面是 skill-form-sop 動詞表的動詞。
 # 沒有動詞的編號行(commit 清單、情境敘述)不是 SOP 步驟,不抽。
-EXAMPLE_STEP = re.compile(r"^(?P<label>|.*?[\s::])\d+\. (?P<body>(?:Read|Write|Think|Ask|Delegate)\s.*)$")
+EXAMPLE_STEP = re.compile(r"^(?P<label>|.*?[\s::])\d+\. (?P<body>(?:Read|Write|Think|Ask|Report|Delegate)\s.*)$")
 # 這些標籤的行是刻意寫壞、正要被改寫的輸入,不檢查
 BROKEN_INPUT_LABELS = ("原本",)
 SYNTHETIC_HEADER = "# SOP\n\n## Phase 1: 檢查範例\n"
