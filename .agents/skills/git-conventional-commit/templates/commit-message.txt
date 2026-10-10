@@ -1,0 +1,5 @@
+{{type}}{{(scope),沒有就不寫}}{{!,破壞性變更才寫}}: {{description}}
+
+{{body,沒有就連同前一行空行不寫}}
+
+{{footer 的 token,空白換成 -;沒有 footer 就連同前一行空行不寫}}: {{footer 的值}}

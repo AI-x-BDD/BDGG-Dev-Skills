@@ -1,0 +1,9 @@
+feat(cli)!: rename --file to --data-file
+
+The data file used to sit in whatever directory the command was run
+from, so running todo from two places gave two different lists. It now
+defaults to the user data directory.
+
+BREAKING-CHANGE: `--file` is now `--data-file`; update scripts that pass it.
+BREAKING-CHANGE: the default data file moved from ./todo.json to the user data directory; move the old file there or pass --data-file ./todo.json.
+Refs: #42
