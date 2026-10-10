@@ -88,8 +88,9 @@ def check_skill(skill: Path, checkers: dict[str, Path], write_diagram: bool) -> 
     rules_dir = skill / "rules"
     for rule_file in sorted(rules_dir.glob("*.md")) if rules_dir.is_dir() else []:
         result = run_checker(checkers["rule"], "--file", str(rule_file))
-        for problem in result.get("problems", []):
-            items.append(item("Rule File", "skill-form-rule", problem["rule"], f"rules/{rule_file.name}", problem["line"], "", problem["message"]))
+        for check in result["checks"]:
+            for violation in check["violations"]:
+                items.append(item("Rule File", "skill-form-rule", check["rule"], f"rules/{rule_file.name}", violation["line"], violation["text"], violation["reason"]))
 
     for part, owner, key in (("樣板", "skill-form-template", "template"), ("腳本", "skill-form-script", "script")):
         result = run_checker(checkers[key], "--skill", str(skill))

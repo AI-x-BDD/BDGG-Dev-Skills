@@ -15,7 +15,7 @@ flowchart TD
         P1S2["2. Write：寫出目標 skill rules/ 底下的 Rule Fi…"]
         P1S3["3. Delegate：取得結構檢查的結果"]
         G_P1S3_1{"有不過？"}
-        P1S4["4. Think：逐條對照"]
+        P1S4["4. Think：逐條對照腳本沒有判的 Rule"]
         G_P1S4_1{"有不過？"}
     end
     End["結束"]
@@ -34,4 +34,4 @@ flowchart TD
 1. Read 目標 skill 的 SKILL.md 與已有的 Rule File。
 2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成目標 skill `rules/` 底下的 Rule File。
 3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_rule_file.py --file <Rule File 的路徑>` 取得結構檢查的結果;若有不過 → 跳至 Phase 1 Step 2。
-4. Think 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
+4. Think 逐條對照腳本沒有判的 Rule;若有不過 → 跳至 Phase 1 Step 2。

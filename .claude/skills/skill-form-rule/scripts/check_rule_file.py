@@ -2,7 +2,11 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""檢查 Rule File 的結構:標題格式、流水號、四段的順序、example 成對與說明行、有沒有用流水號引用 Rule。"""
+"""檢查 Rule File 的結構:標題格式、流水號、四段的順序、example 成對與說明行、有沒有用流水號引用 Rule。
+
+判 RuleFile-格式規範.md 裡結果只由檔案內容決定的 4 條 Rule(其中 2 條只判一部分),
+結果以 JSON 寫到 stdout,每條 Rule 一列;有任何一條不過時 exit code 是 1。
+"""
 import argparse
 import json
 import re
@@ -141,8 +145,21 @@ def check(lines: list[str]) -> tuple[int, list[dict]]:
     return len(rules), problems
 
 
+R_ONLY = "Rule File 只由 Rule 組成"
+R_FORMAT = "每條 Rule 照固定格式寫"
+R_WHY = "desc 寫出為什麼"
+R_NAME = "用名稱引用 Rule"
+# (Rule 名稱, 只判一部分時留給執行的人對照的那一半);4 條的強度都是 must
+RULES = [
+    (R_ONLY, None),
+    (R_FORMAT, None),
+    (R_WHY, "腳本只判每條 Rule 有沒有 `- 為什麼:` 這一行;寫的是不是這條規則在防什麼後果,請自己對照"),
+    (R_NAME, "腳本只看 desc 裡有沒有〈Rule <流水號>〉;example 與 SOP 步驟裡的引用,請自己對照"),
+]
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--file", required=True, type=Path, help="要檢查的 Rule File 的路徑(目標 skill 的 rules/ 底下的 .md 檔)")
     args = parser.parse_args()
 
@@ -151,18 +168,47 @@ def main() -> int:
 
     if not args.file.is_file():
         print(f"錯誤: {args.file} 不是檔案。--file 要給 Rule File 的路徑(目標 skill 的 rules/ 底下的 .md 檔)。", file=sys.stderr)
-        return 1
+        return 2
     try:
         text = args.file.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         print(f"錯誤: {args.file} 不是 UTF-8 編碼的文字檔。Rule File 要存成 UTF-8。", file=sys.stderr)
-        return 1
+        return 2
 
-    count, problems = check(text.splitlines())
+    lines = text.splitlines()
+    count, problems = check(lines)
+    passed_evidence = {
+        R_ONLY: f"{count} 個 `#` 標題都是 Rule,第一條 Rule 之前沒有其他內容",
+        R_FORMAT: f"{count} 條 Rule 的流水號連續,都有 desc 與成對的 good / bad example,每個 example 都先有一行說明",
+        R_WHY: f"{count} 條 Rule 的 desc 都有 `- 為什麼:` 這一行",
+        R_NAME: "desc 裡沒有用流水號引用 Rule",
+    }
+    checks = []
+    for rule, partial in RULES:
+        mine = [problem for problem in problems if problem["rule"] == rule]
+        checks.append(
+            {
+                "rule": rule,
+                "source": "RuleFile-格式規範.md",
+                "strength": "must",
+                "result": "不過" if mine else "過",
+                "evidence": ";".join(f"第 {problem['line']} 行:{problem['message']}" for problem in mine) if mine else passed_evidence[rule],
+                "partial": partial,
+                "violations": [
+                    {
+                        "line": problem["line"],
+                        "text": lines[problem["line"] - 1].strip() if 0 < problem["line"] <= len(lines) else "",
+                        "reason": problem["message"],
+                    }
+                    for problem in mine
+                ],
+            }
+        )
+    passed = not problems
     print(f"檢查了 {count} 條 Rule,{len(problems)} 個不符項", file=sys.stderr)
-    json.dump({"file": args.file.as_posix(), "rules": count, "problems": problems}, sys.stdout, ensure_ascii=False, indent=2)
+    json.dump({"file": args.file.as_posix(), "rules": count, "passed": passed, "checks": checks}, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")
-    return 0
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":
