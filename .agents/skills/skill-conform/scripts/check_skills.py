@@ -51,8 +51,9 @@ def run_checker(script: Path, *arguments: str) -> dict:
     return {}
 
 
-def item(part: str, owner: str, rule: str, file: str, line: int, text: str, reason: str) -> dict:
-    return {"part": part, "owner": owner, "rule": rule, "file": file, "line": line, "text": text, "reason": reason}
+def item(part: str, owner: str, rule: str, source: str, file: str, line: int, text: str, reason: str) -> dict:
+    """source 是那條 Rule 所在的規範檔名(在 owner 那支 form skill 的 rules/ 底下);不是 Rule 的檢查項寫空字串。"""
+    return {"part": part, "owner": owner, "rule": rule, "source": source, "file": file, "line": line, "text": text, "reason": reason}
 
 
 def check_skill(skill: Path, checkers: dict[str, Path], write_diagram: bool) -> dict:
@@ -66,11 +67,13 @@ def check_skill(skill: Path, checkers: dict[str, Path], write_diagram: bool) -> 
         injected = written["diagram"]["result"]
 
     sop = run_checker(checkers["sop"], "--check", "--file", str(skill_file))
+    sop_sources = {check["rule"]: check["source"] for check in sop["checks"]}
     for check in sop["checks"]:
         for violation in check["violations"]:
-            items.append(item("SOP", "skill-form-sop", check["rule"], "SKILL.md", violation["line"], violation["text"], violation["reason"]))
+            items.append(item("SOP", "skill-form-sop", check["rule"], check["source"], "SKILL.md", violation["line"], violation["text"], violation["reason"]))
     for candidate in sop["candidates"]:
-        candidates.append(item("SOP", "skill-form-sop", candidate["rule"], "SKILL.md", candidate["line"], candidate["text"], candidate["reason"]))
+        source = sop_sources.get(candidate["rule"], "")
+        candidates.append(item("SOP", "skill-form-sop", candidate["rule"], source, "SKILL.md", candidate["line"], candidate["text"], candidate["reason"]))
     diagram = sop["diagram"]["result"]
     if diagram == "不一致":
         items.append(
@@ -78,6 +81,7 @@ def check_skill(skill: Path, checkers: dict[str, Path], write_diagram: bool) -> 
                 "流程視覺圖",
                 "skill-form-sop",
                 "流程視覺圖與 SOP 一致",
+                "",
                 "SKILL.md",
                 0,
                 "",
@@ -90,15 +94,16 @@ def check_skill(skill: Path, checkers: dict[str, Path], write_diagram: bool) -> 
         result = run_checker(checkers["rule"], "--file", str(rule_file))
         for check in result["checks"]:
             for violation in check["violations"]:
-                items.append(item("Rule File", "skill-form-rule", check["rule"], f"rules/{rule_file.name}", violation["line"], violation["text"], violation["reason"]))
+                items.append(item("Rule File", "skill-form-rule", check["rule"], check["source"], f"rules/{rule_file.name}", violation["line"], violation["text"], violation["reason"]))
 
     for part, owner, key in (("樣板", "skill-form-template", "template"), ("腳本", "skill-form-script", "script")):
         result = run_checker(checkers[key], "--skill", str(skill))
+        default_source = result["checks"][0]["source"] if result["checks"] else ""
         for check in result["checks"]:
             for violation in check["violations"]:
-                items.append(item(part, owner, check["rule"], violation["file"], violation["line"], violation["text"], violation["reason"]))
+                items.append(item(part, owner, check["rule"], check["source"], violation["file"], violation["line"], violation["text"], violation["reason"]))
         for candidate in result.get("candidates", []):
-            candidates.append(item(part, owner, candidate["rule"], candidate["file"], candidate["line"], candidate["text"], candidate["reason"]))
+            candidates.append(item(part, owner, candidate["rule"], default_source, candidate["file"], candidate["line"], candidate["text"], candidate["reason"]))
 
     report = {"skill": skill.name, "passed": not items, "diagram": diagram, "items": items, "candidates": candidates}
     if injected is not None:

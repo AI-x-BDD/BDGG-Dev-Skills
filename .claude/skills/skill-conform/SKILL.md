@@ -72,7 +72,7 @@ sequenceDiagram
 
 ## Phase 2: 改寫不過的部位
 1. Delegate 執行 `uv run scripts/check_skills.py --skills <放 Skill 的目錄> --only <只缺流程視覺圖的 Skill 名稱> --write-diagrams` 替使用者要處理、而且只缺流程視覺圖的 Skill 注入流程視覺圖;若使用者要處理的項目都只缺流程視覺圖 → 跳至 Phase 2 Step 5。
-2. Think 決定其餘每一項要改成的寫法。
+2. Think 依 `rules/改寫-規範.md` 決定其餘每一項要改成的寫法。
 3. Ask 依骨架 `templates/改寫提案.md` 與範例 `templates/改寫提案.example.md` 提出改寫提案,問使用者是否可以寫入;若使用者要修改 → 跳至 Phase 2 Step 2。
 4. Delegate 轉交 skill-form-sop、skill-form-rule、skill-form-template 或 skill-form-script,照確認過的寫法改寫使用者要處理的其餘每一項。
 5. Delegate 執行 `uv run scripts/check_skills.py --skills <放 Skill 的目錄> --only <改過的 Skill 名稱>` 取得改過的每一支 Skill 重新檢查的結果;若使用者要處理的項目還有不過 → 跳至 Phase 2 Step 2。
