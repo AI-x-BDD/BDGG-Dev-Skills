@@ -5,8 +5,6 @@ description: 撰寫或修改 Skill 的 SKILL.md 中 SOP 流程（Phase、步驟�
 
 # SOP
 
-
-
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
 
@@ -16,7 +14,8 @@ flowchart TD
         P1S1["1. Read：目標 skill 已有的 SKILL.md"]
         P1S2["2. Write：寫出目標 skill 的 # SOP"]
         P1S3["3. Write：替用得到的步驟寫上指標"]
-        P1S4["4. Delegate：產生流程視覺圖並注入目標 skill 的 # SOP"]
+        P1S4["4. Delegate：取得格式檢查的結果並產生流程視覺圖注入目標 skill 的…"]
+        G_P1S4_1{"檢查有不過？"}
     end
     subgraph P2["Phase 2: 列出把關紀錄"]
         P2S1["1. Read：讀回 # SOP"]
@@ -27,7 +26,9 @@ flowchart TD
     P1S1 --> P1S2
     P1S2 --> P1S3
     P1S3 --> P1S4
-    P1S4 --> P2S1
+    P1S4 --> G_P1S4_1
+    G_P1S4_1 -->|是| P1S2
+    G_P1S4_1 -->|否| P2S1
     P2S1 --> P2S2
     P2S2 --> G_P2S2_1
     G_P2S2_1 -->|是| P1S2
@@ -39,7 +40,7 @@ flowchart TD
 1. Read 目標 skill 已有的 SKILL.md。
 2. Write 依 `rules/SOP-格式規範.md` 把使用者要的流程寫成目標 skill 的 `# SOP`。
 3. Write 依 `rules/SOP-按需載入-格式規範.md` 替用得到的步驟寫上指標。
-4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/render_sop_diagram.py --write --file <目標 SKILL.md 的路徑>` 產生流程視覺圖並注入目標 skill 的 `# SOP`。
+4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/render_sop_diagram.py --write --file <目標 SKILL.md 的路徑>` 取得格式檢查的結果並產生流程視覺圖注入目標 skill 的 `# SOP`;若檢查有不過 → 跳至 Phase 1 Step 2。
 
 ## Phase 2: 列出把關紀錄
 1. Read 剛寫進目標 skill 的 `# SOP`。
