@@ -29,7 +29,7 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 2. Delegate 依骨架 `templates/實跑指示.md` 與範例 `templates/實跑指示.example.md` 把每一列驗收輸入與它的複本交給不帶這場對話脈絡的 subagent,**實跑寫完的目標 Skill**。
 3. Read **每一份實跑的結果**:複本和原本的差異、交出的腳本執行的結果。
 4. Think **比對每一份實跑結果**;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1。
-5. Ask 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡**列出驗收紀錄**。
+5. Report 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡**列出驗收紀錄**。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -69,7 +69,7 @@ flowchart TD
         P5S3["3. Read：每一份實跑的結果"]
         P5S4["4. Think：比對每一份實跑結果"]
         G_P5S4_1{"驗收對不上？"}
-        P5S5["5. Ask：列出驗收紀錄"]
+        P5S5["5. Report：列出驗收紀錄"]
     end
     End["結束"]
     P1S1 --> G_P1S1_1
@@ -152,7 +152,6 @@ sequenceDiagram
         Sub_7-->>Main: 完成並交回產出
     end
     Note over User,Sub_7: Phase 5: 列出驗收紀錄
-    Main->>User: 5. Ask：列出驗收紀錄
-    User-->>Main: 回覆確認
+    Main->>User: 5. Report：列出驗收紀錄
 ```
 </details>

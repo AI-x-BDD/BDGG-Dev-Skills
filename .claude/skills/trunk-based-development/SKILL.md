@@ -24,7 +24,7 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 5. Read **修復後 remote trunk 的建置或 CI 狀態**;若狀態仍是紅 → 跳至 Phase 3 Step 4。
 
 ## Phase 4: 交付整合回報
-1. Ask 依骨架 `templates/整合回報.md` 與範例 `templates/整合回報.example.md` **向使用者回報整合結果**,列出切法、整合風格、本機建置證據、trunk 狀態與留下的開關或技術債。
+1. Report 依骨架 `templates/整合回報.md` 與範例 `templates/整合回報.example.md` **向使用者回報整合結果**,列出切法、整合風格、本機建置證據、trunk 狀態與留下的開關或技術債。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -55,7 +55,7 @@ flowchart TD
         G_P3S5_1{"狀態仍是紅？"}
     end
     subgraph P4["Phase 4: 交付整合回報"]
-        P4S1["1. Ask：向使用者回報整合結果"]
+        P4S1["1. Report：向使用者回報整合結果"]
     end
     End["結束"]
     P1S1 --> P1S2

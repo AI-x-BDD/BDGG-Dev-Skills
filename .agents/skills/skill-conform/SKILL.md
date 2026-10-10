@@ -17,7 +17,7 @@ description: 改了 skill-form-sop、skill-form-rule、skill-form-template 或 s
 5. Delegate 執行 `uv run scripts/check_skills.py --skills <放 Skill 的目錄> --only <改過的 Skill 名稱>` **取得改過的每支 Skill 重新檢查的結果**;若使用者要處理的項目還有不過 → 跳至 Phase 2 Step 2。
 
 ## Phase 3: 列出遷移紀錄
-1. Think 依骨架 `templates/遷移紀錄.md` 與範例 `templates/遷移紀錄.example.md` **列出遷移紀錄**。
+1. Report 依骨架 `templates/遷移紀錄.md` 與範例 `templates/遷移紀錄.example.md` **列出遷移紀錄**。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -41,7 +41,7 @@ flowchart TD
         G_P2S5_1{"使用者要處理的<br/>項目還有不過？"}
     end
     subgraph P3["Phase 3: 列出遷移紀錄"]
-        P3S1["1. Think：列出遷移紀錄"]
+        P3S1["1. Report：列出遷移紀錄"]
     end
     End["結束"]
     P1S1 --> G_P1S1_1
@@ -91,5 +91,7 @@ sequenceDiagram
         Main->>Sub_4: 4. Delegate：照確認過的寫法改寫
         Sub_4-->>Main: 完成並交回產出
     end
+    Note over User,Sub_4: Phase 3: 列出遷移紀錄
+    Main->>User: 1. Report：列出遷移紀錄
 ```
 </details>

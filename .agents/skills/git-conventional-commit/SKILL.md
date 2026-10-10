@@ -15,7 +15,7 @@ description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交�
 7. Write 以 `git commit -F <訊息檔>` **提交這一筆**;若還有下一筆 → 跳至 Phase 1 Step 3。
 
 ## Phase 2: 列出回報
-1. Think 依 `rules/回報-規範.md`、骨架 `templates/回報.md` 與範例 `templates/回報.example.md` **列出這次提交的回報**。
+1. Report 依 `rules/回報-規範.md`、骨架 `templates/回報.md` 與範例 `templates/回報.example.md` **列出這次提交的回報**。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -36,7 +36,7 @@ flowchart TD
         G_P1S7_1{"還有下一筆？"}
     end
     subgraph P2["Phase 2: 列出回報"]
-        P2S1["1. Think：列出這次提交的回報"]
+        P2S1["1. Report：列出這次提交的回報"]
     end
     End["結束"]
     P1S1 --> P1S2

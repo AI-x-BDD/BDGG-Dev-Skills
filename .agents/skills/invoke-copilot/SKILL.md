@@ -17,7 +17,7 @@ description: 只要準備在指令列執行 `copilot -p`,不論是委派開發�
 
 ## Phase 3: 驗收成果並回報變更
 1. Think **對照任務指示檔的驗收條件判定是否通過**;若結果不符預期且需要 Copilot 修正,而這次還沒有修正過 → 跳至 Phase 1 Step 2。
-2. Ask **向使用者回報成果**:執行結果、變更內容與驗收依據。
+2. Report **向使用者回報成果**:執行結果、變更內容與驗收依據。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -39,7 +39,7 @@ flowchart TD
     subgraph P3["Phase 3: 驗收成果並回報變更"]
         P3S1["1. Think：對照任務指示檔<br/>的驗收條件判定是否通過"]
         G_P3S1_1{"驗收不符預期？"}
-        P3S2["2. Ask：向使用者回報成果"]
+        P3S2["2. Report：向使用者回報成果"]
     end
     End["結束"]
     P1S1 --> G_P1S1_1
