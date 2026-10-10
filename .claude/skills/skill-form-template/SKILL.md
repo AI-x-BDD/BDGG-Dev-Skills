@@ -5,7 +5,33 @@ description: 當要撰寫 Skill 時,只要涉及樣板的部分(`templates/` 底
 
 # SOP
 
+<details open>
+<summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
+
+```mermaid
+flowchart TD
+    subgraph P1["Phase 1: 寫出樣板"]
+        P1S1["1. Read：目標 skill 的 SKILL.md 與 templat…"]
+        P1S2["2. Write：寫出格式寫成目標 skill templates/ 底下的…"]
+        P1S3["3. Delegate：取得結構檢查的結果"]
+        G_P1S3_1{"有不過？"}
+        P1S4["4. Think：逐條對照腳本沒有判的 Rule"]
+        G_P1S4_1{"有不過？"}
+    end
+    End["結束"]
+    P1S1 --> P1S2
+    P1S2 --> P1S3
+    P1S3 --> G_P1S3_1
+    G_P1S3_1 -->|是| P1S2
+    G_P1S3_1 -->|否| P1S4
+    P1S4 --> G_P1S4_1
+    G_P1S4_1 -->|是| P1S2
+    G_P1S4_1 -->|否| End
+```
+</details>
+
 ## Phase 1: 寫出樣板
 1. Read 目標 skill 的 SKILL.md 與 `templates/` 底下已有的樣板。
 2. Write 依 `rules/樣板-格式規範.md` 把使用者要的格式寫成目標 skill `templates/` 底下的骨架與範例。
-3. Think 逐條對照;若有不過 → 跳至 Phase 1 Step 2。
+3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_templates.py --skill <目標 skill 的根目錄>` 取得結構檢查的結果;若有不過 → 跳至 Phase 1 Step 2。
+4. Think 逐條對照腳本沒有判的 Rule;若有不過 → 跳至 Phase 1 Step 2。
