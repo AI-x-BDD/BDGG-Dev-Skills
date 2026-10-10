@@ -6,8 +6,8 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 # SOP
 
 ## Phase 1: 提出根因報告
-1. Read 問題發生時的對話與當時用到的每一支 Skill 的整個資料夾;若要創建的是全新的 Skill → 跳至 Phase 2 Step 1;若對話裡有那一次交給 Skill 的輸入與它交出的產出 → 跳至 Phase 1 Step 3。
-2. Ask 問使用者那一次交給 Skill 的輸入與它交出的產出。
+1. Read **問題發生時的現場**:當時的對話與用到的每一支 Skill 的整個資料夾;若要創建的是全新的 Skill → 跳至 Phase 2 Step 1;若對話裡有那次交給 Skill 的輸入與交出的產出 → 跳至 Phase 1 Step 3。
+2. Ask 問使用者**那次交給 Skill 的輸入與交出的產出**。
 3. Think 依 `rules/根因-規範.md` 用當時的輸入逐步演練每一支 Skill 的 SOP **找出根因**。
 4. Ask 依骨架 `templates/根因報告.md` 與範例 `templates/根因報告.example.md` **提出根因報告**,問使用者是否同意;若使用者不同意 → 跳至 Phase 1 Step 3;若使用者同意,而每一個落差都不歸類 → 結束。
 
@@ -22,12 +22,12 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 ## Phase 4: 寫出部位
 1. Write **刪除藍圖裡整個檔列為刪的檔**。
 2. Delegate 轉交 skill-form-rule、skill-form-template 或 skill-form-script,**把藍圖裡有變更的既有檔改寫成終態**;若寫出來的內容和藍圖不同 → 跳至 Phase 2 Step 1。
-3. Delegate **替藍圖裡每一個新掛的部位轉交** skill-derive-rule、skill-derive-template 或 skill-derive-script,一次掛一步;若掛上去的內容和藍圖不同 → 跳至 Phase 2 Step 1。
+3. Delegate 轉交 skill-derive-rule、skill-derive-template 或 skill-derive-script,**把藍圖裡每一個新掛的部位掛上去**,一次掛一步;若掛上去的內容和藍圖不同 → 跳至 Phase 2 Step 1。
 
 ## Phase 5: 列出驗收紀錄
 1. Write 替藍圖的每一列驗收輸入,**把實跑會改到的檔複製到 `tmp/verify/`** 底下各自的資料夾。
 2. Delegate 依骨架 `templates/實跑指示.md` 與範例 `templates/實跑指示.example.md` 把每一列驗收輸入與它的複本交給不帶這場對話脈絡的 subagent,**實跑寫完的目標 Skill**。
-3. Read 每一份複本和原本的差異與交出的腳本執行的結果。
+3. Read **每一份實跑的結果**:複本和原本的差異、交出的腳本執行的結果。
 4. Think **比對每一份實跑結果**;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1。
 5. Ask 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡**列出驗收紀錄**。
 
@@ -37,10 +37,10 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 提出根因報告"]
-        P1S1["1. Read：問題發生時的對話與當時<br/>用到的每一支 Skill 的整個資料夾"]
+        P1S1["1. Read：問題發生時的現場"]
         G_P1S1_1{"創建全新 Skill？"}
         G_P1S1_2{"已有輸入與產出？"}
-        P1S2["2. Ask：問使用者那一次交給<br/>Skill 的輸入與它交出的產出"]
+        P1S2["2. Ask：那次交給 Skill<br/>的輸入與交出的產出"]
         P1S3["3. Think：找出根因"]
         P1S4["4. Ask：提出根因報告"]
         G_P1S4_1{"使用者不同意？"}
@@ -60,13 +60,13 @@ flowchart TD
         P4S1["1. Write：刪除藍圖裡整個檔列為刪的檔"]
         P4S2["2. Delegate：把藍圖裡有<br/>變更的既有檔改寫成終態"]
         G_P4S2_1{"內容與藍圖不同？"}
-        P4S3["3. Delegate：替藍圖裡<br/>每一個新掛的部位轉交"]
+        P4S3["3. Delegate：把藍圖裡<br/>每一個新掛的部位掛上去"]
         G_P4S3_1{"內容與藍圖不同？"}
     end
     subgraph P5["Phase 5: 列出驗收紀錄"]
         P5S1["1. Write：把實跑會改到<br/>的檔複製到 tmp/verify/"]
         P5S2["2. Delegate：實跑寫完的目標 Skill"]
-        P5S3["3. Read：每一份複本和原本的<br/>差異與交出的腳本執行的結果"]
+        P5S3["3. Read：每一份實跑的結果"]
         P5S4["4. Think：比對每一份實跑結果"]
         G_P5S4_1{"驗收對不上？"}
         P5S5["5. Ask：列出驗收紀錄"]
@@ -120,7 +120,7 @@ sequenceDiagram
     participant Sub_6 as skill-derive-template
     participant Sub_7 as skill-derive-script
     Note over User,Sub_7: Phase 1: 提出根因報告
-    Main->>User: 2. Ask：問使用者那一次交給 Skill 的輸入與它交出的產出
+    Main->>User: 2. Ask：那次交給 Skill 的輸入與交出的產出
     User-->>Main: 回覆確認
     Main->>User: 4. Ask：提出根因報告
     User-->>Main: 回覆確認
@@ -142,13 +142,13 @@ sequenceDiagram
         Sub_4-->>Main: 完成並交回產出
     end
     alt skill-derive-rule
-        Main->>Sub_5: 3. Delegate：替藍圖裡每一個新掛的部位轉交
+        Main->>Sub_5: 3. Delegate：把藍圖裡每一個新掛的部位掛上去
         Sub_5-->>Main: 完成並交回產出
     else skill-derive-template
-        Main->>Sub_6: 3. Delegate：替藍圖裡每一個新掛的部位轉交
+        Main->>Sub_6: 3. Delegate：把藍圖裡每一個新掛的部位掛上去
         Sub_6-->>Main: 完成並交回產出
     else skill-derive-script
-        Main->>Sub_7: 3. Delegate：替藍圖裡每一個新掛的部位轉交
+        Main->>Sub_7: 3. Delegate：把藍圖裡每一個新掛的部位掛上去
         Sub_7-->>Main: 完成並交回產出
     end
     Note over User,Sub_7: Phase 5: 列出驗收紀錄

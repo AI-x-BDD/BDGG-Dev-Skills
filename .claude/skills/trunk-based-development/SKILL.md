@@ -6,7 +6,7 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 # SOP
 
 ## Phase 1: 同步開工環境
-1. Read 檢查目前 repo 的 remote 狀態、預設 branch、工作目錄是否有未提交變更,以及 CI 與本機建置指令。
+1. Read **目前 repo 的開工狀態**:remote 狀態、預設 branch、工作目錄是否有未提交變更,以及 CI 與本機建置指令。
 2. Think 依 `rules/開工判斷-規範.md` **評估變更規模與選擇整合風格**(直接進 trunk 或短期 branch)。
 3. Write **同步 trunk 的最新狀態**;若整合風格是直接進 trunk → 跳至 Phase 2 Step 1。
 4. Write **由最新 trunk 開出短期 branch**。
@@ -31,7 +31,7 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 同步開工環境"]
-        P1S1["1. Read：檢查目前 repo 的 remote<br/>狀態、預設 branch、工作目錄是否有<br/>未提交變更,以及 CI 與本機建置指令"]
+        P1S1["1. Read：目前 repo 的開工狀態"]
         P1S2["2. Think：評估變更規模與選擇整合風格"]
         P1S3["3. Write：同步 trunk 的最新狀態"]
         G_P1S3_1{"整合風格是直接進 trunk？"}

@@ -6,12 +6,12 @@ description: 既有 Skill 產出不符預期、有多種可疑原因無法確定
 # SOP
 
 ## Phase 1: 建立排查矩陣
-1. Read 問題發生時的對話、受測 Skill 資料夾與執行日誌;若沒有執行日誌 → 跳至 Phase 1 Step 3。
+1. Read 問題發生時的**對話、受測 Skill 資料夾與執行日誌**;若沒有執行日誌 → 跳至 Phase 1 Step 3。
 2. Think **整理已排除原因與反證依據**。
 3. Ask 依骨架 `templates/排查矩陣.md` 與範例 `templates/排查矩陣.example.md` 列出可疑原因、支持線索與尚不能確定的地方,**問使用者優先驗證哪一項**;若使用者指定了要驗證的假說 → 跳至 Phase 2 Step 1。
 
 ## Phase 2: 檢索紀錄採證
-1. Read 依 `rules/採證-規範.md` 檢索日誌裡對應步驟的 thinking、tool 呼叫參數與返回值。
+1. Read 依 `rules/採證-規範.md` **檢索日誌裡對應步驟的紀錄**:thinking、tool 呼叫參數與返回值。
 2. Think **比對日誌事實與待驗假說**;若日誌已構成充分反證 → 跳至 Phase 1 Step 2;若日誌已證實為唯一定因 → 跳至 Phase 4 Step 1。
 
 ## Phase 3: 執行切片實驗
@@ -29,14 +29,14 @@ description: 既有 Skill 產出不符預期、有多種可疑原因無法確定
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 建立排查矩陣"]
-        P1S1["1. Read：問題發生時的對話、<br/>受測 Skill 資料夾與執行日誌"]
+        P1S1["1. Read：對話、受測<br/>Skill 資料夾與執行日誌"]
         G_P1S1_1{"沒有執行日誌？"}
         P1S2["2. Think：整理已排除原因與反證依據"]
         P1S3["3. Ask：問使用者優先驗證哪一項"]
         G_P1S3_1{"使用者指定了要<br/>驗證的假說？"}
     end
     subgraph P2["Phase 2: 檢索紀錄採證"]
-        P2S1["1. Read：檢索日誌裡對應步驟的<br/>thinking、tool 呼叫參數與返回值"]
+        P2S1["1. Read：檢索日誌裡對應步驟的紀錄"]
         P2S2["2. Think：比對日誌事實與待驗假說"]
         G_P2S2_1{"日誌已構成充分反證？"}
         G_P2S2_2{"日誌已證實為唯一定因？"}

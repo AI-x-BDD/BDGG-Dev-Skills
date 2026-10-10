@@ -6,7 +6,7 @@ description: 當要撰寫 Skill 時,只要涉及腳本的部分(`scripts/` 底�
 # SOP
 
 ## Phase 1: 補上腳本執行規範
-1. Read 目標 skill 的 SKILL.md、`rules/` 與 `scripts/` 底下已有的檔;若目標 skill 已有 `rules/腳本執行-規範.md` → 跳至 Phase 2 Step 1。
+1. Read **目標 skill 現有的內容**:SKILL.md、`rules/` 與 `scripts/` 底下已有的檔;若目標 skill 已有 `rules/腳本執行-規範.md` → 跳至 Phase 2 Step 1。
 2. Write 依 `rules/腳本執行規範-格式規範.md` 在目標 skill 的 `rules/` **補上 `腳本執行-規範.md`**。
 
 ## Phase 2: 寫出腳本
@@ -21,7 +21,7 @@ description: 當要撰寫 Skill 時,只要涉及腳本的部分(`scripts/` 底�
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 補上腳本執行規範"]
-        P1S1["1. Read：目標 skill 的 SKILL.md、<br/>rules/ 與 scripts/ 底下已有的檔"]
+        P1S1["1. Read：目標 skill 現有的內容"]
         G_P1S1_1{"目標 skill 已有 rules/<br/>腳本執行-規範.md？"}
         P1S2["2. Write：補上 腳本執行-規範.md"]
     end

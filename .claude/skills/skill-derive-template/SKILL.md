@@ -6,8 +6,8 @@ description: 給定一支已經寫好的 SOP skill,使用者想針對其中某�
 # SOP
 
 ## Phase 1: 提出抽出後的樣子
-1. Read 目標 skill 的 SKILL.md 與已有的樣板;若使用者已講明要抽哪一步、那一步生成的內容要長什麼樣子 → 跳至 Phase 1 Step 3。
-2. Ask 依 `rules/提問-規範.md` 問使用者要抽哪一步(Phase N Step M)、那一步生成的內容要長什麼樣子。
+1. Read 目標 skill 的 **SKILL.md 與已有的樣板**;若使用者已講明要抽哪一步、生成的內容長什麼樣子 → 跳至 Phase 1 Step 3。
+2. Ask 依 `rules/提問-規範.md` **問要抽哪一步、生成的內容長什麼樣子**(哪一步寫成 Phase N Step M)。
 3. Think 依 `rules/抽出-規範.md` **決定抽出後的樣子**:樣板名字與格式、骨架有哪些填位符號、指定那一步改成什麼寫法;若決定不抽出 → 結束;若符合〈沿用已確認的具體轉換〉 → 跳至 Phase 2 Step 1。
 4. Ask **提出抽出後的樣子**,問使用者是否可以寫入;若使用者要修改 → 跳至 Phase 1 Step 3。
 
@@ -23,9 +23,9 @@ description: 給定一支已經寫好的 SOP skill,使用者想針對其中某�
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 提出抽出後的樣子"]
-        P1S1["1. Read：目標 skill 的<br/>SKILL.md 與已有的樣板"]
-        G_P1S1_1{"使用者已講明要抽哪<br/>一步、那一步生成的<br/>內容要長什麼樣子？"}
-        P1S2["2. Ask：問使用者要抽哪一<br/>步(Phase N Step M)、那一<br/>步生成的內容要長什麼樣子"]
+        P1S1["1. Read：SKILL.md 與已有的樣板"]
+        G_P1S1_1{"使用者已講明要抽哪一步、<br/>生成的內容長什麼樣子？"}
+        P1S2["2. Ask：問要抽哪一步、<br/>生成的內容長什麼樣子"]
         P1S3["3. Think：決定抽出後的樣子"]
         G_P1S3_1{"決定不抽出？"}
         G_P1S3_2{"符合〈沿用已確認<br/>的具體轉換〉？"}
@@ -65,7 +65,7 @@ sequenceDiagram
     participant Sub_1 as skill-form-template
     participant Sub_2 as skill-form-sop
     Note over User,Sub_2: Phase 1: 提出抽出後的樣子
-    Main->>User: 2. Ask：問使用者要抽哪一步(Phase N Step M)、那一步生成的內容要長什麼樣子
+    Main->>User: 2. Ask：問要抽哪一步、生成的內容長什麼樣子
     User-->>Main: 回覆確認
     Main->>User: 4. Ask：提出抽出後的樣子
     User-->>Main: 回覆確認

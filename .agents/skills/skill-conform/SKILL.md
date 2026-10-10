@@ -14,7 +14,7 @@ description: 改了 skill-form-sop、skill-form-rule、skill-form-template 或 s
 2. Think 依 `rules/改寫-規範.md` **決定其餘每一項要改成的寫法**。
 3. Ask 依骨架 `templates/改寫提案.md` 與範例 `templates/改寫提案.example.md` **提出改寫提案**,問使用者是否可以寫入;若使用者要修改 → 跳至 Phase 2 Step 2。
 4. Delegate 轉交 skill-form-sop、skill-form-rule、skill-form-template 或 skill-form-script,**照確認過的寫法改寫**使用者要處理的其餘每一項。
-5. Delegate 執行 `uv run scripts/check_skills.py --skills <放 Skill 的目錄> --only <改過的 Skill 名稱>` 取得**改過的每一支 Skill 重新檢查的結果**;若使用者要處理的項目還有不過 → 跳至 Phase 2 Step 2。
+5. Delegate 執行 `uv run scripts/check_skills.py --skills <放 Skill 的目錄> --only <改過的 Skill 名稱>` **取得改過的每支 Skill 重新檢查的結果**;若使用者要處理的項目還有不過 → 跳至 Phase 2 Step 2。
 
 ## Phase 3: 列出遷移紀錄
 1. Think 依骨架 `templates/遷移紀錄.md` 與範例 `templates/遷移紀錄.example.md` **列出遷移紀錄**。
@@ -37,7 +37,7 @@ flowchart TD
         P2S3["3. Ask：提出改寫提案"]
         G_P2S3_1{"使用者要修改？"}
         P2S4["4. Delegate：照確認過的寫法改寫"]
-        P2S5["5. Delegate：改過的每一<br/>支 Skill 重新檢查的結果"]
+        P2S5["5. Delegate：取得改過的每<br/>支 Skill 重新檢查的結果"]
         G_P2S5_1{"使用者要處理的<br/>項目還有不過？"}
     end
     subgraph P3["Phase 3: 列出遷移紀錄"]

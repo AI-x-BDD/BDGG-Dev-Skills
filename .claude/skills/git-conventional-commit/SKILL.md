@@ -6,7 +6,7 @@ description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交�
 # SOP
 
 ## Phase 1: 提交 commit
-1. Read `git status`、`git diff`、`git diff --staged` 與 `git log -n 15 --format='%h %s'` 的輸出。
+1. Read **工作區與最近提交的現況**:`git status`、`git diff`、`git diff --staged` 與 `git log -n 15 --format='%h %s'` 的輸出。
 2. Think 依 `rules/提交計畫-規範.md` 把這批變更**分成一筆一筆的 commit** 並排出提交的順序。
 3. Write 依 `rules/index-規範.md` **把這一筆的變更 stage 進 index**;若這個 repo 沒有建置或測試指令 → 跳至 Phase 1 Step 5。
 4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/verify_staged.py --repo <repo 根目錄> --link <被 gitignore 的建置相依> --cmd <建置與測試指令>` **取得這一筆單獨取出時的建置結果**;若建置或測試失敗 → 跳至 Phase 1 Step 2。
@@ -23,7 +23,7 @@ description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交�
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 提交 commit"]
-        P1S1["1. Read：git status、git diff、<br/>git diff --staged 與 git log<br/>-n 15 --format='%h %s' 的輸出"]
+        P1S1["1. Read：工作區與最近提交的現況"]
         P1S2["2. Think：分成一筆一筆的 commit"]
         P1S3["3. Write：把這一筆的<br/>變更 stage 進 index"]
         G_P1S3_1{"這個 repo 沒有建<br/>置或測試指令？"}

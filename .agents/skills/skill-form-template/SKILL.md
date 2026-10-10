@@ -6,7 +6,7 @@ description: 當要撰寫 Skill 時,只要涉及樣板的部分(`templates/` 底
 # SOP
 
 ## Phase 1: 寫出樣板
-1. Read 目標 skill 的 SKILL.md 與 `templates/` 底下已有的樣板。
+1. Read **目標 skill 現有的內容**:SKILL.md 與 `templates/` 底下已有的樣板。
 2. Write 依 `rules/樣板-格式規範.md` 把使用者要的格式寫成目標 skill **`templates/` 底下的骨架與範例**。
 3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_templates.py --skill <目標 skill 的根目錄>` **取得結構檢查的結果**;若有不過 → 跳至 Phase 1 Step 2。
 4. Think **逐條對照腳本沒有判的 Rule**;若有不過 → 跳至 Phase 1 Step 2。
@@ -17,7 +17,7 @@ description: 當要撰寫 Skill 時,只要涉及樣板的部分(`templates/` 底
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 寫出樣板"]
-        P1S1["1. Read：目標 skill 的 SKILL.md<br/>與 templates/ 底下已有的樣板"]
+        P1S1["1. Read：目標 skill 現有的內容"]
         P1S2["2. Write：templates/<br/>底下的骨架與範例"]
         P1S3["3. Delegate：取得結構檢查的結果"]
         G_P1S3_1{"有不過？"}
