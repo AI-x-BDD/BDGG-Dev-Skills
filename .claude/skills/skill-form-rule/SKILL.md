@@ -5,6 +5,31 @@ description: 當要撰寫 Skill 時 只要涉及到規則部分 規則的撰寫 
 
 # SOP
 
+<details open>
+<summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
+
+```mermaid
+flowchart TD
+    subgraph P1["Phase 1: 寫出 Rule File"]
+        P1S1["1. Read：目標 skill 的 SKILL.md 與已有的 Rule…"]
+        P1S2["2. Write：寫出目標 skill rules/ 底下的 Rule Fi…"]
+        P1S3["3. Delegate：取得結構檢查的結果"]
+        G_P1S3_1{"有不過？"}
+        P1S4["4. Think：逐條對照"]
+        G_P1S4_1{"有不過？"}
+    end
+    End["結束"]
+    P1S1 --> P1S2
+    P1S2 --> P1S3
+    P1S3 --> G_P1S3_1
+    G_P1S3_1 -->|是| P1S2
+    G_P1S3_1 -->|否| P1S4
+    P1S4 --> G_P1S4_1
+    G_P1S4_1 -->|是| P1S2
+    G_P1S4_1 -->|否| End
+```
+</details>
+
 ## Phase 1: 寫出 Rule File
 1. Read 目標 skill 的 SKILL.md 與已有的 Rule File。
 2. Write 依 `rules/RuleFile-格式規範.md` 把使用者要的規則寫成目標 skill `rules/` 底下的 Rule File。

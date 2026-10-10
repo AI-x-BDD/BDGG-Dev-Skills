@@ -5,6 +5,47 @@ description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交�
 
 # SOP
 
+<details open>
+<summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
+
+```mermaid
+flowchart TD
+    subgraph P1["Phase 1: 提交 commit"]
+        P1S1["1. Read：git status、git diff、git diff …"]
+        P1S2["2. Think：把這批變更分成一筆一筆的 commit 並排出提交的順序"]
+        P1S3["3. Write：把這一筆的變更 stage 進 index"]
+        G_P1S3_1{"這個 repo 沒有建置或測試指令？"}
+        P1S4["4. Delegate：取得這一筆單獨取出時的建置結果"]
+        G_P1S4_1{"沒有通過？"}
+        P1S5["5. Write：、骨架 templates/commit-message.…"]
+        P1S6["6. Delegate：取得訊息的檢查結果"]
+        G_P1S6_1{"有 ERROR？"}
+        P1S7["7. Write：以 git commit -F &lt;訊息檔&gt; 提…"]
+        G_P1S7_1{"還有下一筆？"}
+    end
+    subgraph P2["Phase 2: 列出回報"]
+        P2S1["1. Think：、骨架 templates/回報.md 與範例 templ…"]
+    end
+    End["結束"]
+    P1S1 --> P1S2
+    P1S2 --> P1S3
+    P1S3 --> G_P1S3_1
+    G_P1S3_1 -->|是| P1S5
+    G_P1S3_1 -->|否| P1S4
+    P1S4 --> G_P1S4_1
+    G_P1S4_1 -->|是| P1S2
+    G_P1S4_1 -->|否| P1S5
+    P1S5 --> P1S6
+    P1S6 --> G_P1S6_1
+    G_P1S6_1 -->|是| P1S5
+    G_P1S6_1 -->|否| P1S7
+    P1S7 --> G_P1S7_1
+    G_P1S7_1 -->|是| P1S3
+    G_P1S7_1 -->|否| P2S1
+    P2S1 --> End
+```
+</details>
+
 ## Phase 1: 提交 commit
 1. Read `git status`、`git diff`、`git diff --staged` 與 `git log -n 15 --format='%h %s'` 的輸出。
 2. Think 依 `rules/提交計畫-規範.md` 把這批變更分成一筆一筆的 commit 並排出提交的順序。
