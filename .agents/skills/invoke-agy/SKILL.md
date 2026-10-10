@@ -1,6 +1,6 @@
 ---
 name: invoke-agy
-description: 需要將開發、重構、架構設計或探索任務委派給 Antigravity CLI (agy) 執行時,用這支 Skill 進行環境檢查、組裝任務指示、以非互動模式調用並驗收結果;使用者提到調用 agy、呼叫 agy、叫 agy、委派 agy、run agy、invoke agy、antigravity cli、叫 agy 做事時使用。
+description: 需要將開發、重構、架構設計或探索任務委派給 Antigravity CLI (agy) 執行時,用這支 Skill 進行環境檢查、組裝任務指示、以非互動模式調用並驗收結果;使用者提到調用 agy、呼叫 agy、叫 agy、委派 agy、run agy、invoke agy、antigravity cli、叫 agy 做事時使用。(未驗證)
 ---
 
 # SOP
