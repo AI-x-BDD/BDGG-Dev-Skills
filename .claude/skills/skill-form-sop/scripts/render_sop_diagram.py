@@ -249,7 +249,7 @@ RESOURCE = re.compile(r"`((?:rules|templates)/[^`\s]+)`")
 SCRIPT_REF = re.compile(r"scripts/[\w.\-]+\.py")
 NEGATIVE = re.compile(r"^(沒有|無|不|未)")
 BOLD = re.compile(r"\*\*(.+?)\*\*")
-BOLD_MAX_WIDTH = 32  # 粗體的顯示寬度上限(16 個中文字)
+BOLD_MAX_WIDTH = 36  # 粗體的顯示寬度上限(18 個中文字)
 DIAGRAM_BLOCK = re.compile(
     r"<details[^>]*>\s*<summary>.*?流程視覺圖.*?</summary>.*?</details>",
     re.DOTALL,
