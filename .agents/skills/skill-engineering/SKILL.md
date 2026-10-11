@@ -25,10 +25,10 @@ description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出�
 3. Delegate 轉交 skill-derive-rule、skill-derive-template 或 skill-derive-script,**把藍圖裡每一個新掛的部位掛上去**,一次掛一步;若掛上去的內容和藍圖不同 → 跳至 Phase 2 Step 1。
 
 ## Phase 5: 列出驗收紀錄
-1. Write 替藍圖的每一列驗收輸入,**把實跑會改到的檔複製到 `tmp/verify/`** 底下各自的資料夾。
-2. Delegate 依骨架 `templates/實跑指示.md` 與範例 `templates/實跑指示.example.md` 把每一列驗收輸入與它的複本交給不帶這場對話脈絡的 subagent,**實跑寫完的目標 Skill**。
+1. Write 替還沒有實跑的每一列驗收輸入與每一種要查證的讀法,**把實跑會改到的檔複製到 `tmp/verify/`** 底下各自的資料夾。
+2. Delegate 依骨架 `templates/實跑指示.md` 與範例 `templates/實跑指示.example.md` 把這些驗收輸入、要查證的讀法與各自的複本交給不帶這場對話脈絡的 subagent,**實跑寫完的目標 Skill**。
 3. Read **每一份實跑的結果**:複本和原本的差異、交出的腳本執行的結果。
-4. Think **比對每一份實跑結果**;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1。
+4. Think **比對每一份實跑結果**;若驗收紀錄裡有一列判定為對不上 → 跳至 Phase 2 Step 1;若有一種還沒有實跑過的讀法照著做會讓使用者的請求交不出來 → 跳至 Phase 5 Step 1。
 5. Report 依骨架 `templates/驗收紀錄.md` 與範例 `templates/驗收紀錄.example.md` 在給使用者的回覆裡**列出驗收紀錄**。
 
 <details open>
@@ -69,6 +69,7 @@ flowchart TD
         P5S3["3. Read：每一份實跑的結果"]
         P5S4["4. Think：比對每一份實跑結果"]
         G_P5S4_1{"驗收對不上？"}
+        G_P5S4_2{"有一種還沒有實跑過的<br/>讀法照著做會讓使用者<br/>的請求交不出來？"}
         P5S5["5. Report：列出驗收紀錄"]
     end
     End["結束"]
@@ -104,7 +105,9 @@ flowchart TD
     P5S3 --> P5S4
     P5S4 --> G_P5S4_1
     G_P5S4_1 -->|是| P2S1
-    G_P5S4_1 -->|否| P5S5
+    G_P5S4_1 -->|否| G_P5S4_2
+    G_P5S4_2 -->|是| P5S1
+    G_P5S4_2 -->|否| P5S5
     P5S5 --> End
 ```
 
