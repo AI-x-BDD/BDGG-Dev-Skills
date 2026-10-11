@@ -20,8 +20,8 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 1. Write **將變更推送到 remote**;若整合風格是直接進 trunk → 跳至 Phase 3 Step 3。
 2. Write 發起 PR,**通過 review 與 CI 後合併回 trunk**,並立刻刪除短期 branch。
 3. Read 確認 remote trunk 上**最新 commit 的建置或 CI 狀態**;若狀態為綠 → 跳至 Phase 4 Step 1。
-4. Write **立刻 revert 或緊急修復**,讓 remote trunk 回到綠燈。
-5. Read **修復後 remote trunk 的建置或 CI 狀態**;若狀態仍是紅 → 跳至 Phase 3 Step 4。
+4. Write **revert remote trunk 上這次的 commit**,照這次的整合風格送上 remote。
+5. Read remote 上 **revert 後 trunk 的建置或 CI 狀態**;若狀態為綠 → 跳至 Phase 1 Step 3。
 
 ## Phase 4: 交付整合回報
 1. Report 依骨架 `templates/整合回報.md` 與範例 `templates/整合回報.example.md` **向使用者回報整合結果**,列出切法、整合風格、本機建置證據、trunk 狀態與留下的開關或技術債。
@@ -50,9 +50,9 @@ flowchart TD
         P3S2["2. Write：通過 review<br/>與 CI 後合併回 trunk"]
         P3S3["3. Read：最新 commit<br/>的建置或 CI 狀態"]
         G_P3S3_1{"狀態為綠？"}
-        P3S4["4. Write：立刻 revert 或緊急修復"]
-        P3S5["5. Read：修復後 remote<br/>trunk 的建置或 CI 狀態"]
-        G_P3S5_1{"狀態仍是紅？"}
+        P3S4["4. Write：revert remote<br/>trunk 上這次的 commit"]
+        P3S5["5. Read：revert 後<br/>trunk 的建置或 CI 狀態"]
+        G_P3S5_1{"狀態為綠？"}
     end
     subgraph P4["Phase 4: 交付整合回報"]
         P4S1["1. Report：向使用者回報整合結果"]
@@ -78,7 +78,7 @@ flowchart TD
     G_P3S3_1 -->|否| P3S4
     P3S4 --> P3S5
     P3S5 --> G_P3S5_1
-    G_P3S5_1 -->|是| P3S4
+    G_P3S5_1 -->|是| P1S3
     G_P3S5_1 -->|否| P4S1
     P4S1 --> End
 ```
