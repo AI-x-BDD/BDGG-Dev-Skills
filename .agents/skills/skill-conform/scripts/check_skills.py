@@ -5,7 +5,7 @@
 """對一個目錄底下的每一支 Skill 執行 form 系列的四支檢查腳本,把結果合併成一份:SOP 與流程視覺圖、Rule File、樣板、腳本。
 
 另外做兩項要跨檔才判得了的檢查:每個 Rule File 的 good example 裡的 SOP 步驟是否符合現行的 SOP 格式;
-把關紀錄-格式規範.md 逐條列出的範例表格是否和同一支 Skill 的 SOP-格式規範.md 的 Rule 一致。
+把關紀錄-格式規範.md 逐條列出的範例表格是否和同一支 Skill 的 SOP-格式規範.md、SOP-按需載入-格式規範.md 的 Rule 一致。
 
 檢查腳本取自和本 skill 同一層目錄的 skill-form-sop、skill-form-rule、skill-form-template 與 skill-form-script。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。加上 --write-diagrams 時,先替 --only 指定的 Skill 注入流程視覺圖再檢查。
@@ -40,7 +40,8 @@ SYNTHETIC_HEADER = "# SOP\n\n## Phase 1: 檢查範例\n"
 # 那邊的用字改了,這裡會認不出來而把它們報成不過,不會漏報。
 REORDER_ARTIFACTS = ("要跳至的", "已經點名", "是第一個執行腳本的步驟")
 LEDGER_FILE = "把關紀錄-格式規範.md"
-SOP_RULE_FILE = "SOP-格式規範.md"
+# 把關紀錄要逐條列出的規範,依列出的順序
+LEDGER_SOURCES = ("SOP-格式規範.md", "SOP-按需載入-格式規範.md")
 LEDGER_ROW = re.compile(r"^\|\s*([^|]+?)\s*\|\s*(must|should)\s*\|")
 
 
@@ -173,22 +174,23 @@ def check_example_steps(skill: Path, sop_checker: Path) -> list[dict]:
 
 
 def check_ledger_example(skill: Path) -> list[dict]:
-    """把關紀錄規範第一個 good example 逐條列出的表格,要和同一支 Skill 的 SOP-格式規範.md 的 Rule 依序一致。
+    """把關紀錄規範第一個 good example 逐條列出的表格,要和同一支 Skill 的 SOP-格式規範.md 接上 SOP-按需載入-格式規範.md 的 Rule 依序一致。
 
-    這支 Skill 沒有這兩個檔時不檢查。
+    這支 Skill 沒有把關紀錄規範,或這兩份規範一份都沒有時不檢查;只有其中一份時只比那一份。
     """
     ledger = skill / "rules" / LEDGER_FILE
-    sop_rules = skill / "rules" / SOP_RULE_FILE
-    if not (ledger.is_file() and sop_rules.is_file()):
+    sources = [skill / "rules" / name for name in LEDGER_SOURCES if (skill / "rules" / name).is_file()]
+    if not (ledger.is_file() and sources):
         return []
+    named = "、".join(f"`{source.name}`" for source in sources)
 
     def report(rule: str, line: int, text: str, reason: str) -> list[dict]:
         return [item("Rule File", CHECKERS["rule"][0], rule, f"{skill.name}/rules/{LEDGER_FILE}", f"rules/{LEDGER_FILE}", line, text, reason)]
 
-    expected = rule_titles(sop_rules)
+    expected = [title for source in sources for title in rule_titles(source)]
     blocks = good_example_blocks(ledger)
     if not blocks:
-        return report("", 0, "", f"找不到第一個 good example 的 code block;它要逐條列出 `{SOP_RULE_FILE}` 的 {len(expected)} 條 Rule")
+        return report("", 0, "", f"找不到第一個 good example 的 code block;它要逐條列出 {named} 的 {len(expected)} 條 Rule")
     block = blocks[0]
     rows = [(number, line.strip(), match.group(1), match.group(2)) for number, line in block["lines"] if (match := LEDGER_ROW.match(line))]
     actual = [(name, strength) for _number, _text, name, strength in rows]
@@ -218,7 +220,7 @@ def check_ledger_example(skill: Path) -> list[dict]:
         block["rule"],
         number,
         text,
-        f"good example 的表格要和 `{SOP_RULE_FILE}` 的 {len(expected)} 條 Rule 依序一致(現在列了 {len(rows)} 列):{';'.join(problems)}",
+        f"good example 的表格要和 {named} 的 {len(expected)} 條 Rule 依序一致(現在列了 {len(rows)} 列):{';'.join(problems)}",
     )
 
 
