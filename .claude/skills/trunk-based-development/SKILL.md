@@ -9,7 +9,7 @@ description: 開始做一個功能、要切分支或決定分支策略、要合�
 1. Read **目前 repo 的開工狀態**:remote 狀態、預設 branch、工作目錄是否有未提交變更,以及 CI 與本機建置指令。
 2. Think 依 `rules/開工判斷-規範.md` **評估變更規模與選擇整合風格**(直接進 trunk 或短期 branch)。
 3. Write **同步 trunk 的最新狀態**;若整合風格是直接進 trunk → 跳至 Phase 2 Step 1。
-4. Write **由最新 trunk 開出短期 branch**。
+4. Write 依 `rules/短期分支-規範.md` **由最新 trunk 開出短期 branch**。
 
 ## Phase 2: 完成通過本機建置的變更
 1. Write 依 `rules/分支與變更-規範.md` **實作功能或修復並編寫測試**,在本機形成 commit;長變更使用 feature flag 或 branch by abstraction 隔絕未完成功能。
