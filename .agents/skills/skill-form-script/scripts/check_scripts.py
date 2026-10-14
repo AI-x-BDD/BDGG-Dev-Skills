@@ -28,7 +28,7 @@ SCRIPT_RULES = "腳本-格式規範.md"
 FIXED_RULES = "腳本執行規範-格式規範.md"
 # (Rule 名稱, 所在的規範檔, 只判一部分時留給執行的人對照的那一半);8 條的強度都是 must
 RULES = [
-    (R_PY, SCRIPT_RULES, None),
+    (R_PY, SCRIPT_RULES, "腳本只判非 `.py` 的檔第一行有沒有宿主標記;它是不是真的由宿主程式執行、而不是 agent 自己執行,請自己對照"),
     (R_SINGLE, SCRIPT_RULES, None),
     (R_PEP, SCRIPT_RULES, None),
     (R_RANGE, SCRIPT_RULES, None),
@@ -76,6 +76,18 @@ def call_name(node: ast.Call) -> tuple[str, bool]:
     return "", False
 
 
+# 宿主腳本:第一行是 `// host: <宿主>` 或 `# host: <宿主>`,由宿主程式執行,不套 agent 腳本的規則
+HOST_MARKER = re.compile(r"^\s*(//|#)\s*host:\s*\S")
+
+
+def first_line(path: Path) -> str:
+    try:
+        with path.open(encoding="utf-8") as f:
+            return f.readline()
+    except (UnicodeDecodeError, OSError):
+        return ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--skill", required=True, type=Path, help="目標 skill 的根目錄(含 SKILL.md 的那一層)")
@@ -99,9 +111,10 @@ def main() -> int:
         else []
     )
     scripts = [p for p in files if p.suffix == ".py"]
+    host_scripts = [p for p in files if p.suffix != ".py" and HOST_MARKER.match(first_line(p))]
     for path in files:
-        if path.suffix != ".py":
-            bad(R_PY, path, "`scripts/` 底下只放 `.py`;這個檔要改寫成 Python 腳本")
+        if path.suffix != ".py" and path not in host_scripts:
+            bad(R_PY, path, "`scripts/` 底下只放 `.py`;這個檔要改寫成 Python 腳本,或在宿主程式內執行的話,第一行用註解標明 `host: <宿主名稱>`")
     if files:
         for base in (scripts_dir, args.skill):
             for name in EXTRA_DEPENDENCY_FILES:
@@ -199,7 +212,7 @@ def main() -> int:
     count = len(scripts)
     none = "`scripts/` 底下沒有腳本"
     passed_evidence = {
-        R_PY: f"`scripts/` 底下 {len(files)} 個檔都是 `.py`" if files else none,
+        R_PY: (f"`scripts/` 底下 {len(scripts)} 個 `.py`" + (f"、{len(host_scripts)} 個標明宿主的宿主腳本" if host_scripts else "")) if files else none,
         R_SINGLE: f"{count} 支腳本都沒有 import skill 裡的其他 `.py`" if count else none,
         R_PEP: f"{count} 支腳本的檔頭都有 PEP 723 區塊,沒有另外放依賴檔" if count else none,
         R_RANGE: (f"{dependency_count} 個第三方套件都寫了下限與上限" if dependency_count else "沒有第三方套件") if count else none,
