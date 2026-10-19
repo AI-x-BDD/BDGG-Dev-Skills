@@ -10,6 +10,8 @@
   applies_to    _shared/ 的檔有 applies_to 檔頭,列出的每個 <skill>/<產出物> 都合法;其他檔沒有 applies_to
   Rule 格式     每個 # 標題都是 `# Rule N [must|should] - 名稱`,N 從 1 起連號,每條都有 `- 為什麼:`
   example 成對  每條 Rule 至少有一個 ## good example 與一個 ## bad example,每個 example 都附 code block
+  取代合法      `- 取代:<skill>/rules/<規範檔>〈Rule 名稱〉` 指到的規範檔與 Rule 存在,Skill 是這條條文管的產出物
+                所屬的 Skill,而且不在 LOCKED 列的不可取代範圍
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -31,13 +33,42 @@ SDD_SKILLS = [
 ]
 NOT_ARTIFACTS = {"委派指示"}
 
+# 不可取代的範圍:流程契約(下游腳本讀取的結構)與機密
+LOCKED = {
+    "整支 Skill": {
+        "specify": "spec.md 的段落與 FR、NFR、SC 編號被 system-analysis、tasks、implement 的腳本讀取",
+        "technical-research": "research.md 的 R 編號與 techstack.md 的段落被 tasks、implement 的腳本引用",
+        "system-analysis": "plan.md 的端點、波段表與 Documentation 樹被 planner 與 implement 的腳本讀取",
+        "tasks": "tasks.md 的任務編號、⚙ 與 📎 錨點被 implement 的腳本讀取"
+    },
+    "Rule 名稱": {
+        "憲法的條文和本 Skill 的規範都要照做": "管的是怎麼套用憲法本身",
+        "只有 waive 列的 Rule 改照條文做": "管的是怎麼套用憲法本身",
+        "沒有點名取代的衝突照本 Skill 的 Rule 做並交給使用者決定": "管的是怎麼套用憲法本身"
+    },
+    "規範檔": {
+        "腳本執行-規範.md": "管的是怎麼執行腳本,不是產出物",
+        "憲法-規範.md": "管的是怎麼套用憲法本身"
+    },
+    "Rule": {
+        "api-plan/rules/契約-規範.md〈前幾步定下的照原文用,不另起〉": "跨規格檔的一致性,下游的 data-plan 與 tasks 依賴同一套名稱",
+        "data-plan/rules/資料表-規範.md〈欄位對應前幾步規格檔的原文〉": "跨規格檔的一致性",
+        "deploy-plan/rules/部署-規範.md〈機密只寫成 ${變數},值不進任何檔〉": "機密",
+        "deploy-plan/rules/部署-規範.md〈port 與路徑照前幾步規格檔的原文〉": "跨規格檔的一致性",
+        "uiux-plan/rules/原型-規範.md〈每個驗收情境都看得到〉": "畫面的 data-state 是 tasks 的錨點"
+    }
+}
+
 RULE_HEADING = re.compile(r"^# Rule (\d+) \[(must|should)\] - \S")
 FRONT_APPLIES = re.compile(r"^applies_to:\s*\[(.*)\]\s*$")
+REPLACE_LINE = re.compile(r"^- 取代[:：]\s*`?([\w-]+)/rules/([^`〈]+?)`?\s*〈(.+)〉\s*$")
+SKILL_RULE = re.compile(r"^# Rule \d+ \[(?:must|should)\] - (.+?)\s*$", re.MULTILINE)
 
 CHECK_PATH = "路徑合法"
 CHECK_APPLIES = "applies_to"
 CHECK_RULE = "Rule 格式"
 CHECK_EXAMPLE = "example 成對"
+CHECK_REPLACE = "取代合法"
 
 
 def legal_artifacts(skills_dir: Path) -> dict[str, set[str]]:
@@ -67,8 +98,8 @@ def split_front(lines: list[str]) -> tuple[list[str] | None, list[str], int]:
     return None, lines, 1
 
 
-def check_body(rel: str, body: list[str], first_line: int, bad) -> int:
-    """檢查本文的 Rule 與 example;回傳 Rule 條數。"""
+def check_body(rel: str, body: list[str], first_line: int, bad) -> list[dict]:
+    """檢查本文的 Rule 與 example;回傳每條 Rule(含它的取代行)。"""
     rules: list[dict] = []
     current: dict | None = None
     section: dict | None = None
@@ -89,7 +120,7 @@ def check_body(rel: str, body: list[str], first_line: int, bad) -> int:
                 current = None
                 section = None
                 continue
-            current = {"no": int(m.group(1)), "line": lineno, "why": False, "sections": []}
+            current = {"no": int(m.group(1)), "line": lineno, "why": False, "sections": [], "replaces": []}
             rules.append(current)
             section = None
         elif line.startswith("## "):
@@ -105,6 +136,8 @@ def check_body(rel: str, body: list[str], first_line: int, bad) -> int:
             current["sections"].append(section)
         elif current is not None and section is None and line.startswith("- 為什麼:"):
             current["why"] = True
+        elif current is not None and section is None and line.startswith("- 取代"):
+            current["replaces"].append({"line": lineno, "text": line.strip()})
         elif current is None and line.strip():
             bad(CHECK_RULE, rel, f"第 {lineno} 行", "第一條 Rule 之前有內容;檔頭以外的內容都要放在某一條 Rule 底下")
     if in_fence:
@@ -124,12 +157,44 @@ def check_body(rel: str, body: list[str], first_line: int, bad) -> int:
         for s in rule["sections"]:
             if not s["fence"]:
                 bad(CHECK_EXAMPLE, rel, f"第 {s['line']} 行 {s['kind']} example", "沒有附 code block")
-    return len(rules)
+    return rules
+
+
+def check_replaces(rel: str, rules: list[dict], target_skills: set[str], skills_dir: Path, locked: dict, bad) -> None:
+    """檢查每一行取代:指到的 Rule 存在、屬於這條條文管的 Skill、不在不可取代的範圍。"""
+    for rule in rules:
+        for item in rule["replaces"]:
+            where = f"第 {item['line']} 行 Rule {rule['no']}"
+            m = REPLACE_LINE.match(item["text"])
+            if not m:
+                bad(CHECK_REPLACE, rel, where, "取代要寫成 `- 取代:<skill>/rules/<規範檔>〈Rule 名稱〉`")
+                continue
+            skill, rule_file, name = m.group(1), m.group(2).strip(), m.group(3).strip()
+            key = f"{skill}/rules/{rule_file}〈{name}〉"
+            if skill not in target_skills:
+                bad(CHECK_REPLACE, rel, where, f"取代的是 {skill} 的規範,但這條條文管的產出物屬於 {', '.join(sorted(target_skills))}")
+                continue
+            path = skills_dir / skill / "rules" / rule_file
+            if not path.is_file():
+                bad(CHECK_REPLACE, rel, where, f"找不到規範檔 {skill}/rules/{rule_file}")
+                continue
+            names = SKILL_RULE.findall(path.read_text(encoding="utf-8"))
+            if name not in names:
+                bad(CHECK_REPLACE, rel, where, f"{skill}/rules/{rule_file} 裡沒有〈{name}〉;現有的是 " + "、".join(f"〈{n}〉" for n in names))
+                continue
+            if skill in locked.get("整支 Skill", {}):
+                bad(CHECK_REPLACE, rel, where, f"{skill} 的規範不可取代:{locked['整支 Skill'][skill]}")
+            elif rule_file in locked.get("規範檔", {}):
+                bad(CHECK_REPLACE, rel, where, f"{rule_file} 不可取代:{locked['規範檔'][rule_file]}")
+            elif name in locked.get("Rule 名稱", {}):
+                bad(CHECK_REPLACE, rel, where, f"〈{name}〉不可取代:{locked['Rule 名稱'][name]}")
+            elif key in locked.get("Rule", {}):
+                bad(CHECK_REPLACE, rel, where, f"〈{name}〉不可取代:{locked['Rule'][key]}")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="檢查專案 constitution/ 資料夾裡每個憲法檔的路徑、applies_to 檔頭、Rule 格式與 good/bad example。"
+        description="檢查專案 constitution/ 資料夾裡每個憲法檔的路徑、applies_to 檔頭、Rule 格式、good/bad example 與取代的對象。"
     )
     parser.add_argument(
         "--constitution",
@@ -157,7 +222,10 @@ def main() -> int:
         return 2
     legal_ids = {f"{s}/{a}" for s, names in artifacts.items() for a in names}
 
-    violations: dict[str, list[dict]] = {CHECK_PATH: [], CHECK_APPLIES: [], CHECK_RULE: [], CHECK_EXAMPLE: []}
+    locked = LOCKED
+    violations: dict[str, list[dict]] = {
+        CHECK_PATH: [], CHECK_APPLIES: [], CHECK_RULE: [], CHECK_EXAMPLE: [], CHECK_REPLACE: []
+    }
 
     def bad(check: str, file: str, where: str, message: str) -> None:
         violations[check].append({"file": file, "where": where, "message": message})
@@ -202,8 +270,10 @@ def main() -> int:
         elif front is not None:
             bad(CHECK_APPLIES, rel, "檔頭", "只有 _shared/ 的檔才有檔頭;這個檔的約束對象就是它的路徑")
 
-        count = check_body(rel, body, first_line, bad)
-        summary.append({"file": rel, "rules": count, "applies_to": applies if shared else [rel[:-3]]})
+        rules = check_body(rel, body, first_line, bad)
+        targets = applies if shared else [rel[:-3]]
+        check_replaces(rel, rules, {t.split("/")[0] for t in targets}, skills_dir, locked, bad)
+        summary.append({"file": rel, "rules": len(rules), "applies_to": targets})
 
     checks = [
         {"check": name, "result": "不過" if items else "過", "violations": items}
