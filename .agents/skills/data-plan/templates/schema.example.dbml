@@ -1,0 +1,89 @@
+Project online_shop {
+  database_type: 'PostgreSQL'
+  Note: 'S4(E3 資料庫(PostgreSQL))依 spec.md、plan.md 與前幾步的規格檔產出'
+}
+
+Enum order_status {
+  pending [note: '已建立,等待付款']
+  paid [note: '金流通知驗簽通過']
+  cancelled [note: '付款連結 15 分鐘內未付款']
+}
+
+Enum payment_method {
+  credit_card [note: '信用卡']
+  atm [note: 'ATM 轉帳']
+  cvs [note: '超商代碼']
+}
+
+Table products {
+  id varchar(32) [pk, note: '對外的 productId']
+  name varchar(100) [not null]
+  price integer [not null, note: '售價,新台幣元,>= 0']
+  stock integer [not null, default: 0, note: '>= 0']
+  is_listed boolean [not null, default: true, note: 'false 表示已下架,對外回 PRODUCT_NOT_FOUND']
+  category varchar(50) [not null]
+  indexes {
+    (category, is_listed) [name: 'idx_products_category']
+  }
+  Note: '需求: FR-001、FR-002、FR-003'
+}
+
+Table carts {
+  id varchar(32) [pk]
+  buyer_id varchar(32) [unique, note: '未登入的訪客為 null,以匿名 cookie 對應']
+  anonymous_token varchar(64) [unique]
+  updated_at timestamptz [not null]
+  Note: '需求: FR-004、FR-005'
+}
+
+Table cart_items {
+  cart_id varchar(32) [not null]
+  product_id varchar(32) [not null]
+  quantity integer [not null, note: '1–99,對外回 INVALID_QUANTITY']
+  indexes {
+    (cart_id, product_id) [pk]
+  }
+  Note: '需求: FR-004、FR-005、FR-006'
+}
+
+Table orders {
+  id varchar(12) [pk, note: '對外的 orderId,格式 ORD- + 8 碼英數']
+  buyer_id varchar(32) [not null]
+  status order_status [not null, default: 'pending']
+  total integer [not null, note: '新台幣元']
+  shipping_address_id varchar(32) [not null]
+  payment_expires_at timestamptz [not null, note: '建立後 15 分鐘']
+  created_at timestamptz [not null]
+  indexes {
+    (buyer_id, created_at) [name: 'idx_orders_buyer']
+  }
+  Note: '需求: FR-007、FR-008、FR-011'
+}
+
+Table order_items {
+  order_id varchar(12) [not null]
+  product_id varchar(32) [not null]
+  name varchar(100) [not null, note: '下單當下的商品名稱']
+  price integer [not null, note: '下單當下的售價']
+  quantity integer [not null]
+  indexes {
+    (order_id, product_id) [pk]
+  }
+  Note: '需求: FR-007、FR-010'
+}
+
+Table payments {
+  merchant_trade_no varchar(20) [pk, note: '照 S1 的 MerchantTradeNo']
+  order_id varchar(12) [not null, unique]
+  rtn_code integer [note: '照 S1 的 RtnCode;尚未收到通知為 null']
+  trade_amt integer [not null, note: '照 S1 的 TradeAmt']
+  method payment_method [note: '尚未付款為 null']
+  paid_at timestamptz [note: '尚未付款為 null']
+  Note: '需求: FR-009、NFR-003'
+}
+
+Ref: cart_items.cart_id > carts.id [delete: cascade]
+Ref: cart_items.product_id > products.id [delete: restrict]
+Ref: order_items.order_id > orders.id [delete: cascade]
+Ref: order_items.product_id > products.id [delete: restrict]
+Ref: payments.order_id - orders.id [delete: restrict]

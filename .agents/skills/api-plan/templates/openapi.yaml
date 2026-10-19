@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: {{介面名稱}}
+  version: {{契約版本,例如 0.1.0}}
+  description: S{{步驟序號}}(E{{端點序號}} {{端點名稱}})依 spec.md 與 plan.md 產出
+servers:
+  - url: {{base URL}}
+paths:
+  {{路徑}}:
+    {{HTTP 方法:get、post、put、patch 或 delete}}:
+      operationId: {{操作的 camelCase 名稱}}
+      summary: {{操作名稱}}
+      x-requirements: [{{需求出處的編號,用逗號分隔}}]
+      x-callers: {{能呼叫的身分與狀態條件}}
+      parameters:
+        - name: {{參數名稱}}
+          in: {{參數位置:path、query 或 header}}
+          required: {{是否必填:true 或 false}}
+          schema:
+            type: {{參數型別:string、integer、number 或 boolean}}
+      requestBody:
+        required: true
+        content:
+          {{請求的媒體型別:application/json 或 application/x-www-form-urlencoded}}:
+            schema:
+              $ref: '#/components/schemas/{{請求的 schema 名稱}}'
+      responses:
+        '{{成功的狀態碼}}':
+          description: {{成功時回什麼}}
+          x-recipients: {{收件者}}
+          content:
+            {{回應的媒體型別:application/json 或 text/plain}}:
+              schema:
+                $ref: '#/components/schemas/{{回應的 schema 名稱}}'
+        '{{失敗的狀態碼}}':
+          description: {{這個狀態碼涵蓋的不符原因}}
+          x-error-codes: [{{錯誤碼,用逗號分隔}}]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    {{schema 名稱}}:
+      type: {{schema 型別:object 或 string}}
+      enum: [{{schema 是 string 時可以填的值,用逗號分隔}}]
+      required: [{{必填欄位,用逗號分隔}}]
+      properties:
+        {{欄位名稱}}:
+          type: {{欄位型別:string、integer、number、boolean、array 或 object}}
+          format: {{欄位格式,例如 date-time 或 uri}}
+          enum: [{{可以填的值,用逗號分隔}}]
+          minimum: {{最小值}}
+          maximum: {{最大值}}
+          pattern: '{{欄位要符合的正規表示式}}'
+          description: {{欄位的意思與單位}}
+          items:
+            $ref: '#/components/schemas/{{陣列元素的 schema 名稱}}'
+        {{參照其他 schema 的欄位名稱}}:
+          $ref: '#/components/schemas/{{被參照的 schema 名稱}}'
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [{{這個介面所有的錯誤碼,用逗號分隔}}]
+        message:
+          type: string

@@ -1,0 +1,65 @@
+asyncapi: 3.0.0
+info:
+  title: {{介面名稱}}
+  version: {{契約版本,例如 0.1.0}}
+  description: S{{步驟序號}}(E{{端點序號}} {{端點名稱}})依 spec.md 與 plan.md 產出
+servers:
+  {{伺服器代號}}:
+    host: {{主機與 port}}
+    pathname: {{WebSocket 路徑}}
+    protocol: {{協定:ws 或 wss}}
+channels:
+  {{channel 代號}}:
+    address: {{WebSocket 路徑}}
+    messages:
+      {{訊息代號}}:
+        $ref: '#/components/messages/{{訊息代號}}'
+operations:
+  {{操作代號}}:
+    action: {{伺服器的動作:send 或 receive}}
+    channel:
+      $ref: '#/channels/{{channel 代號}}'
+    messages:
+      - $ref: '#/channels/{{channel 代號}}/messages/{{訊息代號}}'
+    summary: {{操作名稱}}
+    x-requirements: [{{需求出處的編號,用逗號分隔}}]
+    x-callers: {{能送出的身分與狀態條件,或觸發推送的時機}}
+    x-error-codes: [{{錯誤碼,用逗號分隔;推送或沒有錯誤就留空}}]
+components:
+  messages:
+    {{訊息代號}}:
+      name: {{訊息的 type 值}}
+      summary: {{訊息的意思}}
+      x-recipients: {{收件者}}
+      payload:
+        $ref: '#/components/schemas/{{訊息內容的 schema 名稱}}'
+  schemas:
+    {{schema 名稱}}:
+      type: object
+      required: [{{必填欄位,用逗號分隔}}]
+      properties:
+        {{欄位名稱}}:
+          type: {{欄位型別:string、integer、number、boolean、array 或 object}}
+          const: {{固定的值,例如訊息的 type}}
+          format: {{欄位格式,例如 date-time 或 uri}}
+          enum: [{{可以填的值,用逗號分隔}}]
+          minimum: {{最小值}}
+          maximum: {{最大值}}
+          pattern: '{{欄位要符合的正規表示式}}'
+          description: {{欄位的意思與單位}}
+          items:
+            $ref: '#/components/schemas/{{陣列元素的 schema 名稱}}'
+        {{參照其他 schema 的欄位名稱}}:
+          $ref: '#/components/schemas/{{被參照的 schema 名稱}}'
+    Error:
+      type: object
+      required: [type, code, message]
+      properties:
+        type:
+          type: string
+          const: error
+        code:
+          type: string
+          enum: [{{這個介面所有的錯誤碼,用逗號分隔}}]
+        message:
+          type: string

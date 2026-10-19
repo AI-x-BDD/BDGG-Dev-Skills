@@ -12,15 +12,14 @@ specs/001-photo-album-organizer/
 ├── research.md          # 輸入(technical-research 產出)
 ├── techstack.md         # 輸入(technical-research 產出)
 ├── plan.md              # 本文件
-├── data-model.md        # S4 產出(E3 資料庫)
+├── prototype/           # S2 產出(E1 前端,uiux-plan)
+├── deploy/              # S5、S8 產出(E4 檔案系統、E6 部署與網路,deploy-plan)
 └── contracts/
-    ├── payment.md       # S1 產出(E7 第三方金流)
-    ├── ui.md            # S2 產出(E1 前端)
-    ├── openapi.yaml     # S3 產出(E2 後端 REST API)
-    ├── filesystem.md    # S5 產出(E4 檔案系統)
-    ├── imaging.md       # S6 產出(E5 影像處理工具)
-    ├── metadata.md      # S7 產出(E8 拍攝資訊讀取工具)
-    └── deploy.md        # S8 產出(E6 部署與網路)
+    ├── payment.openapi.yaml   # S1 產出(E7 第三方金流,api-plan)
+    ├── album.openapi.yaml     # S3 產出(E2 後端 REST API,api-plan)
+    ├── album.dbml             # S4 產出(E3 資料庫,data-plan)
+    ├── imaging.openapi.yaml   # S6 產出(E5 影像處理工具,api-plan)
+    └── metadata.openapi.yaml  # S7 產出(E8 拍攝資訊讀取工具,api-plan)
 ```
 
 ### Source Code (repository root)
@@ -52,7 +51,7 @@ e2e/                         # 跨端點的端對端測試
 deploy/                      # E6 部署與網路
 ```
 
-**Structure Decision**: 前後端分成兩個 workspace,但打包成**同一個 image**:Fastify 同時提供 `/api` 和前端的建置產物。好處是同源,不用處理 CORS,NPM 也只要一個 proxy host。MySQL 是同一個 stack 裡的第二個 service。
+**Structure Decision**: 前後端分成兩個 workspace,但打包成**同一個 image**:Fastify 同時提供 `/api` 和前端的建置產物。好處是同源,不用處理 CORS,前面若有反向代理也只要一個入口。MySQL 是同一個 stack 裡的第二個 service。
 
 後端分層是 `routes → services → (repos → db | payment | imaging | metadata)`:`services/` 是用例,往下呼叫四種對外部的轉接——`repos/` 接資料庫、`payment/` 接金流商、`imaging/` 接影像處理工具、`metadata/` 接拍攝資訊讀取工具。`domain` 是不依賴 I/O 的純函式,讓核心邏輯可以用 < 100ms 的單元測試涵蓋。
 
@@ -60,7 +59,7 @@ deploy/                      # E6 部署與網路
 
 ## 分析流程規劃
 
-> 本段只排定分析的順序,**還不做分析**。每個介面在後續各占至少一個步驟,分析結果由那一步產出。
+> 本段排定分析的順序與每一步指派的 planner;分析由 Phase 3 照波段交給 sub agent 執行,產出寫在 Documentation 樹列的路徑。
 
 ### 端點盤點
 
@@ -73,7 +72,7 @@ deploy/                      # E6 部署與網路
 | E3 | 資料庫(MySQL) | 資料表、關聯、唯一性與狀態約束 | FR-004、FR-009、FR-010、FR-016、Key Entities |
 | E4 | 檔案系統 | 照片原檔(`PHOTO_ROOT` 唯讀)與縮圖(`DATA_DIR`)的路徑與讀寫規約 | FR-001、FR-005、FR-017、SC-006 |
 | E5 | 影像處理工具(libheif CLI、sharp) | 外部程序呼叫:輸入格式、參數、輸出、逾時與失敗原因 | FR-011、SC-002、Assumptions(JPEG/PNG/HEIC) |
-| E6 | 部署與網路(Docker、NPM 反向代理) | 對外入口:port、掛載、HTTPS、付款通知的回呼路徑 | FR-018、Assumptions(自架於家中伺服器) |
+| E6 | 部署與網路(Docker、反向代理) | 對外入口:port、掛載、HTTPS、付款通知的回呼路徑 | FR-018、Assumptions(自行架設) |
 | E7 | 第三方金流(如綠界 ECPay) | 金流商 API:建立交易、付款頁導轉、付款結果通知(webhook)、簽章驗證、查單 | FR-018 |
 | E8 | 拍攝資訊讀取工具(ExifTool) | 外部程序呼叫:讀取的欄位、時間的原始格式、缺失時的回傳、失敗原因 | FR-006、FR-007、SC-004 |
 
@@ -84,15 +83,24 @@ deploy/                      # E6 部署與網路
 第三方端點的介面是對方定好的,我們只能照著接、不能改,所以它不依賴我們任何一個介面;
 反過來,我們這邊碰到它的介面都要遷就它。因此**第三方端點排在最前面**,依賴它的介面往後推一波。
 
-| Wave | 步驟 | 介面 | 平行 | 排在這一波的理由 |
-|---|---|---|---|---|
-| 1 | S1 | E7 第三方金流 | — | 金流商的介面已經定好,不依賴任何介面;前端的付款導轉與後端的建單、收通知都要照它設計 |
-| 2 | S2 | E1 前端畫面與互動 | ✅ 與 S3 平行 | 由使用者故事推出;結帳、導向付款頁與付款完成頁的流程要照 S1 的導轉方式 |
-| 2 | S3 | E2 後端 REST API | ✅ 與 S2 平行 | 由 FR 推出;建立訂單、接收付款通知的端點要照 S1 的參數與簽章。前端與後端以同一份需求為準,不必等對方 |
-| 3 | S4 | E3 資料庫 | ✅ 與 S5、S6、S7 平行 | 要存什麼由 S3 的資源與操作決定(含訂單與付款狀態) |
-| 3 | S5 | E4 檔案系統 | ✅ 與 S4、S6、S7 平行 | 要讀哪些原檔、寫哪些縮圖由 S3 的匯入與重新掃描決定 |
-| 3 | S6 | E5 影像處理工具 | ✅ 與 S4、S5、S7 平行 | 要產出哪些縮圖、失敗要回報什麼由 S3 決定 |
-| 3 | S7 | E8 拍攝資訊讀取工具 | ✅ 與 S4、S5、S6 平行 | 要讀哪些拍攝資訊、缺失時要回報什麼由 S3 的匯入與自動分類決定 |
-| 4 | S8 | E6 部署與網路 | — | 要開哪些 port、掛哪些路徑、DB 放哪個網路,要等 S3–S7 都定下來;S1 的付款通知要打到哪一條回呼路徑,也在這一步定 |
+| Wave | 步驟 | 介面 | Planner | 平行 | 排在這一波的理由 |
+|---|---|---|---|---|---|
+| 1 | S1 | E7 第三方金流 | api-plan | — | 金流商的介面已經定好,不依賴任何介面;前端的付款導轉與後端的建單、收通知都要照它設計 |
+| 2 | S2 | E1 前端畫面與互動 | uiux-plan | ✅ 與 S3 平行 | 由使用者故事推出;結帳、導向付款頁與付款完成頁的流程要照 S1 的導轉方式 |
+| 2 | S3 | E2 後端 REST API | api-plan | ✅ 與 S2 平行 | 由 FR 推出;建立訂單、接收付款通知的端點要照 S1 的參數與簽章。前端與後端以同一份需求為準,不必等對方 |
+| 3 | S4 | E3 資料庫 | data-plan | ✅ 與 S5、S6、S7 平行 | 要存什麼由 S3 的資源與操作決定(含訂單與付款狀態) |
+| 3 | S5 | E4 檔案系統 | deploy-plan | ✅ 與 S4、S6、S7 平行 | 要讀哪些原檔、寫哪些縮圖由 S3 的匯入與重新掃描決定 |
+| 3 | S6 | E5 影像處理工具 | api-plan | ✅ 與 S4、S5、S7 平行 | 要產出哪些縮圖、失敗要回報什麼由 S3 決定 |
+| 3 | S7 | E8 拍攝資訊讀取工具 | api-plan | ✅ 與 S4、S5、S6 平行 | 要讀哪些拍攝資訊、缺失時要回報什麼由 S3 的匯入與自動分類決定 |
+| 4 | S8 | E6 部署與網路 | deploy-plan | — | 要開哪些 port、掛哪些路徑、DB 放哪個網路,要等 S3–S7 都定下來;S1 的付款通知要打到哪一條回呼路徑,也在這一步定 |
 
 共 4 個 wave、8 個步驟:Wave 1 一個介面,Wave 2 兩個介面平行,Wave 3 四個介面平行,Wave 4 一個介面。
+
+## 待決問題
+
+> Phase 3 每一波交回的待決問題都登記在這裡;有問題擋住下一波時,在下一波開始之前把所有還沒決定的一次問完,沒有擋住就等最後一波之後一起問。
+
+| Q | 提出的步驟 | 問題與可選的做法 | 擋住 | 決定 |
+|---|---|---|---|---|
+| Q1 | S1 | 金流的 `MerchantTradeNo` 最多 20 碼,訂單編號要怎麼對:(a)訂單編號縮成 20 碼以內(先採用)(b)另給金流一組對照編號 | S3 | (a)縮成 20 碼以內 |
+| Q2 | S3 | 相簿刪除後照片怎麼處理:(a)只刪相簿、照片留在全部照片(先採用)(b)一起移到垃圾桶 | — | 待決 |

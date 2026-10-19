@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>狀態總覽|山茶小舖</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">山茶小舖 · 狀態總覽</span>
+    <nav>
+      <a href="index.html">開啟原型</a>
+      <button type="button" onclick="Proto.reset()">重設假資料</button>
+    </nav>
+  </header>
+  <main>
+    <section>
+      <h2 class="states-heading"><a href="cart.html">購物車</a></h2>
+      <div class="states-grid">
+        <figure>
+          <iframe src="cart.html?state=normal" title="購物車:有商品" loading="lazy"></iframe>
+          <figcaption>有商品:FR-004、FR-005 改數量與合計</figcaption>
+        </figure>
+        <figure>
+          <iframe src="cart.html?state=empty" title="購物車:空的" loading="lazy"></iframe>
+          <figcaption>空的:FR-006 移除最後一件商品之後</figcaption>
+        </figure>
+        <figure>
+          <iframe src="cart.html?state=loading" title="購物車:確認庫存中" loading="lazy"></iframe>
+          <figcaption>確認庫存中:FR-007 按下前往結帳之後</figcaption>
+        </figure>
+        <figure>
+          <iframe src="cart.html?state=error" title="購物車:庫存不足" loading="lazy"></iframe>
+          <figcaption>庫存不足:FR-007 結帳時數量超過庫存</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{畫面名稱}}|{{產品名稱}}</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body data-requirements="{{這個畫面對到的需求出處編號,用空白分隔}}">
+  <header class="topbar">
+    <a class="brand" href="index.html">{{產品名稱}}</a>
+    <nav>
+      <a href="{{畫面檔名}}.html">{{畫面名稱}}</a>
+    </nav>
+  </header>
+  <main>
+    <h1>{{畫面名稱}}</h1>
+    <section data-state="{{狀態代號:normal、empty、loading、error,或這個畫面自己的狀態,例如 disconnected、timeout}}">
+      {{這個狀態下的畫面內容}}
+    </section>
+  </main>
+  <script>
+    {{這個畫面的互動:從 Proto.load 讀假資料、渲染、處理點擊,伺服器的回應用 Proto.later 模擬}}
+  </script>
+</body>
+</html>

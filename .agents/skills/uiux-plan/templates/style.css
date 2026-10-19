@@ -1,0 +1,74 @@
+:root {
+  --color-{{色彩用途:bg、surface、text、muted、line、primary、primary-text、danger 或 success}}: {{色碼}};
+  --font-{{字體用途:body 或 heading}}: {{字體堆疊}};
+  --radius-{{圓角尺寸:sm 或 lg}}: {{圓角大小}};
+  --space-{{間距尺寸:xs、sm、md 或 lg}}: {{間距大小}};
+  --shadow: {{卡片的陰影}};
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+}
+
+.proto-warn {
+  position: fixed;
+  right: var(--space-md);
+  bottom: var(--space-md);
+  left: var(--space-md);
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-danger);
+  background: var(--color-surface);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+}
+
+.states-heading a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.states-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+}
+
+.states-grid figure {
+  margin: 0;
+}
+
+.states-grid iframe {
+  width: 100%;
+  height: 420px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.states-grid figcaption {
+  margin-top: var(--space-xs);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+{{選擇器}} {
+  {{屬性}}: {{值:顏色、字體、圓角、間距與陰影一律寫成 var(--變數)}};
+}
+
+@media (max-width: {{手機版的寬度上限}}) {
+  {{選擇器}} {
+    {{屬性}}: {{值:顏色、字體、圓角、間距與陰影一律寫成 var(--變數)}};
+  }
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>狀態總覽|{{產品名稱}}</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">{{產品名稱}} · 狀態總覽</span>
+    <nav>
+      <a href="index.html">開啟原型</a>
+      <button type="button" onclick="Proto.reset()">重設假資料</button>
+    </nav>
+  </header>
+  <main>
+    <section>
+      <h2 class="states-heading"><a href="{{畫面檔名}}.html">{{畫面名稱}}</a></h2>
+      <div class="states-grid">
+        <figure>
+          <iframe src="{{畫面檔名}}.html?state={{狀態代號}}" title="{{畫面名稱}}:{{狀態的中文名稱}}" loading="lazy"></iframe>
+          <figcaption>{{狀態的中文名稱}}:{{這個狀態對應的驗收情境或需求編號}}</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

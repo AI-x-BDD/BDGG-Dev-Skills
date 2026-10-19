@@ -5,8 +5,9 @@
 """檢查一份 plan.md 的分析流程規劃是否前後一致。
 
 檢查項目:端點從 E1 連號且個數和敘述一致、每個端點在波段表恰好出現一次、步驟與 wave 的編號、
-「平行」欄和同一波的步驟一致、結尾的總數、Documentation 樹裡每一步恰好一份產出,
-以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
+「Planner」欄只有四支 planner 或「無合適的 planner」、「平行」欄和同一波的步驟一致、結尾的總數、
+Documentation 樹裡每一支指派的 planner 都有產出且步驟、端點與檔案種類對得上、同一波不共用產出路徑、
+「待決問題」表的編號與步驟都存在,以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -18,20 +19,31 @@ from pathlib import Path
 
 ENDPOINT_ROW = re.compile(r"^\| E(\d+) \|(.*)\|$")
 ENDPOINT_COUNT = re.compile(r"這次需求涉及 (\d+) 個端點")
-WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) [^|]+\| ([^|]+) \|.*\|$")
+WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) [^|]+\| ([^|]+) \| ([^|]+) \|.*\|$")
 PARALLEL = re.compile(r"^✅ 與 (S\d+(?:、S\d+)*) 平行$")
 SUMMARY = re.compile(r"共 (\d+) 個 wave、(\d+) 個步驟")
-DOC_OUTPUT = re.compile(r"# S(\d+) 產出[((]E(\d+)")
+DOC_OUTPUT = re.compile(r"^(\s*)[├└]── (\S+)\s+# (S\d+(?:、S\d+)*) 產出[((](.+?)[,,]\s*([a-z]+-plan)[))]")
+QUESTION_ROW = re.compile(r"^\| Q(\d+) \| S(\d+) \|(.*)\|([^|]*)\|([^|]*)\|$")
+PLANNERS = {"uiux-plan", "data-plan", "api-plan", "deploy-plan"}
+NO_PLANNER = "無合適的 planner"
+PLANNER_PATHS = {
+    "uiux-plan": ("prototype 開頭的資料夾", lambda path: re.fullmatch(r"prototype(-[\w-]+)?/", path) is not None),
+    "deploy-plan": ("deploy/", lambda path: path == "deploy/"),
+    "api-plan": ("contracts/ 底下的 .openapi.yaml 或 .asyncapi.yaml", lambda path: path.startswith("contracts/") and path.endswith((".openapi.yaml", ".asyncapi.yaml"))),
+    "data-plan": ("contracts/ 底下的 .dbml", lambda path: path.startswith("contracts/") and path.endswith(".dbml")),
+}
 REQUIREMENT_ID = re.compile(r"\b((?:FR|NFR|SC)-\d+)\b")
 
 R_ENDPOINTS = "端點從 E1 連號且個數和敘述一致"
 R_ONCE = "每個端點在波段表恰好出現一次"
 R_NUMBERING = "步驟從 S1 連號,wave 從 1 起不遞減不跳號"
+R_PLANNER = "「Planner」欄只有四支 planner 或「無合適的 planner」"
 R_PARALLEL = "「平行」欄和同一波的其他步驟一致"
 R_SUMMARY = "結尾的 wave 數與步驟數和波段表一致"
-R_OUTPUTS = "每一步在 Documentation 樹恰好產出一份檔且端點一致"
+R_OUTPUTS = "每支指派的 planner 在 Documentation 樹都有產出且對得上"
+R_QUESTIONS = "「待決問題」表的編號與步驟都存在"
 R_SOURCES = "需求出處的編號都在 spec.md 裡"
-RULES = [R_ENDPOINTS, R_ONCE, R_NUMBERING, R_PARALLEL, R_SUMMARY, R_OUTPUTS, R_SOURCES]
+RULES = [R_ENDPOINTS, R_ONCE, R_NUMBERING, R_PLANNER, R_PARALLEL, R_SUMMARY, R_OUTPUTS, R_QUESTIONS, R_SOURCES]
 
 
 def section(lines: list[tuple[int, str]], heading: str) -> list[tuple[int, str]]:
@@ -84,7 +96,14 @@ def main() -> int:
 
     # 分析波段
     waves_section = section(lines, "### 分析波段")
-    rows = [(n, int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(4).strip()) for n, l in waves_section if (m := WAVE_ROW.match(l.strip()))]
+    rows = [(n, int(m.group(1)), int(m.group(2)), int(m.group(3)), m.group(5).strip()) for n, l in waves_section if (m := WAVE_ROW.match(l.strip()))]
+    planners: dict[int, list[str]] = {}
+    for n, l in waves_section:
+        if m := WAVE_ROW.match(l.strip()):
+            names = [x.strip() for x in m.group(4).split("、")]
+            planners[int(m.group(2))] = names
+            if names != [NO_PLANNER] and not all(x in PLANNERS for x in names):
+                bad(R_PLANNER, f"S{m.group(2)} 的 Planner 欄是「{m.group(4).strip()}」;要是 {'、'.join(sorted(PLANNERS))} 之一(多支用、分隔),或「{NO_PLANNER}」", n)
     if not rows:
         bad(R_NUMBERING, "`### 分析波段` 底下找不到 `| <wave> | S<序號> | E<序號> … |` 的列")
 
@@ -135,18 +154,61 @@ def main() -> int:
 
     # Documentation 樹
     step_endpoint = {step: endpoint for _, _, step, endpoint, _ in rows}
-    outputs: dict[int, list[tuple[int, int]]] = {}
+    step_wave = {step: wave for _, wave, step, _, _ in rows}
+    produced: set[tuple[int, str]] = set()
+    path_steps: dict[str, set[int]] = {}
     for number, line in section(lines, "### Documentation (this feature)"):
-        for m in DOC_OUTPUT.finditer(line):
-            outputs.setdefault(int(m.group(1)), []).append((number, int(m.group(2))))
-    for step, endpoint in step_endpoint.items():
-        found = outputs.get(step, [])
-        if len(found) != 1:
-            bad(R_OUTPUTS, f"S{step} 在 Documentation 樹有 {len(found)} 份產出,要恰好 1 份")
-        elif found[0][1] != endpoint:
-            bad(R_OUTPUTS, f"S{step} 的產出標成 E{found[0][1]},波段表是 E{endpoint}", found[0][0])
-    for step in sorted(set(outputs) - set(step_endpoint)):
-        bad(R_OUTPUTS, f"Documentation 樹有 S{step} 的產出,但波段表沒有 S{step}", outputs[step][0][0])
+        m = DOC_OUTPUT.match(line)
+        if not m:
+            continue
+        indent, name, steps_text, endpoints_text, planner = m.groups()
+        path = ("contracts/" + name) if indent else name
+        line_endpoints = {int(e) for e in re.findall(r"E(\d+)", endpoints_text)}
+        ok, expect = PLANNER_PATHS.get(planner, ("", lambda _: False))[1](path), PLANNER_PATHS.get(planner, ("四支 planner 之一",))[0]
+        if not ok:
+            bad(R_OUTPUTS, f"{path} 標成 {planner} 的產出,但 {planner} 的產出要是 {expect}", number)
+        for step in (int(x[1:]) for x in steps_text.split("、")):
+            if step not in step_endpoint:
+                bad(R_OUTPUTS, f"Documentation 樹有 S{step} 的產出,但波段表沒有 S{step}", number)
+                continue
+            if step_endpoint[step] not in line_endpoints:
+                bad(R_OUTPUTS, f"{path} 標了 S{step},但沒有標 S{step} 分析的 E{step_endpoint[step]}", number)
+            if planner not in planners.get(step, []):
+                bad(R_OUTPUTS, f"{path} 標成 S{step} 的 {planner} 產出,但 S{step} 的 Planner 欄沒有 {planner}", number)
+            produced.add((step, planner))
+            path_steps.setdefault(path, set()).add(step)
+    for step, names in planners.items():
+        for name in names:
+            if name in PLANNERS and (step, name) not in produced:
+                bad(R_OUTPUTS, f"S{step} 指派了 {name},但 Documentation 樹沒有它的產出")
+        if names == [NO_PLANNER] and any(s == step for s, _ in produced):
+            bad(R_OUTPUTS, f"S{step} 是「{NO_PLANNER}」,Documentation 樹卻列了它的產出")
+    for path, steps in path_steps.items():
+        waves: dict[int, list[int]] = {}
+        for step in steps:
+            waves.setdefault(step_wave.get(step, 0), []).append(step)
+        for wave, same in waves.items():
+            if len(same) > 1:
+                bad(R_OUTPUTS, f"{path} 由同一波(wave {wave})的 {'、'.join(f'S{x}' for x in sorted(same))} 一起寫,平行的 sub agent 會互相覆蓋")
+
+    # 待決問題
+    question_rows = [(n, l.strip()) for n, l in section(lines, "## 待決問題") if re.match(r"\| Q\d", l.strip())]
+    for expected, (number, line) in enumerate(question_rows, start=1):
+        m = QUESTION_ROW.match(line)
+        if not m:
+            bad(R_QUESTIONS, "列要寫成「| Q<序號> | S<步驟> | 問題 | 擋住 | 決定 |」", number, line)
+            continue
+        if int(m.group(1)) != expected:
+            bad(R_QUESTIONS, f"第 {expected} 列是 Q{m.group(1)},要從 Q1 連號", number)
+        if int(m.group(2)) not in step_endpoint:
+            bad(R_QUESTIONS, f"Q{m.group(1)} 的提出步驟 S{m.group(2)} 不在波段表", number)
+        blocked = m.group(4).strip()
+        if blocked != "—":
+            for step in re.findall(r"S(\d+)", blocked) or ["?"]:
+                if not step.isdigit() or int(step) not in step_endpoint:
+                    bad(R_QUESTIONS, f"Q{m.group(1)} 的「擋住」欄是「{blocked}」,要是波段表裡的步驟或「—」", number)
+        if not m.group(5).strip():
+            bad(R_QUESTIONS, f"Q{m.group(1)} 的「決定」欄是空的,還沒決定要寫「待決」", number)
 
     # 需求出處
     skipped = args.spec is None
@@ -162,9 +224,11 @@ def main() -> int:
         R_ENDPOINTS: f"E1–E{len(endpoints)} 連號,和「涉及 {len(endpoints)} 個端點」一致",
         R_ONCE: f"{len(endpoint_ids)} 個端點在波段表各出現 1 次",
         R_NUMBERING: f"S1–S{len(rows)} 連號,wave 1–{len(by_wave)} 不遞減不跳號",
+        R_PLANNER: f"{len(rows)} 列的「Planner」欄都是四支 planner 或「{NO_PLANNER}」",
         R_PARALLEL: f"{len(rows)} 列的「平行」欄都和同一波的步驟一致",
         R_SUMMARY: f"結尾的 {len(by_wave)} 個 wave、{len(rows)} 個步驟和波段表一致",
-        R_OUTPUTS: f"{len(rows)} 個步驟在 Documentation 樹各有 1 份產出,端點一致",
+        R_OUTPUTS: f"{len(produced)} 個步驟與 planner 的組合在 Documentation 樹都有產出,步驟、端點與檔案種類對得上",
+        R_QUESTIONS: f"「待決問題」表的 {len(question_rows)} 列編號與步驟都存在",
         R_SOURCES: "沒有給 --spec,沒有檢查" if skipped else "需求出處的編號都在 spec.md 裡有定義",
     }
     checks = []
