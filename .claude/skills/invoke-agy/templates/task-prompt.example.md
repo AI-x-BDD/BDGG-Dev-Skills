@@ -3,7 +3,7 @@ You are Antigravity (AGY), acting as an automated coding assistant.
 Your goal is to implement a new notification service module with email provider support and unit tests.
 
 # Working Directory & Context
-- Working Directory: /home/kevin/Desktop/Projects/learn/BDGG-Dev-Skills
+- Working Directory: /home/user/projects/BDGG-Dev-Skills
 - Task Background: The system needs an event-driven notification component to notify users upon order confirmation.
 
 # Target Files

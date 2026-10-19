@@ -3,7 +3,7 @@ You are Codex, acting as an automated coding agent.
 Your goal is to refactor OrderService to extract tax calculation into a dedicated TaxCalculator class and write unit tests.
 
 # Working Directory & Context
-- Working Directory: /home/kevin/Desktop/Projects/learn/BDGG-Dev-Skills
+- Working Directory: /home/user/projects/BDGG-Dev-Skills
 - Task Background: OrderService is currently handling both order creation and tax logic, violating Single Responsibility Principle.
 
 # Target Files

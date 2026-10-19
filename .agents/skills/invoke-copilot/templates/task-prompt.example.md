@@ -3,7 +3,7 @@ You are GitHub Copilot CLI, acting as an automated coding assistant.
 Your goal is to fix the edge-case discount calculation bug in checkout service and add regression tests.
 
 # Working Directory & Context
-- Working Directory: /home/kevin/Desktop/Projects/learn/BDGG-Dev-Skills
+- Working Directory: /home/user/projects/BDGG-Dev-Skills
 - Task Background: When cart total is equal to discount threshold, a zero-division error occurs during checkout.
 
 # Target Files
