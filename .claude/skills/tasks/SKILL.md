@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: 要依功能規格與系統分析的產出開始拆實作任務時,用這支 Skill 從 spec package 列出規格檔裡的每一個介面元素,排成依使用者故事與端點分節的任務,每個任務以 ⚙ 綁到規格檔的錨點、以 📎 寫出依據,交出通過錨點與介面覆蓋檢查的 tasks.md;使用者提到 tasks、tasks.md、任務清單、拆任務、實作任務、task breakdown、speckit tasks、工作分解時使用。(未驗證)
+description: 要依功能規格與系統分析的產出開始拆實作任務時,用這支 Skill 從 spec package 列出規格檔裡的每一個介面元素,排成依使用者故事與端點分節的任務,每個任務以 ⚙ 綁到規格檔的錨點、以 📎 寫出依據,交出通過錨點與介面覆蓋檢查的 tasks.md;使用者提到 tasks、tasks.md、任務清單、拆任務、實作任務、task breakdown、speckit tasks、工作分解時使用。
 ---
 
 # SOP
