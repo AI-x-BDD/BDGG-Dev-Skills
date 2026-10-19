@@ -1,0 +1,174 @@
+asyncapi: 3.0.0
+info:
+  title: 線上商店訂單推送
+  version: 0.1.0
+  description: S3(E2 後端(Fastify))依 spec.md 與 plan.md 產出
+servers:
+  production:
+    host: shop.example.com
+    pathname: /ws
+    protocol: wss
+channels:
+  orderEvents:
+    address: /ws
+    messages:
+      subscribeOrder:
+        $ref: '#/components/messages/subscribeOrder'
+      orderPaidForBuyer:
+        $ref: '#/components/messages/orderPaidForBuyer'
+      orderPaidForSeller:
+        $ref: '#/components/messages/orderPaidForSeller'
+      error:
+        $ref: '#/components/messages/error'
+operations:
+  receiveSubscribeOrder:
+    action: receive
+    channel:
+      $ref: '#/channels/orderEvents'
+    messages:
+      - $ref: '#/channels/orderEvents/messages/subscribeOrder'
+    summary: 訂閱訂單狀態
+    x-requirements: [FR-010, NFR-001]
+    x-callers: 已登入、且是這張訂單的買家或賣家
+    x-error-codes: [NOT_LOGGED_IN, ORDER_NOT_FOUND]
+  sendOrderPaidToBuyer:
+    action: send
+    channel:
+      $ref: '#/channels/orderEvents'
+    messages:
+      - $ref: '#/channels/orderEvents/messages/orderPaidForBuyer'
+    summary: 付款完成通知(買家)
+    x-requirements: [FR-010, SC-002]
+    x-callers: 金流付款結果通知(receivePaymentNotify)驗簽通過之後
+    x-error-codes: []
+  sendOrderPaidToSeller:
+    action: send
+    channel:
+      $ref: '#/channels/orderEvents'
+    messages:
+      - $ref: '#/channels/orderEvents/messages/orderPaidForSeller'
+    summary: 付款完成通知(賣家)
+    x-requirements: [FR-010, NFR-001, SC-002]
+    x-callers: 金流付款結果通知(receivePaymentNotify)驗簽通過之後
+    x-error-codes: []
+  sendError:
+    action: send
+    channel:
+      $ref: '#/channels/orderEvents'
+    messages:
+      - $ref: '#/channels/orderEvents/messages/error'
+    summary: 拒絕訂閱
+    x-requirements: [NFR-001]
+    x-callers: receiveSubscribeOrder 不符條件時
+    x-error-codes: []
+components:
+  messages:
+    subscribeOrder:
+      name: order.subscribe
+      summary: 開始接收這張訂單的狀態變化
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/SubscribeOrder'
+    orderPaidForBuyer:
+      name: order.paid
+      summary: 買家看到的付款完成通知,含付款方式
+      x-recipients: 訂單的買家
+      payload:
+        $ref: '#/components/schemas/OrderPaidForBuyer'
+    orderPaidForSeller:
+      name: order.paid
+      summary: 賣家看到的付款完成通知,含出貨資料、不含付款細節
+      x-recipients: 訂單的賣家
+      payload:
+        $ref: '#/components/schemas/OrderPaidForSeller'
+    error:
+      name: error
+      summary: 拒絕這則訊息的原因
+      x-recipients: 送出那則訊息的連線
+      payload:
+        $ref: '#/components/schemas/Error'
+  schemas:
+    SubscribeOrder:
+      type: object
+      required: [type, orderId]
+      properties:
+        type:
+          type: string
+          const: order.subscribe
+        orderId:
+          type: string
+          pattern: '^ORD-[A-Z0-9]{8}$'
+    OrderPaidForBuyer:
+      type: object
+      required: [type, orderId, paidAt, amount, paymentMethod]
+      properties:
+        type:
+          type: string
+          const: order.paid
+        orderId:
+          type: string
+        paidAt:
+          type: string
+          format: date-time
+        amount:
+          type: integer
+          minimum: 0
+          description: 付款金額,新台幣元
+        paymentMethod:
+          type: string
+          enum: [credit_card, atm, cvs]
+        last4:
+          type: string
+          pattern: '^[0-9]{4}$'
+          description: 信用卡末四碼,只有 credit_card 時有
+    OrderPaidForSeller:
+      type: object
+      required: [type, orderId, paidAt, items, shippingAddress]
+      properties:
+        type:
+          type: string
+          const: order.paid
+        orderId:
+          type: string
+        paidAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+    OrderItem:
+      type: object
+      required: [productId, name, quantity]
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    ShippingAddress:
+      type: object
+      required: [recipient, phone, address]
+      properties:
+        recipient:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+    Error:
+      type: object
+      required: [type, code, message]
+      properties:
+        type:
+          type: string
+          const: error
+        code:
+          type: string
+          enum: [NOT_LOGGED_IN, ORDER_NOT_FOUND]
+        message:
+          type: string

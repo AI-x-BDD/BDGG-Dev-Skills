@@ -1,0 +1,240 @@
+openapi: 3.1.0
+info:
+  title: 線上商店後端 REST API
+  version: 0.1.0
+  description: S3(E2 後端(Fastify))依 spec.md 與 plan.md 產出
+servers:
+  - url: https://shop.example.com/api/v1
+paths:
+  /products:
+    get:
+      operationId: listProducts
+      summary: 商品列表
+      x-requirements: [FR-001, FR-002]
+      x-callers: 任何訪客
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 這一頁的商品摘要與總數
+          x-recipients: 呼叫者
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        '400':
+          description: 頁碼不在範圍內
+          x-error-codes: [INVALID_PAGE]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /cart/items:
+    post:
+      operationId: addCartItem
+      summary: 加入購物車
+      x-requirements: [FR-004, FR-005]
+      x-callers: 任何訪客
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItem'
+      responses:
+        '200':
+          description: 加入之後的購物車
+          x-recipients: 呼叫者
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          description: 數量不在 1–99
+          x-error-codes: [INVALID_QUANTITY]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 商品不存在或已下架
+          x-error-codes: [PRODUCT_NOT_FOUND]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /checkout:
+    post:
+      operationId: checkout
+      summary: 結帳
+      x-requirements: [FR-007, FR-008, NFR-002]
+      x-callers: 已登入的買家,購物車不為空
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '201':
+          description: 建立的訂單與付款頁網址
+          x-recipients: 呼叫者
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResult'
+        '401':
+          description: 未登入
+          x-error-codes: [NOT_LOGGED_IN]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 購物車是空的,或有商品庫存不足
+          x-error-codes: [CART_EMPTY, OUT_OF_STOCK]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /payments/notify:
+    post:
+      operationId: receivePaymentNotify
+      summary: 金流付款結果通知
+      x-requirements: [FR-009, NFR-003]
+      x-callers: 金流商(驗 CheckMacValue,參數照 S1)
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentNotify'
+      responses:
+        '200':
+          description: 回 1|OK 表示收到(照 S1)
+          x-recipients: 金流商
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/PaymentAck'
+        '400':
+          description: 驗簽失敗,或金額和訂單不符
+          x-error-codes: [INVALID_SIGNATURE, AMOUNT_MISMATCH]
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    ProductSummary:
+      type: object
+      required: [id, name, price, inStock]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: integer
+          minimum: 0
+          description: 售價,新台幣元
+        inStock:
+          type: boolean
+    ProductPage:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+        total:
+          type: integer
+          minimum: 0
+    AddCartItem:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+    Cart:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        total:
+          type: integer
+          minimum: 0
+          description: 總金額,新台幣元
+    CartItem:
+      type: object
+      required: [productId, name, price, quantity]
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: integer
+          minimum: 0
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+    CheckoutRequest:
+      type: object
+      required: [shippingAddressId]
+      properties:
+        shippingAddressId:
+          type: string
+    CheckoutResult:
+      type: object
+      required: [orderId, paymentUrl]
+      properties:
+        orderId:
+          type: string
+          pattern: '^ORD-[A-Z0-9]{8}$'
+        paymentUrl:
+          type: string
+          format: uri
+          description: 金流付款頁,15 分鐘內有效
+    PaymentNotify:
+      type: object
+      required: [MerchantTradeNo, RtnCode, TradeAmt, CheckMacValue]
+      properties:
+        MerchantTradeNo:
+          type: string
+        RtnCode:
+          type: integer
+        TradeAmt:
+          type: integer
+        CheckMacValue:
+          type: string
+    PaymentAck:
+      type: string
+      enum: ['1|OK']
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [INVALID_PAGE, INVALID_QUANTITY, PRODUCT_NOT_FOUND, NOT_LOGGED_IN, CART_EMPTY, OUT_OF_STOCK, INVALID_SIGNATURE, AMOUNT_MISMATCH]
+        message:
+          type: string
