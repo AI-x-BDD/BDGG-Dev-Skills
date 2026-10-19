@@ -24,6 +24,7 @@ from openapi_spec_validator import validate as validate_openapi
 
 HTTP_METHODS = {"get", "put", "post", "delete", "patch", "head", "options", "trace"}
 ENDPOINT_ROW = re.compile(r"^\| E(\d+) \|(.*)\|$")
+CELL_SPLIT = re.compile(r"(?<!\\)\|")  # Markdown 表格裡跳脫的 \| 是內容,不是欄分隔
 WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) ")
 RANGE = re.compile(r"\b(FR|NFR|SC)-(\d+)\s*[–—~]\s*(?:(?:FR|NFR|SC)-)?(\d+)\b")
 REQUIREMENT_ID = re.compile(r"\b((?:FR|NFR|SC)-\d+)\b")
@@ -216,7 +217,7 @@ def main() -> int:
         if row is None:
             bad(R_COVERAGE, "plan.md", f"S{step} 分析的 E{endpoint} 不在 `### 端點盤點`")
         else:
-            needed = requirement_ids(row.split("|")[-1])
+            needed = requirement_ids(CELL_SPLIT.split(row)[-1])
     for rid in sorted(needed - tagged):
         bad(R_COVERAGE, rid, f"E{endpoint} 的需求出處 {rid} 沒有任何操作的 x-requirements 對到")
 
