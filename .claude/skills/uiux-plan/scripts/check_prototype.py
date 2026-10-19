@@ -13,6 +13,7 @@ style.css 的 :root 有變數且 :root 以外與 HTML 裡都沒有寫死的顏�
 這台機器有 node 時 mock.js 與每段內嵌的 script 都通過 `node --check`(沒有就標成略過)、
 plan.md 這一步端點的需求出處都對得到畫面的 data-requirements、data-requirements 的需求編號都在 spec.md 裡。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
+被憲法以 `--waive "<規範檔名>〈Rule 名稱〉"` 取代的檢查標成略過,不算不過;只有下面 WAIVABLE 列的檢查接受取代。
 """
 
 import argparse
@@ -46,6 +47,12 @@ R_STORAGE = "畫面不直接讀寫 localStorage"
 R_JS = "JavaScript 通過 node --check"
 R_COVERAGE = "plan.md 這一步的需求出處都對得到畫面"
 R_SOURCES = "data-requirements 的需求編號都在 spec.md 裡"
+WAIVABLE = {
+    "原型-規範〈審美設定只寫在 :root 變數〉": R_TOKENS,
+    "原型-規範〈不連任何真的後端〉": R_MOCK,
+    "原型-規範〈原型頁不放測試用的控制〉": R_CLEAN,
+}
+
 RULES = [R_ENTRY, R_LINKS, R_CLEAN, R_STATES, R_TOKENS, R_MOCK, R_STORAGE, R_JS, R_COVERAGE, R_SOURCES]
 
 
@@ -141,7 +148,22 @@ def main() -> int:
     parser.add_argument("--plan", required=True, type=Path, help="system-analysis 產出的 plan.md 路徑,用來找這一步分析的端點與需求出處")
     parser.add_argument("--spec", required=True, type=Path, help="spec.md 的路徑,用來確認需求編號都有定義")
     parser.add_argument("--step", required=True, help="這份原型對應的波段表步驟編號,例如 S1")
+    parser.add_argument(
+        "--waive",
+        action="append",
+        default=[],
+        help="被憲法取代的 Skill 規範,寫成 <規範檔名>〈Rule 名稱〉,照 constitution_rules.py 交回的 waive 原樣給;可以給多次",
+    )
     args = parser.parse_args()
+    unknown = [w for w in args.waive if w not in WAIVABLE]
+    if unknown:
+        print(
+            f"錯誤: --waive 收到 {unknown};只有這些規範對應得到檢查,可以被取代:{list(WAIVABLE)}。"
+            "其他規範沒有對應的檢查或不可取代,不要給 --waive。",
+            file=sys.stderr,
+        )
+        return 2
+    waived = {WAIVABLE[w]: w for w in args.waive}
 
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -288,10 +310,13 @@ def main() -> int:
     for rule in RULES:
         mine = violations[rule]
         skipped = rule == R_JS and node is None
-        result = "略過" if skipped else ("不過" if mine else "過")
-        evidence = "這台機器沒有 node" if skipped else (";".join(f"{v['where']}:{v['reason']}" for v in mine) if mine else passed_evidence[rule])
+        if rule in waived:
+            result, evidence = "略過", f"由憲法取代:{waived[rule]}"
+        else:
+            result = "略過" if skipped else ("不過" if mine else "過")
+            evidence = "這台機器沒有 node" if skipped else (";".join(f"{v['where']}:{v['reason']}" for v in mine) if mine else passed_evidence[rule])
         checks.append({"rule": rule, "result": result, "evidence": evidence, "violations": mine})
-    passed = not any(violations.values())
+    passed = not any(v for rule, v in violations.items() if rule not in waived)
     report = {"prototype": str(root), "step": f"S{step}", "pages": [p.name for p in pages], "passed": passed, "checks": checks}
     print(f"檢查了 {len(pages)} 個畫面、{len(needed)} 個需求出處,{sum(len(v) for v in violations.values())} 個不符項", file=sys.stderr)
     json.dump(report, sys.stdout, ensure_ascii=False, indent=2)

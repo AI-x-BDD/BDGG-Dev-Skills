@@ -66,7 +66,7 @@
 
 - 判斷:這只是估計,仍然**必須在 NAS 用真實照片實測**(V-PERF-1)。
 - 估算(12MP × 4 bytes/像素):沒有內嵌縮圖時,每個子行程解一張 12MP 圖約 50MB,8 個併發合計約 400MB。
-- 判斷:併發數量就是記憶體上限,符合原則 IV「記憶體與輸入規模成有界關係」。
+- 判斷:併發數量就是記憶體上限,記憶體用量不隨輸入規模增加。
 
 **考慮過的替代方案**: `worker_threads` 池(解碼已經在子行程中進行,不需要再多一層)、piscina(同前)。
 
@@ -106,36 +106,36 @@
 
 **考慮過的替代方案**: SQLite(更簡單,但使用者指定 MySQL)、MariaDB(和 MySQL 8 的`0900` collation 與生成欄位行為有差異,沒有理由偏離使用者指定的 MySQL)、ORM(Prisma 或 TypeORM會增加依賴和抽象,而 schema 只有 8 張表)。
 
-## R5. 後端框架與語言(使用者指定、原則 I)
+## R5. 後端框架與語言(使用者指定、憲法〈語言寫出型別檢查方式〉)
 
 **決策**: **Node.js 22 LTS + TypeScript(嚴格模式),用 Node 原生的 type stripping 直接執行,不另設編譯步驟**。HTTP 用 **Fastify 5**,搭配 `@fastify/static` 提供前端的建置產物。請求驗證用 Fastify 內建的 JSON Schema(ajv),不另加 zod。
 
 **理由**:
 
-- 判斷:憲法原則 I 要求有型別系統就啟用嚴格模式。
+- 判斷:憲法 `constitution/technical-research/techstack.md`〈語言寫出型別檢查方式〉要求 techstack 的語言一列寫出型別檢查方式;TypeScript 開 `strict` 就寫得出來。
 - 查證(Node.js 22.18.0 release notes):Node 22.18 以後 type stripping 預設開啟。
 - 實測(桌機 Node v22.23.2):`.ts` 檔直接執行成功。所以可以用 TS 寫,但不需要 tsc 輸出或 bundler,只在 CI 跑`tsc --noEmit` 做檢查。tsconfig 開 `erasableSyntaxOnly`,禁止 enum、namespace 這類需要轉譯的語法。
 - 判斷:Fastify 的 route schema 同時用在驗證和回應序列化,可以直接對照 contracts/openapi.yaml 做合約測試。
 
-**考慮過的替代方案**: Express(沒有內建 schema 驗證,要自己補)、原生 `node:http`(路由、驗證、靜態檔都要自己寫,反而比較複雜)、後端也寫原生 JS(和嚴格型別原則有張力)。
+**考慮過的替代方案**: Express(沒有內建 schema 驗證,要自己補)、原生 `node:http`(路由、驗證、靜態檔都要自己寫,反而比較複雜)、後端也寫原生 JS(型別檢查要另外補)。
 
-## R6. 前端:原生 HTML / CSS / JS 的最小構成(使用者指定、NFR-001、NFR-004、原則 I、III、IV)
+## R6. 前端:原生 HTML / CSS / JS 的最小構成(使用者指定、NFR-001、NFR-004、憲法〈語言寫出型別檢查方式〉)
 
 **決策**:
 
 - **runtime 依賴:0 個**。只有開發依賴:`vite`、`vitest` + `jsdom`、`@playwright/test` + `@axe-core/playwright`、`eslint` + `prettier`、`typescript`(只用來做型別檢查)。
-- **型別**:原生 `.js` 加 JSDoc 註記,`jsconfig.json` 開 `checkJs` + `strict`,用 `tsc --noEmit` 檢查。寫的仍然是瀏覽器直接能跑的 JS,但滿足原則 I 的嚴格型別要求。
+- **型別**:原生 `.js` 加 JSDoc 註記,`jsconfig.json` 開 `checkJs` + `strict`,用 `tsc --noEmit` 檢查。寫的仍然是瀏覽器直接能跑的 JS,型別檢查方式是 `tsc --noEmit`。
 - **元件**:原生 Custom Elements,**不用 Shadow DOM**,讓設計 token 和全域樣式直接生效,無障礙樹也比較單純。
 - **路由**:自寫 hash router(`#/albums/12`),約 40 行。
 - **大量縮圖**:自寫固定格線的虛擬捲動。所有縮圖格子同樣大小,只需算出「可見列範圍」;DOM 節點數量只跟視窗大小有關,不受照片總數影響。
-- **i18n**:`src/i18n/zh-TW.json` 搭配一個 `t(key, params)` 函式(原則 III 要求文字集中管理)。
+- **i18n**:`src/i18n/zh-TW.json` 搭配一個 `t(key, params)` 函式(介面文字集中管理)。
 - **設計 token**:`styles/tokens.css` 定義 CSS custom properties,其他 CSS 和 JS 只能引用 `var(--…)`。強制方式不加 stylelint,改用一支約 30 行的 `scripts/check-tokens.mjs`(Node 原生,不需套件)。它掃描 `tokens.css` 以外的檔案,發現色碼、`rgb()` 或非 0 的 `px` 字面值就讓 CI 失敗。這支檢查器要附一個**故意違規的對照樣本**,證明它真的抓得到。
-- **對話框**:原生 `<dialog>`,內建 focus trap 和 Esc 關閉,用於刪除確認(原則 III 的破壞性操作確認)。
+- **對話框**:原生 `<dialog>`,內建 focus trap 和 Esc 關閉,用於刪除確認(破壞性操作要確認)。
 
 **理由**:
 
 - 判斷:依使用者要求「簡單一點」,runtime 依賴維持 0 個。
-- 估算(router 約 40 行、虛擬捲動與元件都是自寫的小模組,沒有框架):JS 建置產物 gzip 後遠小於 30KB,遠低於原則 IV 的 200KB 上限。
+- 估算(router 約 40 行、虛擬捲動與元件都是自寫的小模組,沒有框架):JS 建置產物 gzip 後遠小於 30KB,體積不構成問題。
 
 **考慮過的替代方案**: Lit(很小,但仍是框架)、htmx(要伺服器端 render 片段,虛擬捲動也不好做)、虛擬捲動套件(格子固定大小時自寫很簡單)。
 
@@ -180,7 +180,7 @@
 
 **考慮過的替代方案**: 感知雜湊(pHash 等):會把不同解析度或編輯過的版本當成重複,違反 spec。用路徑當身分:搬動檔案就會變成一張新照片,原本的相簿歸屬會遺失。
 
-## R9. 瀏覽器端的圖片顯示(SC-003、原則 III)
+## R9. 瀏覽器端的圖片顯示(SC-003)
 
 **決策**: 縮圖是 256px WebP,匯入時產生,存在 `/data/thumbs/ab/cd/<sha256>.webp`。大圖預覽是 1600px WebP,**第一次請求時才產生**並快取。回應都加 `Cache-Control: public, max-age=31536000, immutable`(網址裡含雜湊)。
 
@@ -188,7 +188,7 @@
 
 - 查證(caniuse.com「HEIF/HEIC image format」):Chrome 和 Firefox 無法顯示 HEIC 原檔,必須轉檔。
 - 判斷:縮圖檔放在檔案系統而不是 DB BLOB,避免 MySQL 膨脹,也能直接 sendFile。
-- 估算(R1 的完整解碼實測 1.2–1.5 秒):HEIC 第一次開預覽時要用 `heif-dec` 完整解碼,最壞情況約 1.3–1.5 秒。這段時間前端先把縮圖放大顯示,疊上載入指示(原則 III:超過 1 秒要有指示)。之後再開就是快取檔,幾乎即時。
+- 估算(R1 的完整解碼實測 1.2–1.5 秒):HEIC 第一次開預覽時要用 `heif-dec` 完整解碼,最壞情況約 1.3–1.5 秒。這段時間前端先把縮圖放大顯示,疊上載入指示(超過 1 秒要有指示)。之後再開就是快取檔,幾乎即時。
 - 判斷:第一版**不**在匯入時預先產生預覽,因為那會讓匯入時間回到「每張都完整解碼」(R1)。
 
 **考慮過的替代方案**: 縮圖存成 DB BLOB(MySQL 會膨脹,也不能直接 sendFile)、匯入時預先產生預覽(匯入時間回到每張完整解碼,見 R1)。
@@ -209,7 +209,7 @@
 
 **考慮過的替代方案**: 只靠第 1 層「不對外開 port」:如上所述,NPM 的 443 已經對外,外部可以靠 `Host` 標頭進來。只靠 NPM 存取清單:NPM 設定一旦被改錯就沒有任何防線,所以應用程式本身再擋一層。
 
-## R11. 測試工具鏈(原則 II)
+## R11. 測試工具鏈(使用者指定)
 
 **決策**:
 
@@ -225,7 +225,7 @@
 
 **理由**:
 
-- 判斷:原則 II 要求每一層都有測試。後端用原生 `node:test`,不必多加套件;前端用 vitest,和 Vite 共用設定。
+- 判斷:使用者要求每一層都有測試。後端用原生 `node:test`,不必多加套件;前端用 vitest,和 Vite 共用設定。
 - 判斷:integration 測試接真的 MySQL 8.4,因為 R4 的陷阱(collation、`dateStrings`、NULL 排序)只有在真的資料庫上才會出現。
 
 **考慮過的替代方案**: 後端也用 vitest(多一個依賴,`node:test` 已經夠用)、integration 改用 SQLite 或 mock(抓不到 R4 那些 MySQL 專屬的行為)、把真實照片放進 repo 當 fixture(檔案太大;現場產生的小圖已經能涵蓋 EXIF 的情況)。

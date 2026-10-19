@@ -9,6 +9,7 @@
 x-error-codes 用到的錯誤碼都在 Error 的 code enum、plan.md 這一步端點的需求出處都對得到操作、
 x-requirements 的需求編號都在 spec.md 裡。
 --openapi 與 --asyncapi 至少給一個;沒給的那一份相關檢查標成略過。
+被憲法以 `--waive "<規範檔名>〈Rule 名稱〉"` 取代的檢查標成略過,不算不過;只有下面 WAIVABLE 列的檢查接受取代。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -34,6 +35,11 @@ R_RECIPIENTS = "每個成功回應與訊息都有 x-recipients"
 R_ERRORS = "錯誤碼都在 Error 的 code enum"
 R_COVERAGE = "plan.md 這一步的需求出處都對得到操作"
 R_SOURCES = "x-requirements 的需求編號都在 spec.md 裡"
+WAIVABLE = {
+    "契約-規範〈伺服器把關的條件都有具名的錯誤〉": R_ERRORS,
+    "契約-規範〈回應與推送寫明收件者與可見欄位〉": R_RECIPIENTS,
+}
+
 RULES = [R_OPENAPI, R_ASYNCAPI, R_TAGGED, R_RECIPIENTS, R_ERRORS, R_COVERAGE, R_SOURCES]
 
 
@@ -88,7 +94,22 @@ def main() -> int:
     parser.add_argument("--plan", required=True, type=Path, help="system-analysis 產出的 plan.md 路徑,用來找這一步分析的端點與需求出處")
     parser.add_argument("--spec", required=True, type=Path, help="spec.md 的路徑,用來確認需求編號都有定義")
     parser.add_argument("--step", required=True, help="這份規格檔對應的波段表步驟編號,例如 S2")
+    parser.add_argument(
+        "--waive",
+        action="append",
+        default=[],
+        help="被憲法取代的 Skill 規範,寫成 <規範檔名>〈Rule 名稱〉,照 constitution_rules.py 交回的 waive 原樣給;可以給多次",
+    )
     args = parser.parse_args()
+    unknown = [w for w in args.waive if w not in WAIVABLE]
+    if unknown:
+        print(
+            f"錯誤: --waive 收到 {unknown};只有這些規範對應得到檢查,可以被取代:{list(WAIVABLE)}。"
+            "其他規範沒有對應的檢查或不可取代,不要給 --waive。",
+            file=sys.stderr,
+        )
+        return 2
+    waived = {WAIVABLE[w]: w for w in args.waive}
 
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -216,10 +237,13 @@ def main() -> int:
     checks = []
     for rule in RULES:
         mine = violations[rule]
-        result = "略過" if skipped.get(rule) else ("不過" if mine else "過")
-        evidence = "沒有給這一份規格檔" if skipped.get(rule) else (";".join(f"{v['where']}:{v['reason']}" for v in mine) if mine else passed_evidence[rule])
+        if rule in waived:
+            result, evidence = "略過", f"由憲法取代:{waived[rule]}"
+        else:
+            result = "略過" if skipped.get(rule) else ("不過" if mine else "過")
+            evidence = "沒有給這一份規格檔" if skipped.get(rule) else (";".join(f"{v['where']}:{v['reason']}" for v in mine) if mine else passed_evidence[rule])
         checks.append({"rule": rule, "result": result, "evidence": evidence, "violations": mine})
-    passed = not any(violations.values())
+    passed = not any(v for rule, v in violations.items() if rule not in waived)
     report = {
         "openapi": str(args.openapi) if args.openapi else None,
         "asyncapi": str(args.asyncapi) if args.asyncapi else None,

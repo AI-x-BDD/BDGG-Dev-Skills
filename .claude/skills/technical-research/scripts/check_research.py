@@ -72,9 +72,9 @@ def main() -> int:
     for number, heading, _ in research:
         full = R_HEADING_FULL.match(heading)
         if not full:
-            bad(R_TITLE, number, heading, "標題要寫成 `## R<序號>. <主題>(<對應的 FR、NFR、SC、憲法原則或使用者指定>)`")
+            bad(R_TITLE, number, heading, "標題要寫成 `## R<序號>. <主題>(<對應的 FR、NFR、SC、憲法〈條文名稱〉或使用者指定>)`")
         elif not full.group(3).strip():
-            bad(R_TITLE, number, heading, "括號裡的對應是空的;寫出這個研究項對應的 FR、NFR、SC、憲法原則或「使用者指定」")
+            bad(R_TITLE, number, heading, "括號裡的對應是空的;寫出這個研究項對應的 FR、NFR、SC、憲法〈條文名稱〉或「使用者指定」")
         numbers.append(int(R_HEADING.match(heading).group(1)))
     if not research:
         bad(R_TITLE, 0, "", "找不到任何 `## R<序號>.` 研究項;每個研究項各寫一個二級標題")
