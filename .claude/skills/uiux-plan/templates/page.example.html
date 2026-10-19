@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>購物車|山茶小舖</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body data-requirements="FR-004 FR-005 FR-006 FR-007">
+  <header class="topbar">
+    <a class="brand" href="index.html">山茶小舖</a>
+    <nav>
+      <a href="cart.html">購物車 <span class="badge" id="cart-count" hidden></span></a>
+    </nav>
+  </header>
+  <main>
+    <h1>購物車</h1>
+    <section data-state="normal">
+      <div id="cart-items"></div>
+      <p>合計 <strong id="cart-total"></strong></p>
+      <button type="button" class="btn-primary" id="checkout">前往結帳</button>
+    </section>
+    <section data-state="empty">
+      <p class="empty">購物車是空的,<a href="index.html">去逛逛</a></p>
+    </section>
+    <section data-state="loading">
+      <p class="empty">正在確認庫存…</p>
+    </section>
+    <section data-state="error">
+      <p class="notice-error">「山茶花手工皂 3 入組」只剩 3 件,請調整數量後再結帳。</p>
+    </section>
+  </main>
+  <script>
+    const products = Proto.load("products");
+    let cart = Proto.load("cart");
+    const render = () => {
+      if (cart.length === 0) return Proto.showState("empty");
+      document.getElementById("cart-items").innerHTML = cart.map((item) => `
+        <div class="card">
+          ${Proto.thumb(item)}
+          <div>${item.name}<br><small>${Proto.money(item.price)}</small></div>
+          <div class="qty">
+            <button type="button" data-step="-1" data-id="${item.productId}">−</button>
+            ${item.quantity}
+            <button type="button" data-step="1" data-id="${item.productId}">+</button>
+          </div>
+        </div>`).join("");
+      document.getElementById("cart-total").textContent = Proto.money(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
+    };
+    document.getElementById("cart-items").addEventListener("click", (event) => {
+      const id = event.target.dataset.id;
+      if (!id) return;
+      cart = cart.map((item) => item.productId === id ? { ...item, quantity: Math.min(99, item.quantity + Number(event.target.dataset.step)) } : item).filter((item) => item.quantity > 0);
+      Proto.save("cart", cart);
+      render();
+    });
+    document.getElementById("checkout").addEventListener("click", () => {
+      Proto.showState("loading");
+      Proto.later(800, () => {
+        const short = cart.find((item) => item.quantity > products.find((p) => p.id === item.productId).stock);
+        if (short) return Proto.showState("error");
+        location.href = "checkout.html";
+      });
+    });
+    render();
+  </script>
+</body>
+</html>
