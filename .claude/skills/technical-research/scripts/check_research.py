@@ -24,6 +24,7 @@ PART_LABEL = re.compile(rf"^\*\*({'|'.join(PARTS)})\*\*{COLON}")
 EVIDENCE = re.compile(rf"^- (?:(實測|估算|查證){OPEN}([^))]*){CLOSE}|判斷{COLON})")
 TABLE_ROW = re.compile(r"^\|(.+)\|$")
 SEPARATOR = re.compile(r"^\|[\s:|-]+\|$")
+CELL_SPLIT = re.compile(r"(?<!\\)\|")  # Markdown 表格裡跳脫的 \| 是內容,不是欄分隔
 REVISION_ITEM = re.compile(rf"^- R(\d+){COLON}")
 SECTIONS = ["待驗證", "修訂紀錄"]
 
@@ -111,7 +112,7 @@ def main() -> int:
     if "待驗證" in tails:
         rows = [(n, line.strip()) for n, line in tails["待驗證"][1] if TABLE_ROW.match(line.strip()) and not SEPARATOR.match(line.strip())]
         for n, text in rows[1:]:  # 第一列是表頭
-            cells = [cell.strip() for cell in text.strip("|").split("|")]
+            cells = [cell.strip() for cell in CELL_SPLIT.split(text.strip("|"))]
             source = re.fullmatch(r"R(\d+)", cells[0])
             if not source or int(source.group(1)) not in defined:
                 bad(R_TAIL, n, text, f"「來源」欄要是這份文件裡存在的研究項(R1–R{max(defined, default=0)}),實際是 `{cells[0]}`")

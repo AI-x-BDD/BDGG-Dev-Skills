@@ -24,6 +24,7 @@ DECISION_CELL = re.compile(r"^R\d+(、R\d+)*$")
 TRAILING_REFERENCE = re.compile(r"[((]R\d+(、R\d+)*[))]$")
 DEPENDENCY_LINE = re.compile(r"^- (後端 runtime|前端 runtime|開發|系統套件)[((](?:[^,,))]+[,,])?(\d+) 個[))][::](.*)$")
 SEPARATOR = re.compile(r"^\|[\s:|-]+\|$")
+CELL_SPLIT = re.compile(r"(?<!\\)\|")  # Markdown 表格裡跳脫的 \| 是內容,不是欄分隔
 
 R_SECTIONS = "五節齊全且順序正確"
 R_TABLE = "一覽表的層只用七類且一列一個技術"
@@ -83,7 +84,7 @@ def main() -> int:
     if not rows[1:]:
         bad(R_TABLE, 0, "", "一覽表沒有任何一列技術")
     for n, text in rows[1:]:  # 第一列是表頭
-        cells = [cell.strip() for cell in text.strip("|").split("|")]
+        cells = [cell.strip() for cell in CELL_SPLIT.split(text.strip("|"))]
         if len(cells) != 5:
             bad(R_TABLE, n, text, f"一覽表每一列要有 5 欄(層、技術、版本、用途、決策),這一列有 {len(cells)} 欄")
             continue
