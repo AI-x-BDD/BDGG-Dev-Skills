@@ -35,6 +35,7 @@ Q_RANGE = re.compile(r"Q(\d+)\s*[–-]\s*Q?(\d+)")
 Q_ONE = re.compile(r"Q(\d+)")
 OPEN_HEADING = re.compile(r"^## 待決問題\s*$")
 QUESTION_ROW = re.compile(r"^\|\s*Q(\d+)\s*\|(.*)\|\s*$")
+CELL_SPLIT = re.compile(r"(?<!\\)\|")  # Markdown 表格裡跳脫的 \| 是內容,不是欄分隔
 UNDECIDED = {"", "—", "-", "–"}
 
 
@@ -155,7 +156,7 @@ def parse_questions(text: str) -> dict[int, dict]:
         row = QUESTION_ROW.match(line) if inside else None
         if not row:
             continue
-        cells = [cell.strip() for cell in row.group(2).split("|")]
+        cells = [cell.strip() for cell in CELL_SPLIT.split(row.group(2))]
         if len(cells) < 4:
             continue
         step, question, blocks, decision = cells[0], cells[1], cells[2], cells[-1]

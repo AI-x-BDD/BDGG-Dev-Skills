@@ -18,12 +18,13 @@ import sys
 from pathlib import Path
 
 ENDPOINT_ROW = re.compile(r"^\| E(\d+) \|(.*)\|$")
+CELL_SPLIT = re.compile(r"(?<!\\)\|")  # Markdown 表格裡跳脫的 \| 是內容,不是欄分隔
 ENDPOINT_COUNT = re.compile(r"這次需求涉及 (\d+) 個端點")
-WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) [^|]+\| ([^|]+) \| ([^|]+) \|.*\|$")
+WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) (?:\\.|[^|\\])+\| ((?:\\.|[^|\\])+) \| ((?:\\.|[^|\\])+) \|.*\|$")
 PARALLEL = re.compile(r"^✅ 與 (S\d+(?:、S\d+)*) 平行$")
 SUMMARY = re.compile(r"共 (\d+) 個 wave、(\d+) 個步驟")
 DOC_OUTPUT = re.compile(r"^(\s*)[├└]── (\S+)\s+# (S\d+(?:、S\d+)*) 產出[((](.+?)[,,]\s*([a-z]+-plan)[))]")
-QUESTION_ROW = re.compile(r"^\| Q(\d+) \| S(\d+) \|(.*)\|([^|]*)\|([^|]*)\|$")
+QUESTION_ROW = re.compile(r"^\| Q(\d+) \| S(\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
 PLANNERS = {"uiux-plan", "data-plan", "api-plan", "deploy-plan"}
 NO_PLANNER = "無合適的 planner"
 PLANNER_PATHS = {
@@ -215,7 +216,7 @@ def main() -> int:
     if not skipped:
         defined = set(re.findall(r"\*\*((?:FR|NFR|SC)-\d+)\*\*", args.spec.read_text(encoding="utf-8")))
         for number, endpoint, row in endpoints:
-            source = row.split("|")[-1]
+            source = CELL_SPLIT.split(row)[-1]
             for rid in REQUIREMENT_ID.findall(source):
                 if rid not in defined:
                     bad(R_SOURCES, f"E{endpoint} 的需求出處 {rid} 在 spec.md 裡沒有定義", number, rid)
