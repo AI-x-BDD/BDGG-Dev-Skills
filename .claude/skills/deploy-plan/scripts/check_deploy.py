@@ -150,7 +150,7 @@ def main() -> int:
         probe = subprocess.run(["docker", "compose", "version"], capture_output=True, text=True)
         if probe.returncode == 0:
             compose_skipped = False
-            result = subprocess.run(["docker", "compose", "-f", str(args.compose), "config", "-q"], capture_output=True, text=True, cwd=deploy_dir)
+            result = subprocess.run(["docker", "compose", "-f", str(args.compose.resolve()), "config", "-q"], capture_output=True, text=True, cwd=deploy_dir)
             if result.returncode != 0:
                 bad(R_COMPOSE, str(args.compose), (result.stderr or result.stdout).strip().splitlines()[-1] if (result.stderr or result.stdout).strip() else f"exit code {result.returncode}")
     if compose_skipped:
