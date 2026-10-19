@@ -3,6 +3,9 @@
 *.skill
 *.zip
 
+# dbdiagram VS Code 擴充套件預覽 .dbml 時自動產生的版面狀態檔
+*.dbdiagram
+
 # Claude Code 的本機權限設定
 .claude/settings.local.json
 
