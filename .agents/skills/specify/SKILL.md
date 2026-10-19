@@ -23,6 +23,7 @@ description: 要把一段功能描述寫成功能規格、開始做一個新功�
 1. Delegate 執行 `uv run scripts/check_spec.py --spec <spec.md 的路徑>` **取得 spec.md 的結構檢查結果**;若有不過 → 跳至 Phase 3 Step 3。
 2. Think **逐條對照腳本沒有判的 Rule**;若有不過 → 跳至 Phase 3 Step 2。
 3. Ask **提出規格摘要**,問使用者是否同意;若出現新的不確定處 → 跳至 Phase 2 Step 2;若使用者要修改 → 跳至 Phase 3 Step 1。
+4. Report **交出 spec.md 的路徑與可選的下一步**:要先把規格裡的缺口問清楚就用 clarify-over-specs,否則接著做 technical-research。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -52,6 +53,7 @@ flowchart TD
         P4S3["3. Ask：提出規格摘要"]
         G_P4S3_1{"出現新的不確定處？"}
         G_P4S3_2{"使用者要修改？"}
+        P4S4["4. Report：交出 spec.md<br/>的路徑與可選的下一步"]
     end
     End["結束"]
     P1S1 --> P1S2
@@ -74,6 +76,7 @@ flowchart TD
     G_P4S3_1 -->|是| P2S2
     G_P4S3_1 -->|否| G_P4S3_2
     G_P4S3_2 -->|是| P3S1
-    G_P4S3_2 -->|否| End
+    G_P4S3_2 -->|否| P4S4
+    P4S4 --> End
 ```
 </details>
