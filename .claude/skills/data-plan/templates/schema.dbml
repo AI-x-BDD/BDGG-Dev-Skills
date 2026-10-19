@@ -1,0 +1,18 @@
+Project {{專案代號,英文小寫與底線}} {
+  database_type: '{{資料庫種類:PostgreSQL、MySQL 或 SQLite}}'
+  Note: 'S{{步驟序號}}(E{{端點序號}} {{端點名稱}})依 spec.md、plan.md 與前幾步的規格檔產出'
+}
+
+Enum {{enum 名稱}} {
+  {{enum 值}} [note: '{{這個值的意思}}']
+}
+
+Table {{表名,英文小寫複數}} {
+  {{欄位名稱}} {{欄位型別}} [{{欄位設定:pk、not null、unique、default、note 等,用逗號分隔}}]
+  indexes {
+    ({{欄位名稱,用逗號分隔}}) [{{index 設定:unique、name 等,用逗號分隔}}]
+  }
+  Note: '需求: {{需求出處的編號,用、分隔}}'
+}
+
+Ref: {{表名}}.{{欄位名稱}} > {{被參照的表名}}.{{被參照的欄位名稱}} [{{參照設定:delete 與 update 的行為}}]
