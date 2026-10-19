@@ -1,0 +1,28 @@
+name: {{專案代號,英文小寫與連字號}}
+x-source: S{{步驟序號}}(E{{端點序號}} {{端點名稱}})依 spec.md、plan.md 與前幾步的規格檔產出
+services:
+  {{服務名稱}}:
+    x-requirements: [{{需求出處的編號,用逗號分隔}}]
+    image: {{image 名稱與固定的 tag}}
+    build:
+      context: {{build 的根目錄,相對於 compose.yaml}}
+      dockerfile: {{Dockerfile 的路徑,相對於 context}}
+    ports:
+      - "{{對外 port}}:{{容器內 port}}"
+    expose:
+      - "{{只給同一個網路的服務連的 port}}"
+    environment:
+      {{環境變數名稱}}: {{值:機密寫成 ${同名變數},其他寫固定值}}
+    volumes:
+      - {{主機路徑或 volume 名稱}}:{{容器內路徑}}{{唯讀掛載寫 :ro,否則留空}}
+    depends_on:
+      {{相依的服務名稱}}:
+        condition: service_healthy
+    healthcheck:
+      test: [{{健康檢查指令,JSON 陣列的元素,用逗號分隔}}]
+      interval: {{檢查間隔,例如 30s}}
+      timeout: {{逾時,例如 5s}}
+      retries: {{重試次數}}
+    restart: unless-stopped
+volumes:
+  {{volume 名稱}}:

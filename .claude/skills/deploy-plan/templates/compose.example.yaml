@@ -1,0 +1,65 @@
+name: online-shop
+x-source: S5(E6 部署與網路)依 spec.md、plan.md 與前幾步的規格檔產出
+services:
+  proxy:
+    x-requirements: [NFR-004, SC-002]
+    image: nginx:1.27-alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./product-images:/srv/product-images:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+  api:
+    x-requirements: [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, NFR-003]
+    image: online-shop-api:0.1.0
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: ${DATABASE_URL}
+      PAYMENT_HASH_KEY: ${PAYMENT_HASH_KEY}
+      PAYMENT_HASH_IV: ${PAYMENT_HASH_IV}
+    volumes:
+      - ./product-images:/app/product-images
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+  db:
+    x-requirements: [FR-007, FR-009, NFR-003]
+    image: postgres:17-alpine
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "shop", "-d", "shop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+volumes:
+  db-data:
