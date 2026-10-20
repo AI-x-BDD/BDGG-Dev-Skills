@@ -176,23 +176,22 @@ def collect(package: Path) -> tuple[set[tuple[str, str]], dict[str, set[str]], d
                 add(path, " ".join(media.split()))
 
     deploy = package / "deploy"
-    for name in ("compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"):
-        path = deploy / name
-        if path.is_file():
-            anchors.setdefault(path.relative_to(package).as_posix(), set())
-            for service, body in (read_yaml(path).get("services") or {}).items():
-                add(path, f"services.{service}", True)
-                for key in body or {}:
-                    add(path, f"services.{service}.{key}")
-    for path in sorted(deploy.glob("*.conf")):
+    compose_names = {"compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"}
+    for path in sorted(p for p in deploy.rglob("*") if p.name in compose_names and p.is_file()):
+        anchors.setdefault(path.relative_to(package).as_posix(), set())
+        for service, body in (read_yaml(path).get("services") or {}).items():
+            add(path, f"services.{service}", True)
+            for key in body or {}:
+                add(path, f"services.{service}.{key}")
+    for path in sorted(deploy.rglob("*.conf")):
         anchors.setdefault(path.relative_to(package).as_posix(), set())
         for location in NGINX_LOCATION.findall(read_text(path)):
             add(path, f"location {' '.join(location.split())}", True)
-    for path in sorted(deploy.glob("Dockerfile*")):
+    for path in sorted(deploy.rglob("Dockerfile*")):
         anchors.setdefault(path.relative_to(package).as_posix(), set())
         for instruction in DOCKER_INSTRUCTION.findall(read_text(path)):
             add(path, instruction)
-    for path in sorted(deploy.glob(".env*")):
+    for path in sorted(deploy.rglob(".env*")):
         anchors.setdefault(path.relative_to(package).as_posix(), set())
     return required, anchors, message_schemas
 

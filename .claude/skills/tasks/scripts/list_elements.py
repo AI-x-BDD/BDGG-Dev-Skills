@@ -5,7 +5,7 @@
 """列出一個 spec package 裡規格檔的每一個介面元素,錨點的寫法和 tasks.md 的 ⚙ 一致。
 
 讀 contracts/ 底下的 *.asyncapi.yaml、*.openapi.yaml、*.dbml,prototype*/ 底下的 *.html 與 *.css,
-deploy/ 底下的 compose.yaml、*.conf 與 Dockerfile。
+deploy/ 底下(含子資料夾)的 compose.yaml、*.conf 與 Dockerfile。
 
 輸出分成兩類:
   required  每一個都要在 tasks.md 的介面覆蓋表上出現:AsyncAPI 的 operations、OpenAPI 的 path + method、
@@ -116,17 +116,16 @@ def collect(package: Path) -> tuple[list[dict], list[dict]]:
                 add(anchors, path, " ".join(media.split()), "css")
 
     deploy = package / "deploy"
-    for name in ("compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"):
-        path = deploy / name
-        if path.is_file():
-            for service, body in (read_yaml(path).get("services") or {}).items():
-                add(required, path, f"services.{service}", "compose-service")
-                for key in body or {}:
-                    add(anchors, path, f"services.{service}.{key}", "compose-field")
-    for path in sorted(deploy.glob("*.conf")):
+    compose_names = {"compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"}
+    for path in sorted(p for p in deploy.rglob("*") if p.name in compose_names and p.is_file()):
+        for service, body in (read_yaml(path).get("services") or {}).items():
+            add(required, path, f"services.{service}", "compose-service")
+            for key in body or {}:
+                add(anchors, path, f"services.{service}.{key}", "compose-field")
+    for path in sorted(deploy.rglob("*.conf")):
         for location in NGINX_LOCATION.findall(read_text(path)):
             add(required, path, f"location {' '.join(location.split())}", "proxy-location")
-    for path in sorted(deploy.glob("Dockerfile*")):
+    for path in sorted(deploy.rglob("Dockerfile*")):
         for instruction in DOCKER_INSTRUCTION.findall(read_text(path)):
             add(anchors, path, instruction, "dockerfile")
     return required, anchors
