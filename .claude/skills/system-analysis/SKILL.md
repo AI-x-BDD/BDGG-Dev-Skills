@@ -21,10 +21,11 @@ description: 要依功能規格與技術研究規劃並執行系統分析時,用
 ## Phase 3: 執行分析波段
 1. Delegate 依骨架 `templates/委派指示.md` 與範例 `templates/委派指示.example.md` **把這一輪的步驟交給 sub agent**:還沒完成的最前面一波或使用者要重做的步驟,一支 planner 一個 sub agent,同一波平行。
 2. Read **這一輪交回的產出與待決問題**。
-3. Write 依 `rules/待決問題-規範.md` 在 plan.md **登記待決問題**:每一題標出它擋住哪幾步;若有問題擋住下一波 → 跳至 Phase 3 Step 4;若還有下一波 → 跳至 Phase 3 Step 1。
-4. Ask **提出還沒決定的待決問題**,問使用者每一題怎麼決定。
-5. Write **把使用者的決定寫回 plan.md**;若決定要改已經完成的產出,或還有下一波 → 跳至 Phase 3 Step 1。
-6. Report **交出所有產出**:每個檔的路徑,以及打開原型的方式。
+3. Write 依 `rules/待決問題-規範.md` 在 plan.md **登記待決問題**:每一題標出它擋住哪幾步。
+4. Delegate 執行 `uv run scripts/check_plan.py --plan <plan.md 的路徑> --spec <spec.md 的路徑>` **取得規格檔引用與待決問題表的檢查結果**;若有不過 → 跳至 Phase 3 Step 3;若有問題擋住下一波 → 跳至 Phase 3 Step 5;若還有下一波 → 跳至 Phase 3 Step 1。
+5. Ask **提出還沒決定的待決問題**,問使用者每一題怎麼決定。
+6. Write **把使用者的決定寫回 plan.md**;若決定要改已經完成的產出,或還有下一波 → 跳至 Phase 3 Step 1。
+7. Report **交出所有產出**:每個檔的路徑,以及打開原型的方式。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>
@@ -52,12 +53,14 @@ flowchart TD
         P3S1["1. Delegate：把這一輪<br/>的步驟交給 sub agent"]
         P3S2["2. Read：這一輪交回的產出與待決問題"]
         P3S3["3. Write：登記待決問題"]
-        G_P3S3_1{"有問題擋住下一波？"}
-        G_P3S3_2{"還有下一波？"}
-        P3S4["4. Ask：提出還沒決定的待決問題"]
-        P3S5["5. Write：把使用者的決定寫回 plan.md"]
-        G_P3S5_1{"決定要改已經完成的<br/>產出,或還有下一波？"}
-        P3S6["6. Report：交出所有產出"]
+        P3S4["4. Delegate：取得規格檔引<br/>用與待決問題表的檢查結果"]
+        G_P3S4_1{"有不過？"}
+        G_P3S4_2{"有問題擋住下一波？"}
+        G_P3S4_3{"還有下一波？"}
+        P3S5["5. Ask：提出還沒決定的待決問題"]
+        P3S6["6. Write：把使用者的決定寫回 plan.md"]
+        G_P3S6_1{"決定要改已經完成的<br/>產出,或還有下一波？"}
+        P3S7["7. Report：交出所有產出"]
     end
     End["結束"]
     P1S1 --> P1S2
@@ -79,15 +82,18 @@ flowchart TD
     G_P2S5_1 -->|否| P3S1
     P3S1 --> P3S2
     P3S2 --> P3S3
-    P3S3 --> G_P3S3_1
-    G_P3S3_1 -->|是| P3S4
-    G_P3S3_1 -->|否| G_P3S3_2
-    G_P3S3_2 -->|是| P3S1
-    G_P3S3_2 -->|否| P3S4
-    P3S4 --> P3S5
-    P3S5 --> G_P3S5_1
-    G_P3S5_1 -->|是| P3S1
-    G_P3S5_1 -->|否| P3S6
-    P3S6 --> End
+    P3S3 --> P3S4
+    P3S4 --> G_P3S4_1
+    G_P3S4_1 -->|是| P3S3
+    G_P3S4_1 -->|否| G_P3S4_2
+    G_P3S4_2 -->|是| P3S5
+    G_P3S4_2 -->|否| G_P3S4_3
+    G_P3S4_3 -->|是| P3S1
+    G_P3S4_3 -->|否| P3S5
+    P3S5 --> P3S6
+    P3S6 --> G_P3S6_1
+    G_P3S6_1 -->|是| P3S1
+    G_P3S6_1 -->|否| P3S7
+    P3S7 --> End
 ```
 </details>

@@ -7,7 +7,8 @@
 檢查項目:端點從 E1 連號且個數和敘述一致、每個端點在波段表恰好出現一次、步驟與 wave 的編號、
 「Planner」欄只有四支 planner 或「無合適的 planner」、「平行」欄和同一波的步驟一致、結尾的總數、
 Documentation 樹裡每一支指派的 planner 都有產出且步驟、端點與檔案種類對得上、同一波不共用產出路徑、
-「待決問題」表的編號與步驟都存在,以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
+「待決問題」表的編號與步驟都存在(「提出的步驟」可以是 S<步驟>、tasks 或 implement T<編號>)、
+Documentation 樹列出的產出檔裡引用的待決問題都登記在表裡,以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -24,7 +25,8 @@ WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) (?:\\.|[^|\\])+\| ((?:\\.|
 PARALLEL = re.compile(r"^✅ 與 (S\d+(?:、S\d+)*) 平行$")
 SUMMARY = re.compile(r"共 (\d+) 個 wave、(\d+) 個步驟")
 DOC_OUTPUT = re.compile(r"^(\s*)[├└]── (\S+)\s+# (S\d+(?:、S\d+)*) 產出[((](.+?)[,,]\s*([a-z]+-plan)[))]")
-QUESTION_ROW = re.compile(r"^\| Q(\d+) \| S(\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
+QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|implement T\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
+QUESTION_REF = re.compile(r"待決問題\s*(Q\d+(?:\s*(?:[–-]\s*Q?\d+|[、,,和與及]\s*Q\d+))*)?")
 PLANNERS = {"uiux-plan", "data-plan", "api-plan", "deploy-plan"}
 NO_PLANNER = "無合適的 planner"
 PLANNER_PATHS = {
@@ -43,8 +45,9 @@ R_PARALLEL = "「平行」欄和同一波的其他步驟一致"
 R_SUMMARY = "結尾的 wave 數與步驟數和波段表一致"
 R_OUTPUTS = "每支指派的 planner 在 Documentation 樹都有產出且對得上"
 R_QUESTIONS = "「待決問題」表的編號與步驟都存在"
+R_REFERENCES = "規格檔引用的待決問題都登記在表裡"
 R_SOURCES = "需求出處的編號都在 spec.md 裡"
-RULES = [R_ENDPOINTS, R_ONCE, R_NUMBERING, R_PLANNER, R_PARALLEL, R_SUMMARY, R_OUTPUTS, R_QUESTIONS, R_SOURCES]
+RULES = [R_ENDPOINTS, R_ONCE, R_NUMBERING, R_PLANNER, R_PARALLEL, R_SUMMARY, R_OUTPUTS, R_QUESTIONS, R_REFERENCES, R_SOURCES]
 
 
 def section(lines: list[tuple[int, str]], heading: str) -> list[tuple[int, str]]:
@@ -197,11 +200,11 @@ def main() -> int:
     for expected, (number, line) in enumerate(question_rows, start=1):
         m = QUESTION_ROW.match(line)
         if not m:
-            bad(R_QUESTIONS, "列要寫成「| Q<序號> | S<步驟> | 問題 | 擋住 | 決定 |」", number, line)
+            bad(R_QUESTIONS, "列要寫成「| Q<序號> | S<步驟>、tasks 或 implement T<編號> | 問題 | 擋住 | 決定 |」", number, line)
             continue
         if int(m.group(1)) != expected:
             bad(R_QUESTIONS, f"第 {expected} 列是 Q{m.group(1)},要從 Q1 連號", number)
-        if int(m.group(2)) not in step_endpoint:
+        if m.group(2) and int(m.group(2)) not in step_endpoint:
             bad(R_QUESTIONS, f"Q{m.group(1)} 的提出步驟 S{m.group(2)} 不在波段表", number)
         blocked = m.group(4).strip()
         if blocked != "—":
@@ -210,6 +213,35 @@ def main() -> int:
                     bad(R_QUESTIONS, f"Q{m.group(1)} 的「擋住」欄是「{blocked}」,要是波段表裡的步驟或「—」", number)
         if not m.group(5).strip():
             bad(R_QUESTIONS, f"Q{m.group(1)} 的「決定」欄是空的,還沒決定要寫「待決」", number)
+
+    # 規格檔引用的待決問題
+    registered = {int(m.group(1)) for _, l in question_rows if (m := QUESTION_ROW.match(l))}
+    raised = {int(m.group(2)) for _, l in question_rows if (m := QUESTION_ROW.match(l)) and m.group(2)}
+    scanned = 0
+    for output, steps in sorted(path_steps.items()):
+        target = args.plan.parent / output
+        files = sorted(f for f in target.rglob("*") if f.is_file()) if target.is_dir() else ([target] if target.is_file() else [])
+        for file in files:
+            try:
+                text = file.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            scanned += 1
+            name = file.relative_to(args.plan.parent).as_posix()
+            unnumbered = []
+            for number, line in enumerate(text.splitlines(), start=1):
+                for ref in QUESTION_REF.finditer(line):
+                    if not ref.group(1):
+                        unnumbered.append(number)
+                        continue
+                    for a, b in re.findall(r"Q(\d+)(?:\s*[–-]\s*Q?(\d+))?", ref.group(1)):
+                        for q in range(int(a), int(b or a) + 1):
+                            if q not in registered:
+                                bad(R_REFERENCES, f"{name} 第 {number} 行引用待決問題 Q{q},表裡沒有這一題")
+            if unnumbered and not steps & raised:
+                owners = "、".join(f"S{s}" for s in sorted(steps))
+                where = "、".join(str(n) for n in unnumbered)
+                bad(R_REFERENCES, f"{name} 第 {where} 行寫了待決問題但沒有 Q 號,表裡沒有任何一列是 {owners} 提出的")
 
     # 需求出處
     skipped = args.spec is None
@@ -230,6 +262,7 @@ def main() -> int:
         R_SUMMARY: f"結尾的 {len(by_wave)} 個 wave、{len(rows)} 個步驟和波段表一致",
         R_OUTPUTS: f"{len(produced)} 個步驟與 planner 的組合在 Documentation 樹都有產出,步驟、端點與檔案種類對得上",
         R_QUESTIONS: f"「待決問題」表的 {len(question_rows)} 列編號與步驟都存在",
+        R_REFERENCES: f"Documentation 樹列出的 {scanned} 個產出檔裡引用的待決問題都登記在表裡",
         R_SOURCES: "沒有給 --spec,沒有檢查" if skipped else "需求出處的編號都在 spec.md 裡有定義",
     }
     checks = []
