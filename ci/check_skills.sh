@@ -31,9 +31,9 @@ for dir in .agents/skills/*/; do
     if [ ! -d ".claude/skills/$name" ]; then
         echo "不過 .claude/skills/$name 不存在(兩份要同步)"
         fail=1
-    elif ! diff -r -x __pycache__ ".agents/skills/$name" ".claude/skills/$name" >/dev/null; then
+    elif ! diff -r ".agents/skills/$name" ".claude/skills/$name" >/dev/null; then
         echo "不過 .agents/skills/$name 與 .claude/skills/$name 內容不同(兩份要同步)"
-        diff -rq -x __pycache__ ".agents/skills/$name" ".claude/skills/$name" | head -20
+        diff -rq ".agents/skills/$name" ".claude/skills/$name" | head -20
         fail=1
     fi
 done
