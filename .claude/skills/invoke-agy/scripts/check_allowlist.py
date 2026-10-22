@@ -17,10 +17,13 @@
   (regex 規則則整條 regex 完全符合整行)
 - regex 規則切成 token 後有不合法的(例如 `^(ls|cat)( |$)` 群組裡的空白把它切斷),前綴比對時視為不成立,
   列在輸出的 `broken_rules`;agy 遇到這種規則的行為文件沒寫,這裡依觀察推定為不放行
-- 引號外出現 `#`、`(`、`)`(不論位置、有沒有跳脫),或含空白、tab、換行以外的控制字元或非 ASCII 字元(例如 U+00A0)時,
+- 引號外出現 `#`、`(`、`)`(不論位置、有沒有跳脫)、`$'…'`(ANSI-C 引號)或 `$"…"`,或含空白、tab、換行以外的控制字元或非 ASCII 字元(例如 U+00A0)時,
   一律整行比對
 已知限制(刻意 fail-closed,不再逐一補 shell 註解與跳脫的解析邊角):含引號外 `#` 的指令要以整行原文寫進允許清單,
 `echo a #c`、`echo a;#c` 這類合法的註解寫法也會被擋;引號內的 `#`(`echo '#x'`)照常前綴比對。
+不實作 `$'…'` 的 ANSI-C 跳脫語意,遇到 `$'`、`$"` 一律整行比對。
+其他需要刻意構造的 shell 語法邊角(本腳本是 agy 實際比對的近似,不是 bash 解析器)不再逐一改碼,只記在這裡;
+真正放行與否仍由 agy 自己的權限引擎決定,這支腳本只是事前檢查。
 結果以 JSON 寫到 stdout。全部在清單裡 exit 0;有不在清單的 exit 1;檔案讀不到或格式不符 exit 2。
 """
 
@@ -121,7 +124,7 @@ def expandable_text(command: str) -> str:
 
 
 def unquoted_text(command: str) -> str:
-    """回傳所有引號外的字元,連反斜線跳脫的也算(用來判斷 # 有沒有出現在引號外)。"""
+    """回傳所有引號外的字元,連反斜線跳脫的與開頭的引號字元也算(用來判斷 #、(、)、$'、$" 有沒有出現在引號外)。"""
     out, state, i = [], None, 0
     while i < len(command):
         ch = command[i]
@@ -137,6 +140,7 @@ def unquoted_text(command: str) -> str:
             out.append(command[i:i + 2])
             i += 1
         elif ch in "'\"":
+            out.append(ch)  # 留下開頭引號,`$'…'`、`$"…"` 才看得出來
             state = ch
         else:
             out.append(ch)
@@ -146,9 +150,9 @@ def unquoted_text(command: str) -> str:
 
 def needs_exact_match(command: str) -> bool:
     """以下任一種就停用前綴比對、改整行比對(fail-closed,見檔頭的已知限制):
-    會展開的部分有命令替換、反引號、程序替換、大括號展開或換行;引號外出現 #、( 或 )(子 shell、函式等);含空白、tab、換行以外的控制字元或非 ASCII 字元。"""
+    會展開的部分有命令替換、反引號、程序替換、大括號展開或換行;引號外出現 #、( 或 )(子 shell、函式等)、$'…' 或 $"…";含空白、tab、換行以外的控制字元或非 ASCII 字元。"""
     outside = unquoted_text(command)
-    if UNSAFE_CHAR.search(command) or any(ch in outside for ch in "#()"):
+    if UNSAFE_CHAR.search(command) or any(ch in outside for ch in "#()") or "$'" in outside or '$"' in outside:
         return True
     text = expandable_text(command)
     return any(mark in text for mark in ("$(", "`", "<(", ">(", "\n", "\r")) or bool(BRACE.search(text))
