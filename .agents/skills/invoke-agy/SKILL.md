@@ -11,10 +11,12 @@ description: 只要準備在指令列執行 `agy -p` 或 `agy --print`,不論是
 3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_allowlist.py --prompt <任務指示檔>` **確認指示檔的指令都在 agy 的允許清單**;若有不在清單的 → 跳至 Phase 1 Step 2。
 
 ## Phase 2: 判定調用結果
-1. Think 依 `rules/調用-規範.md` **決定非互動調用參數與授權權限**。
-2. Delegate **執行 agy --print 指令**傳入任務指示檔並將最後輸出寫入紀錄檔。
-3. Read AGY **執行紀錄與工作目錄的 git diff**。
-4. Delegate 執行 `uv run scripts/judge_invocation.py --json <JSON 紀錄檔> --stderr <stderr 紀錄檔> --exit <結束碼紀錄檔>` **判定這次調用的結果**是成功、逾時、權限中止、額度用完或其他失敗;若判定不是成功 → 跳至 Phase 3 Step 2。
+1. Delegate 執行 `uv run scripts/pick_model.py --kind <review 或 dev>` **取得這次調用的模型**;若判定額度用完 → 跳至 Phase 3 Step 2。
+2. Delegate 執行 `uv run scripts/prepare_home.py --dest <任務指示檔所在資料夾>/home` **建出不載入 MCP 的家目錄**。
+3. Think 依 `rules/調用-規範.md` **決定非互動調用參數與授權權限**。
+4. Delegate **執行 agy -p 指令**傳入任務指示檔並將最後輸出寫入紀錄檔。
+5. Read AGY **執行紀錄與工作目錄的 git diff**。
+6. Delegate 執行 `uv run scripts/judge_invocation.py --json <JSON 紀錄檔> --stderr <stderr 紀錄檔> --exit <結束碼紀錄檔>` **判定這次調用的結果**是成功、逾時、權限中止、額度用完或其他失敗;若判定不是成功 → 跳至 Phase 3 Step 2。
 
 ## Phase 3: 驗收成果並回報變更
 1. Think **對照任務指示檔的驗收條件判定是否通過**;若結果不符預期且需要 AGY 修正,而這次還沒有修正過 → 跳至 Phase 1 Step 2。
@@ -33,11 +35,14 @@ flowchart TD
         G_P1S3_1{"有不在清單的？"}
     end
     subgraph P2["Phase 2: 判定調用結果"]
-        P2S1["1. Think：決定非互動<br/>調用參數與授權權限"]
-        P2S2["2. Delegate：執行 agy --print 指令"]
-        P2S3["3. Read：執行紀錄與<br/>工作目錄的 git diff"]
-        P2S4["4. Delegate：判定這次調用的結果"]
-        G_P2S4_1{"判定不是成功？"}
+        P2S1["1. Delegate：取得這次調用的模型"]
+        G_P2S1_1{"判定額度用完？"}
+        P2S2["2. Delegate：建出不載入 MCP 的家目錄"]
+        P2S3["3. Think：決定非互動<br/>調用參數與授權權限"]
+        P2S4["4. Delegate：執行 agy -p 指令"]
+        P2S5["5. Read：執行紀錄與<br/>工作目錄的 git diff"]
+        P2S6["6. Delegate：判定這次調用的結果"]
+        G_P2S6_1{"判定不是成功？"}
     end
     subgraph P3["Phase 3: 驗收成果並回報變更"]
         P3S1["1. Think：對照任務指示檔<br/>的驗收條件判定是否通過"]
@@ -52,12 +57,16 @@ flowchart TD
     P1S3 --> G_P1S3_1
     G_P1S3_1 -->|是| P1S2
     G_P1S3_1 -->|否| P2S1
-    P2S1 --> P2S2
+    P2S1 --> G_P2S1_1
+    G_P2S1_1 -->|是| P3S2
+    G_P2S1_1 -->|否| P2S2
     P2S2 --> P2S3
     P2S3 --> P2S4
-    P2S4 --> G_P2S4_1
-    G_P2S4_1 -->|是| P3S2
-    G_P2S4_1 -->|否| P3S1
+    P2S4 --> P2S5
+    P2S5 --> P2S6
+    P2S6 --> G_P2S6_1
+    G_P2S6_1 -->|是| P3S2
+    G_P2S6_1 -->|否| P3S1
     P3S1 --> G_P3S1_1
     G_P3S1_1 -->|是| P1S2
     G_P3S1_1 -->|否| P3S2
