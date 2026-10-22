@@ -19,6 +19,7 @@ Your goal is to refactor OrderService to extract tax calculation into a dedicate
 - Only modify the target files listed above. Do not touch unrelated files.
 - TaxCalculator must implement the TaxCalculatorInterface and handle VAT rates correctly.
 - Do not run interactive commands or launch long-running daemon servers.
+- Do not run git commit or git push: .git is read-only in this sandbox; leave changes in the working tree.
 - Keep all existing comments, docstrings, and formatting intact unless requested otherwise.
 
 # Expected Deliverables & Verification

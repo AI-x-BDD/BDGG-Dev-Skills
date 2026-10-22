@@ -8,12 +8,13 @@ description: 只要準備在指令列執行 `agy -p` 或 `agy --print`,不論是
 ## Phase 1: 產生任務指示檔
 1. Read 使用者的**委派需求、當前工作目錄與 git 狀態**;若 agy 未安裝或環境不支援 → 結束。
 2. Write 依骨架 `templates/task-prompt.md` 與範例 `templates/task-prompt.example.md` 把任務背景、修改範圍、操作限制與預期產出**寫成任務指示檔**。
+3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_allowlist.py --prompt <任務指示檔>` **確認指示檔的指令都在 agy 的允許清單**;若有不在清單的 → 跳至 Phase 1 Step 2。
 
 ## Phase 2: 判定調用結果
 1. Think 依 `rules/調用-規範.md` **決定非互動調用參數與授權權限**。
 2. Delegate **執行 agy --print 指令**傳入任務指示檔並將最後輸出寫入紀錄檔。
 3. Read AGY **執行紀錄與工作目錄的 git diff**。
-4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/judge_invocation.py --json <JSON 紀錄檔> --stderr <stderr 紀錄檔> --exit <結束碼紀錄檔>` **判定這次調用的結果**是成功、逾時、權限中止、額度用完或其他失敗;若判定不是成功 → 跳至 Phase 3 Step 2。
+4. Delegate 執行 `uv run scripts/judge_invocation.py --json <JSON 紀錄檔> --stderr <stderr 紀錄檔> --exit <結束碼紀錄檔>` **判定這次調用的結果**是成功、逾時、權限中止、額度用完或其他失敗;若判定不是成功 → 跳至 Phase 3 Step 2。
 
 ## Phase 3: 驗收成果並回報變更
 1. Think **對照任務指示檔的驗收條件判定是否通過**;若結果不符預期且需要 AGY 修正,而這次還沒有修正過 → 跳至 Phase 1 Step 2。
@@ -28,6 +29,8 @@ flowchart TD
         P1S1["1. Read：委派需求、當<br/>前工作目錄與 git 狀態"]
         G_P1S1_1{"未安裝或不支援？"}
         P1S2["2. Write：寫成任務指示檔"]
+        P1S3["3. Delegate：確認指示檔的<br/>指令都在 agy 的允許清單"]
+        G_P1S3_1{"有不在清單的？"}
     end
     subgraph P2["Phase 2: 判定調用結果"]
         P2S1["1. Think：決定非互動<br/>調用參數與授權權限"]
@@ -45,7 +48,10 @@ flowchart TD
     P1S1 --> G_P1S1_1
     G_P1S1_1 -->|是| End
     G_P1S1_1 -->|否| P1S2
-    P1S2 --> P2S1
+    P1S2 --> P1S3
+    P1S3 --> G_P1S3_1
+    G_P1S3_1 -->|是| P1S2
+    G_P1S3_1 -->|否| P2S1
     P2S1 --> P2S2
     P2S2 --> P2S3
     P2S3 --> P2S4
