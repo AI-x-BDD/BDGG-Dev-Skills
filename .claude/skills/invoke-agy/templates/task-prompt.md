@@ -19,6 +19,7 @@ Your goal is to {{具體任務目標與期望結果}}.
 - Keep all existing comments, docstrings, and formatting intact unless requested otherwise.
 - You are running headless: any shell command that needs a permission prompt is auto-denied, which ends the whole turn with no output.
 - Read, create and edit files with your built-in file tools, never through the shell.
+- Do not call any MCP tool (gitlab, kb, …): MCP calls are auto-denied in headless mode and end the whole turn. Use only the shell commands listed below.
 - Run only the shell commands listed below, one plain command per call: no `cd`, `&&`, `;`, pipes, redirects, heredocs, `$( )` or `bash -c`.
   - {{允許執行的 shell 指令,一行一條;不需要就寫 none}}
 
