@@ -17,6 +17,10 @@
   (regex 規則則整條 regex 完全符合整行)
 - regex 規則切成 token 後有不合法的(例如 `^(ls|cat)( |$)` 群組裡的空白把它切斷),前綴比對時視為不成立,
   列在輸出的 `broken_rules`;agy 遇到這種規則的行為文件沒寫,這裡依觀察推定為不放行
+- 引號外出現 `#`、`(`、`)`(不論位置、有沒有跳脫),或含空白、tab、換行以外的控制字元或非 ASCII 字元(例如 U+00A0)時,
+  一律整行比對
+已知限制(刻意 fail-closed,不再逐一補 shell 註解與跳脫的解析邊角):含引號外 `#` 的指令要以整行原文寫進允許清單,
+`echo a #c`、`echo a;#c` 這類合法的註解寫法也會被擋;引號內的 `#`(`echo '#x'`)照常前綴比對。
 結果以 JSON 寫到 stdout。全部在清單裡 exit 0;有不在清單的 exit 1;檔案讀不到或格式不符 exit 2。
 """
 
@@ -35,6 +39,7 @@ DEFAULT_SETTINGS = Path.home() / ".gemini" / "antigravity-cli" / "settings.json"
 OPERATORS = {";", "&&", "||", "|", "&"}
 WRAPPERS = {"timeout", "nohup", "nice", "env"}
 REDIRECTS = {">", ">>", "<", ">&", "<&", "&>", "&>>", ">|"}
+UNSAFE_CHAR = re.compile(r"[^\x20-\x7e\t\n]")
 PUNCT = re.compile(r"[;&|<>]+")
 BRACE = re.compile(r"\{[^{}\s]*,[^{}\s]*\}")
 
@@ -115,38 +120,46 @@ def expandable_text(command: str) -> str:
     return "".join(out)
 
 
-def needs_exact_match(command: str) -> bool:
-    """會展開的部分有命令替換、反引號、程序替換、大括號展開或換行時,agy 停用前綴比對。"""
-    text = expandable_text(command)
-    return any(mark in text for mark in ("$(", "`", "<(", ">(", "\n", "\r")) or bool(BRACE.search(text))
-
-
-def strip_comment(command: str) -> str:
-    """去掉 shell 註解:引號外、位在字詞開頭(行首、空白或 ;&|<>() 之後)的 `#` 起到行尾;字詞中間的 `#` 是字面。"""
-    state, i = None, 0
+def unquoted_text(command: str) -> str:
+    """回傳所有引號外的字元,連反斜線跳脫的也算(用來判斷 # 有沒有出現在引號外)。"""
+    out, state, i = [], None, 0
     while i < len(command):
         ch = command[i]
         if state == "'":
             if ch == "'":
                 state = None
-        elif ch == "\\":
-            i += 1
         elif state == '"':
-            if ch == '"':
+            if ch == "\\":
+                i += 1
+            elif ch == '"':
                 state = None
+        elif ch == "\\":
+            out.append(command[i:i + 2])
+            i += 1
         elif ch in "'\"":
             state = ch
-        elif ch == "#" and (i == 0 or command[i - 1].isspace() or command[i - 1] in ";&|<>()"):
-            return command[:i]
+        else:
+            out.append(ch)
         i += 1
-    return command
+    return "".join(out)
+
+
+def needs_exact_match(command: str) -> bool:
+    """以下任一種就停用前綴比對、改整行比對(fail-closed,見檔頭的已知限制):
+    會展開的部分有命令替換、反引號、程序替換、大括號展開或換行;引號外出現 #、( 或 )(子 shell、函式等);含空白、tab、換行以外的控制字元或非 ASCII 字元。"""
+    outside = unquoted_text(command)
+    if UNSAFE_CHAR.search(command) or any(ch in outside for ch in "#()"):
+        return True
+    text = expandable_text(command)
+    return any(mark in text for mark in ("$(", "`", "<(", ">(", "\n", "\r")) or bool(BRACE.search(text))
 
 
 def segments(command: str) -> list[list[str]] | None:
-    """去掉註解後以 shlex 切 token、依串接符號分段;切不開時回 None。"""
-    lexer = shlex.shlex(strip_comment(command), posix=True, punctuation_chars=";&|<>")
+    """以 shlex 切 token、依串接符號分段;切不開時回 None。"""
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|<>")
     lexer.whitespace_split = True
-    lexer.commenters = ""  # shlex 預設把字詞中間的 # 也當註解(`echo a#; rm x` 會吃掉後段),改由 strip_comment 判斷
+    lexer.whitespace = " \t\n"  # 分隔符只認空白、tab、換行與 ;&|<>;引號外的 ( ) 在 needs_exact_match 已改整行比對
+    lexer.commenters = ""  # 含 # 的指令在 needs_exact_match 就改整行比對了,這裡不必也不該再判註解
     try:
         tokens = list(lexer)
     except ValueError:
@@ -265,6 +278,8 @@ def main() -> None:
     rules = allow_rules(args.settings)
     allowed = [c for c in commands if is_allowed(c, rules)]
     denied = [c for c in commands if c not in allowed]
+    if any("#" in unquoted_text(c) for c in denied):
+        print("被擋的指令裡有引號外的 #:這類指令一律整行比對,要放行就把整行原文寫進允許清單,或把 # 放進引號", file=sys.stderr)
     broken = broken_rules(rules)
     if broken:
         print(f"允許清單有 {len(broken)} 條 regex 規則切成 token 後不是合法 regex(群組裡有空白?),agy 前綴比對時不會放行", file=sys.stderr)
