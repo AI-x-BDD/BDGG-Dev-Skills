@@ -2,22 +2,28 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""建一個給無頭 agy 用的家目錄:內容全部符號連結回真正的家目錄,只少了 MCP 設定檔。
+"""建一個給無頭 agy 用的全新家目錄:只複製 agy 需要讀的設定檔,不連結也不複製其他東西。
 
 agy 1.4.5 沒有停用 MCP 的調用旗標(`agy --help` 沒有;`agy mcp disable` 改的是全域設定),
-MCP 伺服器列在 `~/.gemini/config/mcp_config.json`。這支腳本在 --dest 底下逐層連結真正家目錄的每一項,
-只有 `.gemini/config/mcp_config.json` 不連,於是 `HOME=<--dest> agy -p …` 看不到任何 MCP 伺服器,
-登入狀態、settings.json 的允許清單、git 設定與快取照常可用。
-結果以 JSON 寫到 stdout。建好 exit 0;--dest 已存在且不是空目錄、或真正的家目錄沒有 `.gemini` 時 exit 2。
+MCP 伺服器列在 `~/.gemini/config/mcp_config.json`;新家目錄裡沒有這個檔,`HOME=<--dest> agy -p …` 就看不到任何 MCP 伺服器。
+複製的清單(COPIES)與理由:
+- `.gemini/antigravity-cli/settings.json`:permissions 允許清單與預設模型;不帶它,無頭的 agy 每個指令都會被拒絕
+- `.gitconfig`:git 的 user 與安全設定;不帶它,agy 執行的 git 沒有身分
+登入不在這份清單裡:2026-10-23 實測只放 settings.json 的家目錄,`agy -p` 照常回覆(登入走系統金鑰圈,不讀 HOME 底下的檔)。
+一律複製、不建符號連結:agy 以 accept-edits 寫進 $HOME 的東西(對話紀錄、快取、或任務誤寫的檔)只會落在新家目錄,
+不會穿透到真正家目錄的 `.ssh`、`.config`、`.claude` 或 agy 自己的設定。
+結果以 JSON 寫到 stdout。建好 exit 0;--dest 已存在且不是空目錄、或真正的家目錄沒有 settings.json 時 exit 2。
 """
 
 import argparse
 import json
+import shutil
 import sys
 from pathlib import Path
 
-# 從家目錄往下逐層展開的路徑;最後一層是不連的那個檔
-EXCLUDE = (".gemini", "config", "mcp_config.json")
+SETTINGS = Path(".gemini") / "antigravity-cli" / "settings.json"
+COPIES = (SETTINGS, Path(".gitconfig"))
+MCP_CONFIG = Path(".gemini") / "config" / "mcp_config.json"
 
 
 def fail(message: str) -> None:
@@ -26,32 +32,31 @@ def fail(message: str) -> None:
     sys.exit(2)
 
 
-def mirror(src: Path, dest: Path, path: tuple[str, ...]) -> None:
-    """把 src 底下每一項連結到 dest;path 的第一層展開成目錄往下遞迴,最後一層略過。"""
-    dest.mkdir(parents=True, exist_ok=True)
-    for entry in sorted(src.iterdir()):
-        if entry.name == path[0]:
-            if len(path) > 1:
-                mirror(entry, dest / entry.name, path[1:])
-            continue
-        (dest / entry.name).symlink_to(entry)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="建一個連結回真正家目錄、但不含 ~/.gemini/config/mcp_config.json 的家目錄,給 HOME=<dest> agy -p 用"
+        description="建一個只含 agy settings.json 與 .gitconfig 複本、沒有 MCP 設定的新家目錄,給 HOME=<dest> agy -p 用"
     )
     parser.add_argument("--dest", required=True, type=Path, help="要建出的家目錄路徑(不存在或空目錄),例如任務資料夾底下的 home")
     parser.add_argument("--home", type=Path, default=Path.home(), help="真正的家目錄(預設目前使用者的家目錄)")
     args = parser.parse_args()
 
-    if not (args.home / ".gemini").is_dir():
-        fail(f"{args.home} 底下沒有 .gemini 目錄;--home 要給裝了 agy 的那個使用者的家目錄")
+    if not (args.home / SETTINGS).is_file():
+        fail(f"{args.home / SETTINGS} 不存在;--home 要給裝了 agy、登入過的那個使用者的家目錄")
     if args.dest.exists() and (not args.dest.is_dir() or any(args.dest.iterdir())):
-        fail(f"--dest {args.dest} 已存在且不是空目錄;給一個新的路徑,或先刪掉上一次建的家目錄")
-    mirror(args.home, args.dest, EXCLUDE)
-    excluded = args.home.joinpath(*EXCLUDE)
-    print(json.dumps({"home": str(args.dest), "excluded": str(excluded), "excluded_existed": excluded.exists()}, ensure_ascii=False))
+        fail(f"--dest {args.dest} 已存在且不是空目錄;每次調用給一個新的路徑,上一次的家目錄確認不用了再刪")
+    args.dest.mkdir(parents=True, exist_ok=True, mode=0o700)
+    copied = []
+    for rel in COPIES:
+        src = args.home / rel
+        if not src.is_file():
+            print(f"{src} 不存在,略過", file=sys.stderr)
+            continue
+        target = args.dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        shutil.copyfile(src, target, follow_symlinks=True)
+        target.chmod(0o600)
+        copied.append(str(rel))
+    print(json.dumps({"home": str(args.dest), "copied": copied, "mcp_config_present": (args.dest / MCP_CONFIG).exists()}, ensure_ascii=False))
 
 
 if __name__ == "__main__":

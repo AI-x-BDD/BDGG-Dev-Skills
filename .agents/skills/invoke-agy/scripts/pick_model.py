@@ -5,7 +5,7 @@
 """依任務性質與 ai-quota 的剩餘額度,決定這次 agy 調用的 `--model`。
 
 審查(review)預設用 Argon;`gemini-4-argon-7d` 剩餘低於門檻、stale、或查不到額度時改用 Flash。
-開發(dev)一律用 Flash。Flash 用到的池(`gemini-5h`、`gemini-7d`)有一個剩 0% 時判定額度用完。
+開發(dev)一律用 Flash。Flash 用到的池(`gemini-5h`、`gemini-7d`)有一個剩 0% 以下時判定額度用完。
 模型代號以 `agy models` 列出的為準(agy 1.4.5,2026-10-23)。
 結果以 JSON 寫到 stdout。選得出模型 exit 0;額度用完 exit 1;參數或 --state-file 讀不了 exit 2。
 """
@@ -84,7 +84,11 @@ def pick(kind: str, found: dict[str, dict], threshold: float, unreachable: str |
             reason = f"審查類預設 Argon,但 {ARGON_POOL} 剩 {argon['remaining_pct']}% 低於 {threshold:g}%,改用 Flash"
     exhausted = []
     if model == FLASH:
-        exhausted = [p for p in FLASH_POOLS if found.get(p) and not found[p]["stale"] and found[p]["remaining_pct"] == 0]
+        for pid in FLASH_POOLS:
+            pool = found.get(pid)
+            pct = pool["remaining_pct"] if pool else None
+            if pool and not pool["stale"] and isinstance(pct, (int, float)) and pct <= 0:
+                exhausted.append(pid)
     return {"kind": kind, "model": model, "reason": reason, "exhausted": exhausted, "pools": found}
 
 

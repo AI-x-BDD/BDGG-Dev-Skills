@@ -12,7 +12,8 @@
   `command(regex:…)` 每個 token 是錨定的 `^(?:pat)$`;`command(*)` 全部放行
 - `;`、`&&`、`||`、`|`、`&` 拆開的每一段都要有規則;`timeout`、`nohup`、`nice`、`env` 去掉後比對裡面的指令;
   `>`、`>>`、`<`、`2>&1` 這類檔案重導向不參與比對
-- 單引號外出現 `$(`、反引號、`<(`、`>(`、`{a,b}`,或 shlex 切不開時,整行原文要和規則完全相同
+- 單引號外(含雙引號內)出現 `$(`、反引號、`<(`、`>(`、`{a,b}`、換行,出現 `|&`、`;;`、`<<` 等沒有逐段語意的符號,
+  或 shlex 切不開時,整行原文要和規則完全相同
   (regex 規則則整條 regex 完全符合整行)
 - regex 規則切成 token 後有不合法的(例如 `^(ls|cat)( |$)` 群組裡的空白把它切斷),前綴比對時視為不成立,
   列在輸出的 `broken_rules`;agy 遇到這種規則的行為文件沒寫,這裡依觀察推定為不放行
@@ -33,6 +34,7 @@ DEFAULT_SETTINGS = Path.home() / ".gemini" / "antigravity-cli" / "settings.json"
 OPERATORS = {";", "&&", "||", "|", "&"}
 WRAPPERS = {"timeout", "nohup", "nice", "env"}
 REDIRECTS = {">", ">>", "<", ">&", "<&", "&>", "&>>", ">|"}
+PUNCT = re.compile(r"[;&|<>]+")
 BRACE = re.compile(r"\{[^{}\s]*,[^{}\s]*\}")
 
 
@@ -86,16 +88,33 @@ def allow_rules(settings_path: Path) -> list[str]:
     return allow
 
 
+def expandable_text(command: str) -> str:
+    """回傳 shell 會展開的部分:單引號外的字元(雙引號內仍會展開);反斜線跳脫的字元是字面,不算。"""
+    out, state, i = [], None, 0
+    while i < len(command):
+        ch = command[i]
+        if state == "'":
+            if ch == "'":
+                state = None
+        elif ch == "\\":
+            i += 1  # 跳脫:下一個字元是字面(雙引號內的 \$、\` 也一樣)
+        elif state == '"':
+            if ch == '"':
+                state = None
+            else:
+                out.append(ch)  # 雙引號內的單引號只是字元,$( 與反引號照樣展開
+        elif ch in "'\"":
+            state = ch
+        else:
+            out.append(ch)
+        i += 1
+    return "".join(out)
+
+
 def needs_exact_match(command: str) -> bool:
-    """單引號外有命令替換、反引號、程序替換或大括號展開時,agy 停用前綴比對。"""
-    outside, quoted = [], False
-    for ch in command:
-        if ch == "'":
-            quoted = not quoted
-        elif not quoted:
-            outside.append(ch)
-    text = "".join(outside)
-    return any(mark in text for mark in ("$(", "`", "<(", ">(")) or bool(BRACE.search(text))
+    """會展開的部分有命令替換、反引號、程序替換、大括號展開或換行時,agy 停用前綴比對。"""
+    text = expandable_text(command)
+    return any(mark in text for mark in ("$(", "`", "<(", ">(", "\n", "\r")) or bool(BRACE.search(text))
 
 
 def segments(command: str) -> list[list[str]] | None:
@@ -108,6 +127,8 @@ def segments(command: str) -> list[list[str]] | None:
         return None
     result, current = [], []
     for token in tokens:
+        if PUNCT.fullmatch(token) and token not in OPERATORS | REDIRECTS:
+            return None  # `|&`、`;;`、`<<`、`<<<` 等沒有逐段語意的符號:切不清楚就改整行比對
         if token in OPERATORS:
             result.append(current)
             current = []
