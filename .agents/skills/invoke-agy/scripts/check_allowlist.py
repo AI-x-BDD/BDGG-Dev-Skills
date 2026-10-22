@@ -5,7 +5,7 @@
 """確認任務指示檔列出的 shell 指令都在 agy 的允許清單(settings.json 的 permissions.allow)裡。
 
 讀任務指示檔裡「Run only the shell commands listed below」那一行底下縮排的 `- ` 子項,每項一條指令
-(去掉反引號;只寫 `none` 表示沒有指令),逐條比對允許清單的 `command(…)` 規則;其他種類(read_file 等)不參與比對。
+(整項包在一對 Markdown 行內程式碼的反引號裡時只去掉外層那一對,指令裡的反引號保留;只寫 `none` 表示沒有指令),逐條比對允許清單的 `command(…)` 規則;其他種類(read_file 等)不參與比對。
 比對方式照 agy 1.4.5 的權限文件(https://www.agy.dev/docs/permissions/ 的 command 一列與
 「When commands require an exact match」一節,2026-10-23 讀)與 agent-dispatch MR !30 的本機實驗:
 - 規則以空白切成 token,對指令開頭的 token 做前綴比對:`command(x)` 逐 token 字面相等,
@@ -29,6 +29,7 @@ from pathlib import Path
 
 ANCHOR = "Run only the shell commands listed below"
 SUB_ITEM = re.compile(r"^\s+- (.*)$")
+CODE_SPAN = re.compile(r"^(`+) ?(.*?) ?\1$")
 RULE = re.compile(r"^command\((.*)\)$")
 DEFAULT_SETTINGS = Path.home() / ".gemini" / "antigravity-cli" / "settings.json"
 OPERATORS = {";", "&&", "||", "|", "&"}
@@ -61,7 +62,10 @@ def listed_commands(prompt_path: Path) -> list[str]:
         match = SUB_ITEM.match(line)
         if not match:
             break
-        command = match.group(1).replace("`", "").strip()
+        command = match.group(1).strip()
+        span = CODE_SPAN.match(command)
+        if span:
+            command = span.group(2).strip()  # 只去掉外層的行內程式碼標記,裡面的反引號是命令替換,要留給比對判斷
         if command:
             commands.append(command)
     if not commands:
@@ -117,10 +121,32 @@ def needs_exact_match(command: str) -> bool:
     return any(mark in text for mark in ("$(", "`", "<(", ">(", "\n", "\r")) or bool(BRACE.search(text))
 
 
+def strip_comment(command: str) -> str:
+    """去掉 shell 註解:引號外、位在字詞開頭(行首、空白或 ;&|<>() 之後)的 `#` 起到行尾;字詞中間的 `#` 是字面。"""
+    state, i = None, 0
+    while i < len(command):
+        ch = command[i]
+        if state == "'":
+            if ch == "'":
+                state = None
+        elif ch == "\\":
+            i += 1
+        elif state == '"':
+            if ch == '"':
+                state = None
+        elif ch in "'\"":
+            state = ch
+        elif ch == "#" and (i == 0 or command[i - 1].isspace() or command[i - 1] in ";&|<>()"):
+            return command[:i]
+        i += 1
+    return command
+
+
 def segments(command: str) -> list[list[str]] | None:
-    """以 shlex 切 token、依串接符號分段;切不開時回 None。"""
-    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|<>")
+    """去掉註解後以 shlex 切 token、依串接符號分段;切不開時回 None。"""
+    lexer = shlex.shlex(strip_comment(command), posix=True, punctuation_chars=";&|<>")
     lexer.whitespace_split = True
+    lexer.commenters = ""  # shlex 預設把字詞中間的 # 也當註解(`echo a#; rm x` 會吃掉後段),改由 strip_comment 判斷
     try:
         tokens = list(lexer)
     except ValueError:

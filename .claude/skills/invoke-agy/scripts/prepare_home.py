@@ -12,7 +12,7 @@ MCP 伺服器列在 `~/.gemini/config/mcp_config.json`;新家目錄裡沒有這�
 登入不在這份清單裡:2026-10-23 實測只放 settings.json 的家目錄,`agy -p` 照常回覆(登入走系統金鑰圈,不讀 HOME 底下的檔)。
 一律複製、不建符號連結:agy 以 accept-edits 寫進 $HOME 的東西(對話紀錄、快取、或任務誤寫的檔)只會落在新家目錄,
 不會穿透到真正家目錄的 `.ssh`、`.config`、`.claude` 或 agy 自己的設定。
-結果以 JSON 寫到 stdout。建好 exit 0;--dest 已存在且不是空目錄、或真正的家目錄沒有 settings.json 時 exit 2。
+結果以 JSON 寫到 stdout。建好 exit 0;--dest 是符號連結、已存在且不是空目錄、或真正的家目錄沒有 settings.json 時 exit 2。
 """
 
 import argparse
@@ -42,9 +42,12 @@ def main() -> None:
 
     if not (args.home / SETTINGS).is_file():
         fail(f"{args.home / SETTINGS} 不存在;--home 要給裝了 agy、登入過的那個使用者的家目錄")
+    if args.dest.is_symlink():
+        fail(f"--dest {args.dest} 是符號連結;給一個真實的新路徑,寫入才不會落到連結指向的地方")
     if args.dest.exists() and (not args.dest.is_dir() or any(args.dest.iterdir())):
         fail(f"--dest {args.dest} 已存在且不是空目錄;每次調用給一個新的路徑,上一次的家目錄確認不用了再刪")
     args.dest.mkdir(parents=True, exist_ok=True, mode=0o700)
+    args.dest.chmod(0o700)  # 既有的空目錄也收緊成只有自己能讀寫
     copied = []
     for rel in COPIES:
         src = args.home / rel
