@@ -386,3 +386,44 @@ Merge branch 'feat/delete-command' into main
 ```
 chore: merge feat/delete-command into main
 ```
+
+# Rule 13 [must] - 訊息裡不出現跳過 CI 的標記字樣
+- 標題、body、footer 的任何位置,都不寫出 GitLab 認得的跳過 CI 標記:方括號包住 `skip ci` 或 `ci skip` 的那兩種寫法(大小寫不拘)
+- 要描述這個機制時,改寫成「跳過 CI 的標記」這類說法,不寫出帶方括號的原字樣
+- 為什麼:GitLab 會掃整段 commit 訊息找這個標記,不只標題;只要出現,push 與 MR 的 pipeline 都被標成 skipped,看起來像 CI 壞了,合併機器人也因為沒有綠的 pipeline 而不合併。2026-10-22 infra/gitlab !12 的 4a88703 只是在 body 描述「涵蓋被跳過、<跳過 CI 的標記> 與失敗的提交」,pipeline 就全被跳過,只好補一個空提交 ec6c6ff 重跑
+
+## good example
+- body 要講清楚這次改動涵蓋了哪幾種提交;**機制用「跳過 CI 的標記」描述**,pipeline 照常跑
+```
+feat(ci): report skipped and failed commits in the summary job
+
+The summary now covers commits that were skipped, commits that carry
+the skip-CI marker, and commits whose pipeline failed.
+```
+
+## bad example
+- 同一筆變更,但 **body 直接寫出方括號包住的標記字樣**(下面以 `<跳過 CI 的標記>` 代表那幾個字元);GitLab 讀到之後把這一筆的 pipeline 標成 skipped
+```
+feat(ci): report skipped and failed commits in the summary job
+
+The summary now covers commits that were skipped, commits that carry
+<跳過 CI 的標記>, and commits whose pipeline failed.
+```
+
+## good example
+- 邊界:這一筆就是在修「誤用跳過 CI 標記」的問題,訊息很難不提到它;**仍然用描述代替字樣**,修這個問題的提交自己也要跑得到 CI
+```
+docs(rules): forbid the skip-CI marker anywhere in commit messages
+
+GitLab scans the whole message, so mentioning the marker in the body
+skips the pipeline just like putting it in the subject.
+```
+
+## bad example
+- 邊界:同一筆提交,覺得「放在反引號裡只是引用,不算真的要跳過」;**GitLab 不看反引號**,這一筆的 pipeline 一樣被跳過,修規則的提交本身沒有經過 CI
+```
+docs(rules): forbid `<跳過 CI 的標記>` anywhere in commit messages
+
+GitLab scans the whole message, so mentioning the marker in the body
+skips the pipeline just like putting it in the subject.
+```
