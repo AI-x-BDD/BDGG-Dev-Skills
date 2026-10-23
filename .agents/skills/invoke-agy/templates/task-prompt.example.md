@@ -28,6 +28,15 @@ Your goal is to implement a new notification service module with email provider 
 - Run only the shell commands listed below, one plain command per call: no `cd`, `&&`, `;`, pipes, redirects, heredocs, `$( )` or `bash -c`.
   - uv run pytest tests/test_notifier.py
 
+# Allowed Command Forms (fixed list)
+- These forms pass agy's allowlist; write every command you list above in one of them:
+  - `git log --oneline -n 20`, `git show 0123abc`, `git diff main...HEAD`, `git diff --stat main...HEAD`, `git status --short`, `git ls-files`, `git -C /path/to/dir log --oneline`
+  - `grep -rn -E 'foo|bar' src` (pattern in single quotes, ASCII only), `ls -R src`, `cat file`, `head -n 50 file`, `tail -n 50 file`, `wc -l file`, `diff file1 file2`
+  - `uv run script.py`, `uv run pytest tests/test_x.py`, `uv run python -m unittest discover -s tests`, `uv run /home/user/.claude/skills/gitlab-workflow/scripts/glw.py whoami`
+- These are denied and end the whole turn: `sort`, `find`, `sed`, `awk`, `xargs`, `tr`, `python3 ...` or `python ...` (write `uv run python ...`), `sh script.sh`, `cd dir && ...`, any pipe or `&&` chain with one segment outside the forms above, and any argument with non-ASCII characters.
+- Reported denied in practice, so avoid them too: `git grep` (use `grep -rn -E`), `uniq`.
+- If a command you need is not in the forms above, rewrite it into one of them (find becomes `ls -R` or `git ls-files`; sort and uniq become a read with your file tools; `python3 -m unittest` becomes `uv run python -m unittest`); never run the original.
+
 # Expected Deliverables & Verification
 - Deliverables:
   - Implemented EmailProvider class and updated Notifier with unit tests.
