@@ -45,6 +45,7 @@ REDIRECTS = {">", ">>", "<", ">&", "<&", "&>", "&>>", ">|"}
 UNSAFE_CHAR = re.compile(r"[^\x20-\x7e\t\n]")
 PUNCT = re.compile(r"[;&|<>]+")
 BRACE = re.compile(r"\{[^{}\s]*,[^{}\s]*\}")
+ENV_PREFIX = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
 
 def fail(message: str) -> None:
@@ -284,6 +285,10 @@ def main() -> None:
     denied = [c for c in commands if c not in allowed]
     if any("#" in unquoted_text(c) for c in denied):
         print("被擋的指令裡有引號外的 #:這類指令一律整行比對,要放行就把整行原文寫進允許清單,或把 # 放進引號", file=sys.stderr)
+    if any(ENV_PREFIX.match(c) for c in denied):
+        print("被擋的指令以 VAR=… 開頭:agy 比對開頭的 token,環境變數改由啟動 agy 的那一條指令在前面設好,指示檔只列指令本身", file=sys.stderr)
+    if any(re.search(r"[^\x00-\x7f]", c) for c in denied):
+        print("被擋的指令含非 ASCII 字元:這類指令一律整行比對,中文內容先寫進檔再用 --summary-file 或 --body-file 傳入", file=sys.stderr)
     broken = broken_rules(rules)
     if broken:
         print(f"允許清單有 {len(broken)} 條 regex 規則切成 token 後不是合法 regex(群組裡有空白?),agy 前綴比對時不會放行", file=sys.stderr)
