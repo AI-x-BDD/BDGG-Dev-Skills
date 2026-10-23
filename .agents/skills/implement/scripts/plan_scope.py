@@ -21,7 +21,7 @@ PHASE = re.compile(r"^## Phase (\d+):\s*(.+?)\s*$")
 STORY = re.compile(r"User Story (\d+)")
 SECTION = re.compile(r"^### (.+?)\s*$")
 SUBSECTION = re.compile(r"^#### (.+?)\s*$")
-TASK = re.compile(r"^- \[([ xX])\] T(\d{3})\b\s*(\[P\]\s*)?(\[US(\d+)\]\s*)?(.*)$")
+TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b\s*(\[P\]\s*)?(\[US(\d+)\]\s*)?(.*)$")
 CLIP = re.compile(r"^\s+- 📎 (.*)$")
 CHECKPOINT = re.compile(r"^\*\*Checkpoint\*\*:\s*(.*)$")
 CODE = re.compile(r"`([^`]+)`")
@@ -166,6 +166,17 @@ def parse_questions(text: str) -> dict[int, dict]:
     return questions
 
 
+def task_id_of(compact: str) -> str:
+    """把 --scope 裡的 `t1`、`t030`、`t001a` 寫成 tasks.md 的任務編號 T001、T030、T001a。"""
+    digits = compact[1:].rstrip("abcdefghijklmnopqrstuvwxyz")
+    return f"T{int(digits):03d}{compact[1 + len(digits):]}"
+
+
+def task_order(task_id: str) -> tuple[int, str]:
+    """任務編號的排序鍵:先比編號,同號時不帶字尾的排在 a、b 之前。"""
+    return int(task_id[1:4]), task_id[4:]
+
+
 def select_phases(phases: list[dict], scope: str | None) -> list[int]:
     """回傳範圍碰到的 phase 在 phases 裡的索引;範圍寫錯時結束並說明可以用的寫法。"""
     if not scope:
@@ -181,15 +192,15 @@ def select_phases(phases: list[dict], scope: str | None) -> list[int]:
             hit = [i for i, p in enumerate(phases) if p["story"] == f"US{int(compact[2:])}"]
         elif compact in ("setup", "foundational", "polish"):
             hit = [i for i, p in enumerate(phases) if p["kind"] == compact]
-        elif re.fullmatch(r"t\d{1,3}", compact):
-            wanted = f"T{int(compact[1:]):03d}"
+        elif re.fullmatch(r"t\d{1,3}[a-z]?", compact):
+            wanted = task_id_of(compact)
             hit = [i for i, p in enumerate(phases) if any(t["id"] == wanted for t in p["tasks"])]
         else:
-            print(f"錯誤: --scope 裡的「{token}」看不懂。可以寫 `Phase 2`、`US1`、`T030`、`Setup`、`Foundational`、`Polish`,多個用逗號分開;省略代表全部。", file=sys.stderr)
+            print(f"錯誤: --scope 裡的「{token}」看不懂。可以寫 `Phase 2`、`US1`、`T030`、`T001a`、`Setup`、`Foundational`、`Polish`,多個用逗號分開;省略代表全部。", file=sys.stderr)
             sys.exit(2)
         if not hit:
             known = ", ".join(f"Phase {p['number']}" + (f"({p['story']})" if p["story"] else "") for p in phases)
-            print(f"錯誤: --scope 的「{token}」在 tasks.md 裡找不到。這份 tasks.md 有:{known};任務編號從 T001 到 T{len([t for p in phases for t in p['tasks']]):03d}。", file=sys.stderr)
+            print(f"錯誤: --scope 的「{token}」在 tasks.md 裡找不到。這份 tasks.md 有:{known};任務編號從 T001 到 {([t["id"] for p in phases for t in p["tasks"]] or ["T000"])[-1]}。", file=sys.stderr)
             sys.exit(2)
         chosen.update(hit)
     return sorted(chosen)
@@ -218,10 +229,10 @@ def main() -> int:
     if args.scope:
         for raw in args.scope.split(","):
             compact = raw.strip().replace(" ", "").lower()
-            if re.fullmatch(r"t\d{1,3}", compact):
+            if re.fullmatch(r"t\d{1,3}[a-z]?", compact):
                 # 指定到任務時,同一個 phase 裡排在它前面的任務也算明講的範圍
-                wanted = int(compact[1:])
-                explicit.update(t["id"] for i in chosen for t in phases[i]["tasks"] if int(t["id"][1:]) <= wanted)
+                wanted = task_order(task_id_of(compact))
+                explicit.update(t["id"] for i in chosen for t in phases[i]["tasks"] if task_order(t["id"]) <= wanted)
             else:
                 for i in select_phases(phases, raw):
                     explicit.update(t["id"] for t in phases[i]["tasks"])

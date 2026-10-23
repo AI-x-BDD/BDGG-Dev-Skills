@@ -5,7 +5,8 @@
 """檢查一份 tasks.md 的錨點與介面覆蓋。
 
 檢查項目:
-  任務編號      T 編號從 T001 起連號、不重複
+  任務編號      T 編號從 T001 起連號、不重複;一個編號可以拆成帶小寫字尾的子任務(T003a、T003b,跨 repo 各一個),
+                字尾從 a 起連續,拆了就不再同時寫不帶字尾的同號任務
   錨點          每個 ⚙ 與 📎 的引用都寫成 `檔案` § 錨點,不只寫檔名
   ⚙ 錨點存在    ⚙ 指到的規格檔在 spec package 裡,錨點(operation、path、schema、Table、data-state、#id、.class、
                 services、location、Dockerfile 指令、CSS)在那個檔裡找得到;`§ 全檔` 代表整個檔
@@ -35,12 +36,12 @@ CSS_AT_MEDIA = re.compile(r"(@media[^{]+?)\s*\{")
 NGINX_LOCATION = re.compile(r"^\s*location\s+([^{]+?)\s*\{", re.MULTILINE)
 DOCKER_INSTRUCTION = re.compile(r"^\s*([A-Z]+)\s", re.MULTILINE)
 
-TASK_LINE = re.compile(r"^- \[[ xX]\] T(\d{3})\b")
+TASK_LINE = re.compile(r"^- \[[ xX]\] T(\d{3}[a-z]?)\b")
 SUB_LINE = re.compile(r"^\s+- (⚙|📎) (.*)$")
 REFERENCE = re.compile(r"^`([^`]+)`\s*§\s*(.+)$")
 COVERAGE_HEADING = re.compile(r"^### 介面覆蓋[((](.+?)[))]")
 COVERAGE_ROW = re.compile(r"^\| (`.+?) \| (.*?) \| (.*?) \|$")
-TASK_ID = re.compile(r"T(\d{3})")
+TASK_ID = re.compile(r"T(\d{3}[a-z]?)(?![A-Za-z0-9])")
 SPEC_ID = re.compile(r"\b((?:FR|NFR|SC)-\d{3})\b")
 RESEARCH_ID = re.compile(r"\bR(\d+)\b")
 PLAN_ID = re.compile(r"\bQ(\d+)\b")
@@ -54,6 +55,17 @@ C_CLIP = "📎 的編號在依據文件裡找得到"
 C_COVER = "必須覆蓋的介面元素都在介面覆蓋表上"
 C_ROW = "介面覆蓋表的每一列都有存在、且 ⚙ 列了該元素的實作與測試任務"
 CHECKS = [C_IDS, C_ANCHOR, C_GEAR, C_CLIP, C_COVER, C_ROW]
+
+
+def next_task_ids(previous: str | None) -> list[str]:
+    """回傳緊接在 previous 之後可以出現的任務編號:下一個編號(不帶字尾或從 a 起拆),或同一個編號的下一個字尾。"""
+    number = int(previous[1:4]) if previous else 0
+    suffix = previous[4:] if previous else ""
+    allowed = []
+    if suffix and suffix < "z":
+        allowed.append(f"T{number:03d}{chr(ord(suffix) + 1)}")
+    allowed += [f"T{number + 1:03d}", f"T{number + 1:03d}a"]
+    return allowed
 
 
 def read_text(path: Path) -> str:
@@ -353,10 +365,13 @@ def main() -> int:
                 else:
                     bad(C_GEAR, number, reference, f"{current} 的 ⚙ 錨點 `{anchor}` 在 `{resolved}` 裡找不到")
 
+    previous: str | None = None
     for index, task_id in enumerate(order, start=1):
-        if task_id != f"T{index:03d}":
-            bad(C_IDS, tasks[task_id]["line"], task_id, f"第 {index} 個任務應該是 T{index:03d},實際是 {task_id}")
+        allowed = next_task_ids(previous)
+        if task_id not in allowed:
+            bad(C_IDS, tasks[task_id]["line"], task_id, f"第 {index} 個任務應該是 {' 或 '.join(allowed)},實際是 {task_id}")
             break
+        previous = task_id
 
     def task_covers(task_id: str, elements: list[tuple[str, str]]) -> bool:
         info = tasks[task_id]
@@ -402,7 +417,7 @@ def main() -> int:
         bad(C_COVER, 0, f"{file} § {anchor}", "這個介面元素沒有出現在任何一張介面覆蓋表上")
 
     evidence = {
-        C_IDS: f"{len(order)} 個任務從 T001 連號到 T{len(order):03d}",
+        C_IDS: f"{len(order)} 個任務從 T001 連號到 {order[-1] if order else 'T000'}",
         C_ANCHOR: "每個 ⚙ 與 📎 的引用都有 § 錨點",
         C_GEAR: f"{sum(len(t['gear']) for t in tasks.values())} 個 ⚙ 錨點都在規格檔裡找得到",
         C_CLIP: "📎 引用的 FR / NFR / SC、R、Q 編號都找得到",

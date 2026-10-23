@@ -4,7 +4,8 @@
 # ///
 """檢查 tasks.md 裡一個 phase 的勾選狀態。
 
-任務        這個 phase 的每個任務是否都勾成 [X]
+任務        這個 phase 的每個任務是否都勾成 [X];任務編號可以帶一個小寫字尾(T001a、T001b,跨 repo 拆出的子任務),
+            T001、T001a、T001b 是不同的任務
 介面覆蓋    這個 phase 的介面覆蓋表,每一列的實作欄與測試欄寫的任務是否都勾了;
             寫的是後面 phase 的任務時,那一列列在 deferred_rows(還沒輪到),不算不過
 結果以 JSON 寫到 stdout;這個 phase 或前面 phase 有沒勾的任務、覆蓋列時 exit code 是 1,參數或檔案有誤時是 2。
@@ -17,10 +18,10 @@ import sys
 from pathlib import Path
 
 PHASE = re.compile(r"^## Phase (\d+):\s*(.+?)\s*$")
-TASK = re.compile(r"^- \[([ xX])\] T(\d{3})\b")
+TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b")
 COVERAGE_HEADING = re.compile(r"^### 介面覆蓋[((](.+?)[))]")
 COVERAGE_ROW = re.compile(r"^\| (`.+?) \| (.*?) \| (.*?) \|$")
-TASK_ID = re.compile(r"T(\d{3})")
+TASK_ID = re.compile(r"T(\d{3}[a-z]?)(?![A-Za-z0-9])")
 
 
 def main() -> int:
