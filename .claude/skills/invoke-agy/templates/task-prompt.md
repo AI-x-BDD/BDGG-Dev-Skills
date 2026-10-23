@@ -31,7 +31,7 @@ Your goal is to {{具體任務目標與期望結果}}.
   - `grep -rn -E 'foo|bar' src` (pattern in single quotes, ASCII only), `ls -R src`, `cat file`, `head -n 50 file`, `tail -n 50 file`, `wc -l file`, `diff file1 file2`
   - `uv run script.py`, `uv run pytest tests/test_x.py`, `uv run python -m unittest discover -s tests`, `uv run /home/user/.claude/skills/gitlab-workflow/scripts/glw.py whoami`
 - These are denied and end the whole turn: `sort`, `find`, `sed`, `awk`, `xargs`, `tr`, `python3 ...` or `python ...` (write `uv run python ...`), `sh script.sh`, `cd dir && ...`, any pipe or `&&` chain with one segment outside the forms above, and any argument with non-ASCII characters.
-- Reported denied in practice, so avoid them too: `git grep` (use `grep -rn -E`), `uniq`.
+- Not on the verified list, so do not use them even though the static allowlist check passes them (agy's own permission engine rejected them in earlier runs): `git grep` (use `grep -rn -E`), `uniq`.
 - If a command you need is not in the forms above, rewrite it into one of them (find becomes `ls -R` or `git ls-files`; sort and uniq become a read with your file tools; `python3 -m unittest` becomes `uv run python -m unittest`); never run the original.
 
 # Expected Deliverables & Verification
