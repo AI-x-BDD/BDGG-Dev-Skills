@@ -13,6 +13,7 @@
 - **[P]**:可平行執行(不同檔案、不依賴未完成的任務)
 - **[Story]**:所屬的使用者故事({{spec.md 每個使用者故事的代號,寫成 US 序號,用、分隔}})
 - 每個任務都寫出確切的檔案路徑
+- **任務編號**:`T` 加三位數,例如 `T012`;一個任務要拆成幾個依序的子任務時,在同一個三位數後面加小寫字尾 `a`、`b`、`c`…(例如 `T012a`、`T012b`),字尾從 `a` 起、不跳號,同一個三位數不能同時有 `T012` 與 `T012a`
 - **⚙**:這個任務要做出來或測到的介面元素,做完時這些元素都必須照規格成立:
   - AsyncAPI:`contracts/<介面>.asyncapi.yaml` § `operations.<operationId>`、`components.schemas.<Name>`
   - OpenAPI:`contracts/<介面>.openapi.yaml` § `paths./<路徑>.<method>`、`components.schemas.<Name>`
