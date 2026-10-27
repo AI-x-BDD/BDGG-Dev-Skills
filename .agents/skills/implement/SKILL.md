@@ -21,7 +21,7 @@ description: 要依 tasks.md 開始寫程式、把拆好的任務實作出來時
 5. Write **勾選驗收過的任務**。
 6. Delegate 依 `rules/提交-規範.md` 轉交 git-conventional-commit **commit 驗收過的一組任務**。
 7. Read 這個 phase 的 **Checkpoint 指令執行的結果**;若有和停下的任務無關的不過 → 跳至 Phase 2 Step 2。
-8. Delegate 執行 `uv run scripts/check_phase.py --tasks <tasks.md 的路徑> --phase <phase 序號>` **取得介面覆蓋表的勾選結果**;若有沒勾、也沒停下的任務 → 跳至 Phase 2 Step 2。
+8. Delegate 執行 `uv run scripts/check_phase.py --tasks <tasks.md 的路徑> --phase <phase 序號>` **取得介面覆蓋表的勾選結果**,描述開頭標 ⏸ 的延後任務列在 `paused_tasks`、不算沒勾;若有沒勾、也沒停下的任務 → 跳至 Phase 2 Step 2。
 9. Ask 依骨架 `templates/Checkpoint報告.md` 與範例 `templates/Checkpoint報告.example.md` **提出 Checkpoint 報告**,問使用者要手動確認的項目過了沒有、這個 phase 登記的待決問題怎麼決定、可不可以往下做。
 10. Write 把使用者的決定**寫回 plan.md 的待決問題**。
 11. Delegate 轉交 git-conventional-commit **commit 寫回決定的 plan.md**;若有停下的任務、手動確認沒過或範圍內還有下一個 phase → 跳至 Phase 2 Step 1。
