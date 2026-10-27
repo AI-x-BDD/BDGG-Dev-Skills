@@ -8,6 +8,8 @@
             T001、T001a、T001b 是不同的任務
 介面覆蓋    這個 phase 的介面覆蓋表,每一列的實作欄與測試欄寫的任務是否都勾了;
             寫的是後面 phase 的任務時,那一列列在 deferred_rows(還沒輪到),不算不過
+⏸ 延後    描述開頭(在 [P]、[US1] 這類標籤之後)是 ⏸ 的未勾任務是排除或延後的任務,列在 paused_tasks,
+            不算進 unchecked_tasks;覆蓋列沒勾的只有 ⏸ 任務時,那一列列在 paused_rows,不算不過
 結果以 JSON 寫到 stdout;這個 phase 或前面 phase 有沒勾的任務、覆蓋列時 exit code 是 1,參數或檔案有誤時是 2。
 """
 
@@ -18,7 +20,8 @@ import sys
 from pathlib import Path
 
 PHASE = re.compile(r"^## Phase (\d+):\s*(.+?)\s*$")
-TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b")
+TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b\s*((?:\[[^\]]*\]\s*)*)(.*)$")
+PAUSED = "⏸"
 COVERAGE_HEADING = re.compile(r"^### 介面覆蓋[((](.+?)[))]")
 COVERAGE_ROW = re.compile(r"^\| (`.+?) \| (.*?) \| (.*?) \|$")
 TASK_ID = re.compile(r"T(\d{3}[a-z]?)(?![A-Za-z0-9])")
@@ -43,6 +46,7 @@ def main() -> int:
         return 2
 
     checked: dict[str, bool] = {}
+    paused: set[str] = set()
     task_phase: dict[str, int | None] = {}
     phase_tasks: list[str] = []
     rows: list[dict] = []
@@ -66,6 +70,8 @@ def main() -> int:
         if task:
             task_id = f"T{task.group(2)}"
             checked[task_id] = task.group(1) in "xX"
+            if not checked[task_id] and task.group(4).startswith(PAUSED):
+                paused.add(task_id)
             task_phase[task_id] = current
             if current == args.phase:
                 phase_tasks.append(task_id)
@@ -89,17 +95,21 @@ def main() -> int:
         print(f"錯誤: tasks.md 裡沒有 Phase {args.phase}。這份 tasks.md 的 phase 序號有:{known}。", file=sys.stderr)
         return 2
 
-    unchecked_tasks = [t for t in phase_tasks if not checked[t]]
-    open_rows, deferred_rows = [], []
+    unchecked_tasks = [t for t in phase_tasks if not checked[t] and t not in paused]
+    paused_tasks = [t for t in phase_tasks if t in paused]
+    open_rows, deferred_rows, paused_rows = [], [], []
     for row in rows:
         listed = row["implement"] + row["test"]
         unknown = [t for t in listed if t not in checked]
-        later = [t for t in listed if t in checked and not checked[t] and (task_phase[t] or 0) > args.phase]
-        missing = [t for t in listed if t in checked and not checked[t] and t not in later]
+        on_hold = [t for t in listed if t in paused]
+        later = [t for t in listed if t in checked and not checked[t] and t not in paused and (task_phase[t] or 0) > args.phase]
+        missing = [t for t in listed if t in checked and not checked[t] and t not in paused and t not in later]
         if missing or unknown or not row["implement"] or not row["test"]:
-            open_rows.append({**row, "unchecked": missing, "unknown": unknown})
+            open_rows.append({**row, "unchecked": missing, "unknown": unknown, "paused": on_hold})
         elif later:
-            deferred_rows.append({**row, "later": later})
+            deferred_rows.append({**row, "later": later, "paused": on_hold})
+        elif on_hold:
+            paused_rows.append({**row, "paused": on_hold})
 
     passed = not unchecked_tasks and not open_rows
     result = {
@@ -109,13 +119,16 @@ def main() -> int:
         "passed": passed,
         "task_count": len(phase_tasks),
         "unchecked_tasks": unchecked_tasks,
+        "paused_tasks": paused_tasks,
         "coverage_rows": len(rows),
         "open_rows": open_rows,
         "deferred_rows": deferred_rows,
+        "paused_rows": paused_rows,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     print(
-        f"Phase {args.phase}:{len(phase_tasks)} 個任務 {len(unchecked_tasks)} 個沒勾;介面覆蓋 {len(rows)} 列 {len(open_rows)} 列還有沒勾的任務、{len(deferred_rows)} 列等後面的 phase",
+        f"Phase {args.phase}:{len(phase_tasks)} 個任務 {len(unchecked_tasks)} 個沒勾、{len(paused_tasks)} 個 ⏸ 延後;"
+        f"介面覆蓋 {len(rows)} 列 {len(open_rows)} 列還有沒勾的任務、{len(deferred_rows)} 列等後面的 phase、{len(paused_rows)} 列只缺 ⏸ 延後任務",
         file=sys.stderr,
     )
     return 0 if passed else 1
