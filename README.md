@@ -51,7 +51,7 @@ flowchart LR
 
 | Skill | 做什麼 |
 |---|---|
-| [`invoke-codex`](./.claude/skills/invoke-codex/) · [`invoke-agy`](./.claude/skills/invoke-agy/) · [`invoke-copilot`](./.claude/skills/invoke-copilot/) | 組裝任務指示,以非互動模式調用 Codex、Antigravity 或 GitHub Copilot CLI,判定這次調用有沒有成功並驗收結果 |
+| `invoke-codex` · `invoke-agy` · `invoke-copilot` | 2026-10-28 起搬到 [skills/agent-ops-skills](https://git.example.test/skills/agent-ops-skills)(本家自訂,不屬於課程內容);歷史留在本 repo |
 
 ## 一支 Skill 的結構
 
