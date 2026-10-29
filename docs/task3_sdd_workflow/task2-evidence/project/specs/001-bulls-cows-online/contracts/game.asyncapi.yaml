@@ -805,7 +805,7 @@ components:
       description: 重連 token;只給本人,前端存在 sessionStorage
     Error:
       type: object
-      required: [type, code, message]
+      required: [type, code, message, traceId]
       properties:
         type:
           type: string
@@ -850,3 +850,6 @@ components:
         message:
           type: string
           description: 給玩家看的繁體中文說明,例如「必須是 4 個互不重複的數字」
+        traceId:
+          type: string
+          description: 伺服器為這則錯誤訊息產生的追蹤編號,與伺服器日誌裡同一筆紀錄的編號相同;玩家回報錯誤畫面時據以對到日誌(憲法 api-plan/asyncapi〈錯誤一律帶 traceId〉)

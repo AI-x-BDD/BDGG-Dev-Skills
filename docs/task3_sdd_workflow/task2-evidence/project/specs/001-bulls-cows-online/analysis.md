@@ -4,9 +4,9 @@
 
 ## 判定
 
-**最新一輪:第 1 輪(2026-10-29)— ⛔ 不能進 `/implement`**
+**最新一輪:第 2 輪(2026-10-29)— ⛔ 不能進 `/implement`**
 
-還沒解決的 CRITICAL 有 A1,HIGH 有 A2、A3、A4;另有 2 個 LOW(A5、A6)不擋實作,建議一起修掉。
+A1 已由 `/api-plan` 修正;還沒解決的 HIGH 有 A2、A3、A4,以及修 A1 時帶出的 A7;另有 2 個 LOW(A5、A6)不擋實作。
 
 ## 檢查範圍
 
@@ -60,4 +60,41 @@
 2. `/system-analysis` 把 FR-002、FR-011、FR-014、FR-016、FR-017、FR-018、NFR-003 補進 E1 的需求出處(A6)
 3. `/api-plan` 在 `components.schemas.Error` 加上必填的 `traceId`(A1);`/ui-plan` 把 `game.html` 的 `setup-auto`、`#countdown` 與預設截止時間改成 60 秒(A2)
 4. `/tasks` 刪掉 T090(A4),並依第 1、3 步的修正重跑:T006 對齊定下的 TypeScript 版本、T019 / T034 加上 `traceId`、T025 收錄改過的原型文字
+5. 重跑 `/analyze`
+
+---
+
+## 第 2 輪(2026-10-29)
+
+### 前置檢查
+
+| 腳本 | 結果 |
+|---|---|
+| `specify/scripts/check_spec.py` | ✅ 通過 |
+| `system-analysis/scripts/check_plan.py` | ✅ 通過 |
+| `tasks/scripts/check_tasks.py` | ✅ 通過 |
+
+### 上一輪的問題
+
+| ID | 狀態 | 依據 |
+|---|---|---|
+| A1 | ✅ 已修正 | `contracts/game.asyncapi.yaml` § `components.schemas.Error` 的 `required` 改成 `[type, code, message, traceId]`,並新增 `traceId` 的說明,符合憲法〈錯誤一律帶 traceId〉;T019 的描述還沒跟上,另列 A7 |
+| A2 | ❌ 仍存在 | `prototype/game.html` 的 `setup-auto` 與 `#countdown` 仍寫 30 秒 |
+| A3 | ❌ 仍存在 | `techstack.md` 的 TypeScript 版本仍是「未定」 |
+| A4 | ❌ 仍存在 | `tasks.md` 仍有 T090 |
+| A5 | ❌ 仍存在 | `research.md` § R9 與 `techstack.md` 仍寫 3 個畫面 |
+| A6 | ❌ 仍存在 | `plan.md` 端點盤點 E1 的需求出處仍未補齊 |
+
+### 新問題
+
+| ID | 類別 | 嚴重度 | 位置 | 摘要 | 回哪一步 |
+|---|---|---|---|---|---|
+| A7 | 矛盾 | HIGH | `tasks.md` § T019;`contracts/game.asyncapi.yaml` § `components.schemas.Error` | 修 A1 後合約把 `traceId` 列為必填,T019 仍寫「`sendError(conn, code, message)`」;照描述做,送出的錯誤訊息不帶 `traceId`,又會違反憲法〈錯誤一律帶 traceId〉。T015 的型別與 T034 的合約測試也要涵蓋這個欄位 | `/tasks` |
+
+### 修正順序
+
+1. `/technical-research` 定下 TypeScript 版本(A3),把 R9 與 techstack 的「3 個畫面」改成 4 個(A5)
+2. `/system-analysis` 把 FR-002、FR-011、FR-014、FR-016、FR-017、FR-018、NFR-003 補進 E1 的需求出處(A6)
+3. `/ui-plan` 把 `game.html` 的 `setup-auto`、`#countdown` 與預設截止時間改成 60 秒(A2)
+4. `/tasks` 刪掉 T090(A4);T019 的 `sendError` 帶上 `traceId`,T015、T034 跟著涵蓋(A7);並依第 1、3 步的修正調整 T006、T025
 5. 重跑 `/analyze`
