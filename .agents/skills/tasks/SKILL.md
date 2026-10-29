@@ -20,7 +20,7 @@ description: 要依功能規格與系統分析的產出開始拆實作任務時,
 ## Phase 3: 確認任務清單
 1. Ask **提出任務清單與新登記的待決問題**,問使用者每一題怎麼決定、任務要不要修改。
 2. Write 把使用者的決定**寫回 plan.md 與 tasks.md**;若改動了任務 → 跳至 Phase 2 Step 4。
-3. Report **交出 tasks.md**,附上憲法的對照結果:路徑、每個 phase 的任務數與可以平行的任務。
+3. Report **交出 tasks.md**,附上憲法的對照結果:路徑、每個 phase 的任務數與可以平行的任務,以及下一步跑 `/analyze`。
 
 <details open>
 <summary>🗺️ 流程視覺圖 (點擊展開/收合)</summary>

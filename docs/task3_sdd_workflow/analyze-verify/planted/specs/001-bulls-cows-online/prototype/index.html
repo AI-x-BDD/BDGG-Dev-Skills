@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>輸入暱稱|1A2B 線上對戰</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body data-requirements="FR-001 FR-002 NFR-004 SC-001">
+  <header class="topbar">
+    <a class="brand" href="index.html">1A2B 線上對戰</a>
+    <nav>
+      <a href="index.html">開始配對</a>
+    </nav>
+  </header>
+  <main>
+    <h1>猜 4 位數,先猜中的人贏</h1>
+    <p class="lead">輸入暱稱就能開始,不用註冊。系統會把你放進一間還有空位的房間,沒有的話就幫你開一間。</p>
+    <form class="panel" id="match-form" novalidate>
+      <div class="field">
+        <label for="nickname">暱稱</label>
+        <input id="nickname" name="nickname" autocomplete="off" placeholder="例如:阿哲">
+        <button type="submit" class="btn-primary" id="match-btn">開始配對</button>
+      </div>
+      <p class="hint" data-state="normal">1 到 12 個字,只在這次連線有效,不會留下戰績</p>
+      <p class="notice-error" data-state="nickname-empty">請先輸入暱稱(前後的空白不算)</p>
+      <p class="notice-error" data-state="nickname-long">暱稱最多 12 個字,目前 <strong id="nickname-length">14</strong> 個字</p>
+      <p class="hint" data-state="loading">正在找有空位的房間…</p>
+      <p class="notice-error" data-state="error">連不上伺服器,請確認網路後再按一次「開始配對」</p>
+    </form>
+    <section class="panel">
+      <h2>怎麼玩</h2>
+      <ol class="rules">
+        <li>一間房 2 到 4 人,房主按「開始遊戲」</li>
+        <li>每人在 60 秒內設定一組 4 個互不重複的數字,只有自己看得到</li>
+        <li>大家圍成一圈,依座位輪流猜「下一位」的數字,每回合 60 秒</li>
+        <li>位置和數字都對是 A,數字對但位置錯是 B;第一個猜到 4A 的人獲勝</li>
+      </ol>
+    </section>
+  </main>
+  <script>
+    const PREVIEW = new URLSearchParams(location.search).get("state");
+    const input = document.getElementById("nickname");
+    const button = document.getElementById("match-btn");
+    const lengthOf = (text) => [...text].length;
+
+    const uniqueName = (name, players) => {
+      const same = players.filter((p) => p.nickname === name || p.nickname.startsWith(`${name} (`)).length;
+      return same === 0 ? name : `${name} (${same + 1})`;
+    };
+
+    const match = (name) => {
+      const lobby = Proto.load("lobby");
+      const room = lobby.find((r) => r.players.length < 4);
+      if (room) {
+        const taken = room.players.map((p) => p.seat);
+        const seat = [1, 2, 3, 4].find((s) => !taken.includes(s));
+        const nickname = uniqueName(name, room.players);
+        room.players.push({ seat, nickname, host: false, conn: "online" });
+        room.players.sort((a, b) => a.seat - b.seat);
+        room.me = seat;
+        room.incoming = [];
+        const host = room.players.find((p) => p.host);
+        room.notice = `你加入了 ${host.nickname} 的房間,坐 ${seat} 號座位`;
+        Proto.save("lobby", lobby.filter((r) => r !== room));
+        Proto.save("room", room);
+        return;
+      }
+      Proto.save("room", {
+        me: 1,
+        players: [{ seat: 1, nickname: name, host: true, conn: "online" }],
+        incoming: structuredClone(MOCK.joiners),
+        notice: "你開了一間新房間,坐 1 號座位",
+      });
+    };
+
+    if (PREVIEW && MOCK.preview.index[PREVIEW]) {
+      input.value = MOCK.preview.index[PREVIEW].nickname;
+      button.disabled = PREVIEW === "loading";
+    }
+
+    document.getElementById("match-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (PREVIEW) return;
+      const name = input.value.trim();
+      const length = lengthOf(name);
+      if (length === 0) return Proto.showState("nickname-empty");
+      if (length > 12) {
+        document.getElementById("nickname-length").textContent = length;
+        return Proto.showState("nickname-long");
+      }
+      Proto.showState("loading");
+      button.disabled = true;
+      Proto.later(900, () => {
+        match(name);
+        location.href = "room.html";
+      });
+    });
+  </script>
+</body>
+</html>

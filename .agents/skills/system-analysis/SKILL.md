@@ -1,6 +1,6 @@
 ---
 name: system-analysis
-description: 要依功能規格與技術研究規劃並執行系統分析時,用這支 Skill 盤點涉及的技術端點(前端、後端、資料庫、第三方、硬體、手機、雲端)與各自對外的介面,排成可以平行分析的 wave,替每一步指派 uiux-plan、data-plan、api-plan 或 deploy-plan,再一波一波交給 sub agent 執行,交出 plan.md 與各介面可以直接交付的規格檔和原型;使用者提到系統分析、system analysis、分析規劃、端點盤點、介面分析、wave、波段、平行分析、plan.md 時使用。(未驗證)
+description: 要依功能規格與技術研究規劃並執行系統分析時,用這支 Skill 盤點涉及的技術端點(前端、後端、資料庫、第三方、硬體、手機、雲端)與各自對外的介面,排成可以平行分析的 wave,替每一步指派 ui-plan、data-plan、api-plan 或 deploy-plan,再一波一波交給 sub agent 執行,交出 plan.md 與各介面可以直接交付的規格檔和原型;使用者提到系統分析、system analysis、分析規劃、端點盤點、介面分析、wave、波段、平行分析、plan.md 時使用。(未驗證)
 ---
 
 # SOP

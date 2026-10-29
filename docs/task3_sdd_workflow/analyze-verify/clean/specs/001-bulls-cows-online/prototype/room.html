@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>房間|1A2B 線上對戰</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body data-requirements="FR-004 FR-005 FR-006 FR-008 FR-014 NFR-003 NFR-004">
+  <header class="topbar">
+    <a class="brand" href="index.html">1A2B 線上對戰</a>
+    <nav>
+      <button type="button" class="btn-ghost" id="leave-room">離開房間</button>
+    </nav>
+  </header>
+  <main>
+    <h1>等待中的房間 <span class="tag" id="room-count">1/4</span></h1>
+    <p class="notice" id="notice"></p>
+    <section class="panel">
+      <h2>玩家與座位</h2>
+      <ul class="seat-list" id="seat-list"></ul>
+    </section>
+    <section class="panel" data-state="alone">
+      <button type="button" class="btn-primary" disabled>開始遊戲</button>
+      <p class="hint">目前只有你一個人,至少需要 2 人才能開始遊戲</p>
+    </section>
+    <section class="panel" data-state="host-ready">
+      <button type="button" class="btn-primary js-start">開始遊戲</button>
+      <p class="hint">你是房主,<span class="js-count">4</span> 人都到齊就可以開始;沒坐滿也能先開</p>
+    </section>
+    <section class="panel" data-state="guest">
+      <p>等待房主 <strong class="js-host-name">阿哲</strong> 開始遊戲</p>
+      <p class="hint">開始之後,每個人要在 60 秒內設定自己的祕密數字</p>
+    </section>
+    <section class="panel" data-state="host-transferred">
+      <button type="button" class="btn-primary js-start">開始遊戲</button>
+      <p class="hint">原本的房主離開了,你現在是房主,可以開始遊戲</p>
+    </section>
+    <section class="panel" data-state="seat-refill">
+      <button type="button" class="btn-primary js-start">開始遊戲</button>
+      <p class="hint">座位號不會重排:有人離開後,新進的人坐進最小的空號</p>
+    </section>
+    <section class="panel" data-state="disconnected">
+      <button type="button" class="btn-primary js-start">開始遊戲</button>
+      <p class="hint">斷線中的玩家照樣佔座位;60 秒內連回來就回到原座位,沒回來就視同離開</p>
+    </section>
+    <section class="panel" data-state="loading">
+      <button type="button" class="btn-primary" disabled>開始遊戲</button>
+      <p class="hint">正在開始遊戲…</p>
+    </section>
+  </main>
+  <script>
+    const PREVIEW = new URLSearchParams(location.search).get("state");
+    let room = PREVIEW ? structuredClone(MOCK.preview.room[PREVIEW]) : Proto.load("room");
+    const timers = [];
+    const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]);
+    const me = () => room.players.find((p) => p.seat === room.me);
+    const host = () => room.players.find((p) => p.host);
+
+    const uniqueName = (name, players) => {
+      const same = players.filter((p) => p.nickname === name || p.nickname.startsWith(`${name} (`)).length;
+      return same === 0 ? name : `${name} (${same + 1})`;
+    };
+
+    const stateFor = () => {
+      if (!me().host) return "guest";
+      return room.players.length < 2 ? "alone" : "host-ready";
+    };
+
+    const render = () => {
+      document.getElementById("seat-list").innerHTML = [1, 2, 3, 4].map((seat) => {
+        const p = room.players.find((x) => x.seat === seat);
+        if (!p) return `<li class="seat-empty"><span class="seat-no">${seat} 號</span><span class="seat-name">空位</span></li>`;
+        const tags = [
+          p.host ? "<span class=\"tag tag-host\">房主</span>" : "",
+          p.seat === room.me ? "<span class=\"tag tag-me\">你</span>" : "",
+          p.conn === "offline" ? "<span class=\"tag tag-off\">斷線中</span>" : "",
+        ].join("");
+        return `<li><span class="seat-no">${seat} 號</span><span class="seat-name">${esc(p.nickname)}</span>${tags}</li>`;
+      }).join("");
+      document.getElementById("room-count").textContent = `${room.players.length}/4`;
+      document.querySelectorAll(".js-count").forEach((el) => { el.textContent = room.players.length; });
+      document.querySelectorAll(".js-host-name").forEach((el) => { el.textContent = `${host().seat} 號 ${host().nickname}`; });
+      document.getElementById("notice").textContent = room.notice ?? "";
+    };
+
+    const join = (entry) => {
+      room.incoming = room.incoming.filter((x) => x !== entry);
+      if (room.players.length >= 4) return;
+      const taken = room.players.map((p) => p.seat);
+      const seat = [1, 2, 3, 4].find((s) => !taken.includes(s));
+      const nickname = uniqueName(entry.nickname, room.players);
+      room.players.push({ seat, nickname, host: false, conn: "online" });
+      room.players.sort((a, b) => a.seat - b.seat);
+      room.notice = `${nickname} 加入,坐 ${seat} 號座位`;
+      Proto.save("room", room);
+      render();
+      Proto.showState(stateFor());
+    };
+
+    const startGame = () => {
+      timers.forEach((t) => clearTimeout(t));
+      Proto.showState("loading");
+      Proto.later(800, () => {
+        const players = room.players.map((p) => ({
+          seat: p.seat,
+          nickname: p.nickname,
+          host: p.host,
+          conn: "online",
+          inGame: true,
+          secret: null,
+        }));
+        Proto.save("game", {
+          phase: "setup",
+          round: 1,
+          turn: null,
+          deadline: Date.now() + 60000,
+          mySeat: room.me,
+          players,
+          log: [],
+          notice: "遊戲開始!先設定你的祕密數字",
+          autoSecret: false,
+          winner: null,
+          reason: null,
+        });
+        location.href = "game.html";
+      });
+    };
+
+    const leaveRoom = () => {
+      timers.forEach((t) => clearTimeout(t));
+      const others = room.players.filter((p) => p.seat !== room.me);
+      if (others.length > 0) {
+        if (me().host) others[0].host = true;
+        const lobby = Proto.load("lobby");
+        lobby.push({ me: null, players: others, incoming: [], notice: "" });
+        Proto.save("lobby", lobby);
+      }
+      location.href = "index.html";
+    };
+
+    document.querySelectorAll(".js-start").forEach((btn) => btn.addEventListener("click", () => {
+      if (PREVIEW) return;
+      startGame();
+    }));
+
+    document.getElementById("leave-room").addEventListener("click", () => {
+      if (PREVIEW) return;
+      leaveRoom();
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      render();
+      if (PREVIEW) return;
+      Proto.showState(stateFor());
+      (room.incoming ?? []).forEach((entry) => timers.push(Proto.later(entry.after, () => join(entry))));
+      if (!me().host) {
+        timers.push(Proto.later(15000, () => {
+          room.notice = `房主 ${host().nickname} 開始了遊戲`;
+          render();
+          startGame();
+        }));
+      }
+    });
+  </script>
+</body>
+</html>
