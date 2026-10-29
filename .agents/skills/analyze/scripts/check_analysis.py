@@ -12,6 +12,7 @@
                 (constitution/ 開頭的相對於專案根目錄,其餘相對於 analysis.md 所在的 spec package)
   上一輪列齊    第 2 輪起,前幾輪還沒解決的問題都列在「上一輪的問題」表,表上的編號都存在
   判定一致      判定寫的是最後一輪;✅ / ⛔ 與算出來的未解決 CRITICAL、HIGH 一致
+  空段落省略    每一輪裡的表格段落至少有一列內容;沒有內容的段落整節省略,不寫空表或「無」
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -41,7 +42,10 @@ R_VALUES = "類別、嚴重度、狀態與回哪一步只用規定的值"
 R_LOCATIONS = "每個問題至少兩處位置,而且檔案存在"
 R_CARRY = "前幾輪還沒解決的問題都列在上一輪的問題表"
 R_VERDICT = "判定與最後一輪的未解決 CRITICAL、HIGH 一致"
-RULES = [R_ROUNDS, R_IDS, R_VALUES, R_LOCATIONS, R_CARRY, R_VERDICT]
+R_EMPTY = "沒有內容的段落整節省略"
+RULES = [R_ROUNDS, R_IDS, R_VALUES, R_LOCATIONS, R_CARRY, R_VERDICT, R_EMPTY]
+LIST_SECTIONS = {"修正順序"}
+EMPTY_MARKS = {"無", "(無)", "—", "-"}
 
 
 def cells(line: str) -> list[str]:
@@ -65,7 +69,7 @@ def parse(lines: list[str]) -> tuple[dict | None, list[dict]]:
             continue
         matched = ROUND.match(text)
         if matched:
-            rounds.append({"line": number, "round": int(matched.group(1)), "issues": [], "carried": []})
+            rounds.append({"line": number, "round": int(matched.group(1)), "issues": [], "carried": [], "sections": []})
             section = None
             continue
         if text.startswith("## "):
@@ -74,13 +78,21 @@ def parse(lines: list[str]) -> tuple[dict | None, list[dict]]:
         if text.startswith("### "):
             title = text[4:].strip()
             section = "issues" if title in ("問題", "新問題") else "carried" if title == "上一輪的問題" else None
+            if rounds:
+                rounds[-1]["sections"].append({"line": number, "title": title, "header": None, "rows": []})
             continue
-        if not rounds or section is None:
+        if not rounds or not rounds[-1]["sections"]:
             continue
         row = cells(text)
-        if not row or row[0] == "ID":
+        if not row:
             continue
-        rounds[-1][section].append({"line": number, "cells": row, "text": text})
+        current = rounds[-1]["sections"][-1]
+        if current["header"] is None:
+            current["header"] = row
+            continue
+        current["rows"].append({"line": number, "cells": row, "text": text})
+        if section is not None and row[0] != "ID":
+            rounds[-1][section].append({"line": number, "cells": row, "text": text})
     return verdict, rounds
 
 
@@ -134,6 +146,8 @@ def main() -> int:
                 bad(R_VALUES, row["line"], row["text"], "上一輪的問題表要有 ID、狀態、依據 3 欄")
                 continue
             item, status, _ = values
+            if item in EMPTY_MARKS:
+                continue
             carried_ids.add(item)
             if status not in STATUSES:
                 bad(R_VALUES, row["line"], row["text"], f"狀態「{status}」要是 {'、'.join(sorted(STATUSES))} 之一")
@@ -154,6 +168,8 @@ def main() -> int:
                 bad(R_VALUES, row["line"], row["text"], "問題表要有 ID、類別、嚴重度、位置、摘要、回哪一步 6 欄")
                 continue
             item, category, level, location, _, route = values
+            if item in EMPTY_MARKS:
+                continue
             matched = ISSUE_ID.match(item)
             if not matched or int(matched.group(1)) != expected_next:
                 bad(R_IDS, row["line"], row["text"], f"預期是 A{expected_next};編號要從 A1 起跨輪連續、不重複")
@@ -175,11 +191,25 @@ def main() -> int:
                     bad(R_LOCATIONS, row["line"], row["text"], f"「{part}」要以 `檔案` 開頭,寫成 `檔案` § 錨點")
                     continue
                 relative = path.group(1).rstrip("/")
-                base = root if relative.startswith("constitution/") else package
+                base = root if relative.split("/")[0] == "constitution" else package
                 if not (base / relative).exists():
                     bad(R_LOCATIONS, row["line"], row["text"], f"找不到 {relative}(以 {base} 為起點);檔名寫錯,或這份產出物不存在")
             severity[item] = level
             open_ids.append(item)
+
+    # 沒有內容的段落整節省略
+    for block in rounds:
+        for part in block["sections"]:
+            if part["title"] in LIST_SECTIONS:
+                continue
+            filled = [row for row in part["rows"] if row["cells"][0] not in EMPTY_MARKS]
+            if not filled:
+                bad(
+                    R_EMPTY,
+                    part["line"],
+                    f"### {part['title']}",
+                    f"第 {block['round']} 輪的「{part['title']}」沒有內容;沒有內容的段落整節省略(連標題一起拿掉),不寫空表或「無」",
+                )
 
     # 判定與最後一輪一致
     if verdict is None:
