@@ -6,7 +6,7 @@ description: 要依功能規格與技術研究規劃並執行系統分析時,用
 # SOP
 
 ## Phase 1: 盤點端點
-1. Read **規劃的依據**:spec.md、research.md 與 techstack.md。
+1. Read **規劃的依據**:spec.md、research.md 與 techstack.md;若 spec.md 所在的資料夾已有 plan.md,而且使用者帶來新的決定 → 跳至 Phase 3 Step 6;若已有 plan.md、沒有新的決定 → 跳至 Phase 3 Step 1。
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact system-analysis/plan` **取得套用到 plan.md 的憲法條文**。
 3. Think 依 `rules/端點-規範.md` **盤點這次需求涉及的端點**:每個端點視為一個獨立系統,寫出它對外的介面與需求出處。
 4. Ask **提出端點盤點**,問使用者是否要增減;若使用者要修改 → 跳至 Phase 1 Step 3。
@@ -34,6 +34,8 @@ description: 要依功能規格與技術研究規劃並執行系統分析時,用
 flowchart TD
     subgraph P1["Phase 1: 盤點端點"]
         P1S1["1. Read：規劃的依據"]
+        G_P1S1_1{"spec.md 所在的資料夾<br/>已有 plan.md,而且使<br/>用者帶來新的決定？"}
+        G_P1S1_2{"已有 plan.md、<br/>沒有新的決定？"}
         P1S2["2. Delegate：取得套用<br/>到 plan.md 的憲法條文"]
         P1S3["3. Think：盤點這次需求涉及的端點"]
         P1S4["4. Ask：提出端點盤點"]
@@ -63,7 +65,11 @@ flowchart TD
         P3S7["7. Report：交出所有產出"]
     end
     End["結束"]
-    P1S1 --> P1S2
+    P1S1 --> G_P1S1_1
+    G_P1S1_1 -->|是| P3S6
+    G_P1S1_1 -->|否| G_P1S1_2
+    G_P1S1_2 -->|是| P3S1
+    G_P1S1_2 -->|否| P1S2
     P1S2 --> P1S3
     P1S3 --> P1S4
     P1S4 --> G_P1S4_1
