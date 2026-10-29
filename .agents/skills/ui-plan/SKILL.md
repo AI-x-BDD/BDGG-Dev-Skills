@@ -1,5 +1,5 @@
 ---
-name: uiux-plan
+name: ui-plan
 description: 要分析前端畫面與互動、想先看到介面長什麼樣子,手上已經有功能規格或 plan.md 指派了前端這一步時,用這支 Skill 從使用者故事盤點畫面與流程,定下審美方向,交出含假資料、點開就能操作的 HTML 原型;使用者提到 UI 設計、UX、畫面設計、wireframe、mockup、原型、prototype、介面長什麼樣子、做個畫面給我看時使用。(未驗證)
 ---
 
@@ -9,7 +9,7 @@ description: 要分析前端畫面與互動、想先看到介面長什麼樣子,
 1. Read **這次要分析的介面**:plan.md 的端點盤點與波段表裡指派給這次的那一步;若 plan.md 指派了這一步 → 跳至 Phase 1 Step 3。
 2. Ask 問使用者**這次要分析的端點、介面與需求出處**。
 3. Read **分析的依據**:spec.md、research.md、techstack.md,以及這一步的理由欄點名的前幾步產出。
-4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact uiux-plan/style --artifact uiux-plan/mock --artifact uiux-plan/page --artifact uiux-plan/states` **取得套用到原型的憲法條文**。
+4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact ui-plan/style --artifact ui-plan/mock --artifact ui-plan/page --artifact ui-plan/states` **取得套用到原型的憲法條文**。
 5. Think **盤點畫面與互動流程**:每個需求出處都要對到至少一個畫面。
 
 ## Phase 2: 做出原型

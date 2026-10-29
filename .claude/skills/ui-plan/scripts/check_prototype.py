@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""檢查 uiux-plan 交出的 HTML 原型。
+"""檢查 ui-plan 交出的 HTML 原型。
 
 檢查項目:有入口 index.html 與狀態總覽 states.html、本地的 href 與 src 都指得到檔案、
 原型頁沒有測試用的控制(切換狀態、模擬、快轉的按鈕)、

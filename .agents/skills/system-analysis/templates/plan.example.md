@@ -12,7 +12,7 @@ specs/001-photo-album-organizer/
 ├── research.md          # 輸入(technical-research 產出)
 ├── techstack.md         # 輸入(technical-research 產出)
 ├── plan.md              # 本文件
-├── prototype/           # S2 產出(E1 前端,uiux-plan)
+├── prototype/           # S2 產出(E1 前端,ui-plan)
 ├── deploy/              # S5、S8 產出(E4 檔案系統、E6 部署與網路,deploy-plan)
 └── contracts/
     ├── payment.openapi.yaml   # S1 產出(E7 第三方金流,api-plan)
@@ -86,7 +86,7 @@ deploy/                      # E6 部署與網路
 | Wave | 步驟 | 介面 | Planner | 平行 | 排在這一波的理由 |
 |---|---|---|---|---|---|
 | 1 | S1 | E7 第三方金流 | api-plan | — | 金流商的介面已經定好,不依賴任何介面;前端的付款導轉與後端的建單、收通知都要照它設計 |
-| 2 | S2 | E1 前端畫面與互動 | uiux-plan | ✅ 與 S3 平行 | 由使用者故事推出;結帳、導向付款頁與付款完成頁的流程要照 S1 的導轉方式 |
+| 2 | S2 | E1 前端畫面與互動 | ui-plan | ✅ 與 S3 平行 | 由使用者故事推出;結帳、導向付款頁與付款完成頁的流程要照 S1 的導轉方式 |
 | 2 | S3 | E2 後端 REST API | api-plan | ✅ 與 S2 平行 | 由 FR 推出;建立訂單、接收付款通知的端點要照 S1 的參數與簽章。前端與後端以同一份需求為準,不必等對方 |
 | 3 | S4 | E3 資料庫 | data-plan | ✅ 與 S5、S6、S7 平行 | 要存什麼由 S3 的資源與操作決定(含訂單與付款狀態) |
 | 3 | S5 | E4 檔案系統 | deploy-plan | ✅ 與 S4、S6、S7 平行 | 要讀哪些原檔、寫哪些縮圖由 S3 的匯入與重新掃描決定 |

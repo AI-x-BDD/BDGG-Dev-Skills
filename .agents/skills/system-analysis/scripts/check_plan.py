@@ -27,10 +27,10 @@ SUMMARY = re.compile(r"共 (\d+) 個 wave、(\d+) 個步驟")
 DOC_OUTPUT = re.compile(r"^(\s*)[├└]── (\S+)\s+# (S\d+(?:、S\d+)*) 產出[((](.+?)[,,]\s*([a-z]+-plan)[))]")
 QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|implement T\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
 QUESTION_REF = re.compile(r"待決問題\s*(Q\d+(?:\s*(?:[–-]\s*Q?\d+|[、,,和與及]\s*Q\d+))*)?")
-PLANNERS = {"uiux-plan", "data-plan", "api-plan", "deploy-plan"}
+PLANNERS = {"ui-plan", "data-plan", "api-plan", "deploy-plan"}
 NO_PLANNER = "無合適的 planner"
 PLANNER_PATHS = {
-    "uiux-plan": ("prototype 開頭的資料夾", lambda path: re.fullmatch(r"prototype(-[\w-]+)?/", path) is not None),
+    "ui-plan": ("prototype 開頭的資料夾", lambda path: re.fullmatch(r"prototype(-[\w-]+)?/", path) is not None),
     "deploy-plan": ("deploy/", lambda path: path == "deploy/"),
     "api-plan": ("contracts/ 底下的 .openapi.yaml 或 .asyncapi.yaml", lambda path: path.startswith("contracts/") and path.endswith((".openapi.yaml", ".asyncapi.yaml"))),
     "data-plan": ("contracts/ 底下的 .dbml", lambda path: path.startswith("contracts/") and path.endswith(".dbml")),

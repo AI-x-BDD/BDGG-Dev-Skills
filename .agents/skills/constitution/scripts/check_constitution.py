@@ -28,7 +28,7 @@ SDD_SKILLS = [
     "api-plan",
     "data-plan",
     "deploy-plan",
-    "uiux-plan",
+    "ui-plan",
     "tasks",
 ]
 NOT_ARTIFACTS = {"委派指示"}
@@ -55,7 +55,7 @@ LOCKED = {
         "data-plan/rules/資料表-規範.md〈欄位對應前幾步規格檔的原文〉": "跨規格檔的一致性",
         "deploy-plan/rules/部署-規範.md〈機密只寫成 ${變數},值不進任何檔〉": "機密",
         "deploy-plan/rules/部署-規範.md〈port 與路徑照前幾步規格檔的原文〉": "跨規格檔的一致性",
-        "uiux-plan/rules/原型-規範.md〈每個驗收情境都看得到〉": "畫面的 data-state 是 tasks 的錨點"
+        "ui-plan/rules/原型-規範.md〈每個驗收情境都看得到〉": "畫面的 data-state 是 tasks 的錨點"
     }
 }
 
