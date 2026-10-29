@@ -19,10 +19,10 @@ description: 要依功能規格與技術研究規劃並執行系統分析時,用
 5. Ask **提出分析波段與指派的 planner**,附上憲法的對照結果,問使用者是否同意;若使用者要修改 → 跳至 Phase 2 Step 1。
 
 ## Phase 3: 執行分析波段
-1. Delegate 依骨架 `templates/委派指示.md` 與範例 `templates/委派指示.example.md` **把這一輪的步驟交給 sub agent**:還沒完成的最前面一波或使用者要重做的步驟,一支 planner 一個 sub agent,同一波平行。
+1. Delegate 依骨架 `templates/委派指示.md` 與範例 `templates/委派指示.example.md` **把這一輪的步驟交給 sub agent**:還沒完成的最前面一波、使用者要重做的步驟,或理由欄依賴上一輪重做的步驟、已經完成的步驟,一支 planner 一個 sub agent,同一波平行。
 2. Read **這一輪交回的產出與待決問題**。
 3. Write 依 `rules/待決問題-規範.md` 在 plan.md **登記待決問題**:每一題標出它擋住哪幾步。
-4. Delegate 執行 `uv run scripts/check_plan.py --plan <plan.md 的路徑> --spec <spec.md 的路徑>` **取得規格檔引用與待決問題表的檢查結果**;若有不過 → 跳至 Phase 3 Step 3;若有問題擋住下一波 → 跳至 Phase 3 Step 5;若還有下一波 → 跳至 Phase 3 Step 1。
+4. Delegate 執行 `uv run scripts/check_plan.py --plan <plan.md 的路徑> --spec <spec.md 的路徑>` **取得規格檔引用與待決問題表的檢查結果**;若有不過 → 跳至 Phase 3 Step 3;若有問題擋住下一波 → 跳至 Phase 3 Step 5;若還有下一波,或有理由欄依賴這一輪重做的步驟、已經完成的步驟 → 跳至 Phase 3 Step 1。
 5. Ask **提出還沒決定的待決問題**,問使用者每一題怎麼決定。
 6. Write **把使用者的決定寫回 plan.md**;若決定要改已經完成的產出,或還有下一波 → 跳至 Phase 3 Step 1。
 7. Report **交出所有產出**:每個檔的路徑,以及打開原型的方式。
@@ -56,7 +56,7 @@ flowchart TD
         P3S4["4. Delegate：取得規格檔引<br/>用與待決問題表的檢查結果"]
         G_P3S4_1{"有不過？"}
         G_P3S4_2{"有問題擋住下一波？"}
-        G_P3S4_3{"還有下一波？"}
+        G_P3S4_3{"還有下一波,或有理由<br/>欄依賴這一輪重做的步<br/>驟、已經完成的步驟？"}
         P3S5["5. Ask：提出還沒決定的待決問題"]
         P3S6["6. Write：把使用者的決定寫回 plan.md"]
         G_P3S6_1{"決定要改已經完成的<br/>產出,或還有下一波？"}
