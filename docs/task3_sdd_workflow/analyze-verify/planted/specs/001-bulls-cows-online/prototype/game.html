@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>對局|1A2B 線上對戰</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body data-requirements="FR-009 FR-010 FR-011 FR-012 FR-015 FR-016 FR-017 FR-019 NFR-003 NFR-004">
+  <header class="topbar">
+    <a class="brand" href="index.html">1A2B 線上對戰</a>
+    <nav>
+      <button type="button" class="btn-ghost" id="leave-game">離開對局</button>
+    </nav>
+  </header>
+  <main>
+    <div class="status-bar">
+      <span class="phase" id="phase">設定祕密數字</span>
+      <span class="countdown" id="countdown">設定倒數 30 秒</span>
+    </div>
+    <p class="notice" id="notice"></p>
+
+    <section class="panel" data-state="setup">
+      <form class="field js-secret-form" novalidate>
+        <label for="secret-input">設定你的祕密數字</label>
+        <input id="secret-input" class="digits" inputmode="numeric" autocomplete="off" placeholder="0000">
+        <button type="submit" class="btn-primary">鎖定</button>
+      </form>
+      <p class="hint">4 個互不重複的數字(0–9,可以 0 開頭),只有你看得到;鎖定後不能再改</p>
+    </section>
+    <section class="panel" data-state="setup-invalid">
+      <form class="field js-secret-form" novalidate>
+        <label for="secret-input-retry">設定你的祕密數字</label>
+        <input id="secret-input-retry" class="digits" inputmode="numeric" autocomplete="off" placeholder="0000">
+        <button type="submit" class="btn-primary">鎖定</button>
+      </form>
+      <p class="notice-error">「<span class="js-bad-secret">1123</span>」不行:必須是 4 個互不重複的數字(0–9,可以 0 開頭)</p>
+    </section>
+    <section class="panel" data-state="setup-done">
+      <p>你的祕密數字已鎖定:<strong class="big-digits js-my-secret">3906</strong></p>
+      <p class="hint">等其他人設定中,已設定 <span class="js-set-count">3/4</span>。全員設定完成後從座位最前面的人開始猜</p>
+    </section>
+    <section class="panel" data-state="setup-auto">
+      <p>30 秒內沒有設定,系統替你產生了 <strong class="big-digits js-my-secret">7024</strong></p>
+      <p class="hint">這組數字只有你看得到,這一局都用它</p>
+    </section>
+    <section class="panel" data-state="my-turn">
+      <form class="field js-guess-form" novalidate>
+        <label for="guess-input">輪到你了!猜 <span class="js-target-name">2 號 阿哲</span> 的數字</label>
+        <input id="guess-input" class="digits" inputmode="numeric" autocomplete="off" placeholder="0000">
+        <button type="submit" class="btn-primary">送出猜測</button>
+      </form>
+    </section>
+    <section class="panel" data-state="guess-invalid">
+      <form class="field js-guess-form" novalidate>
+        <label for="guess-input-retry">輪到你了!猜 <span class="js-target-name">2 號 阿哲</span> 的數字</label>
+        <input id="guess-input-retry" class="digits" inputmode="numeric" autocomplete="off" placeholder="0000">
+        <button type="submit" class="btn-primary">送出猜測</button>
+      </form>
+      <p class="notice-error">「<span class="js-bad-guess">12a4</span>」不行:必須是 4 個互不重複的數字(0–9,可以 0 開頭)。這次不算,請重新輸入</p>
+    </section>
+    <section class="panel" data-state="waiting-turn">
+      <p>等待 <strong class="js-turn-name">2 號 阿哲</strong> 猜測</p>
+      <p class="hint">輪到你的時候,這裡會出現輸入框</p>
+    </section>
+    <section class="panel" data-state="timeout">
+      <p>上一位逾時,這一回合換 <strong class="js-turn-name">4 號 小明</strong> 猜</p>
+      <p class="hint">逾時只是放棄這一次,不會出局</p>
+    </section>
+    <section class="panel" data-state="disconnected">
+      <p>等待 <strong class="js-turn-name">3 號 週五晚上只想猜數字的人類</strong> 猜測 <span class="tag tag-off">斷線中</span></p>
+      <p class="hint">這一回合照樣倒數,時間到就換下一位;他斷線超過 60 秒就判出局</p>
+    </section>
+    <section class="panel" data-state="eliminated">
+      <p>現在輪到 <strong class="js-turn-name">2 號 阿哲</strong> 猜</p>
+      <p class="hint">出局的人不再被猜,他的上一位改猜他的下一位;右邊「玩家」看得到現在誰猜誰</p>
+    </section>
+    <section class="panel" data-state="reconnecting">
+      <p>連線中斷,正在重新連線…</p>
+      <p class="hint">60 秒內連回來就回到原座位,猜測紀錄與你的祕密數字都還在</p>
+    </section>
+    <section class="confirm" data-state="leave-confirm">
+      <p><strong>確定要離開這一局嗎?</strong></p>
+      <p>遊戲中離開會直接判出局,不能再回到這一局。</p>
+      <div class="actions">
+        <button type="button" class="btn-ghost js-stay">留下來</button>
+        <button type="button" class="btn-danger js-leave">確定離開</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <dl class="me-info">
+        <div>
+          <dt>你的祕密數字(只有你看得到)</dt>
+          <dd class="big-digits" id="my-secret">還沒設定</dd>
+        </div>
+        <div>
+          <dt>你要猜</dt>
+          <dd id="my-target">2 號 阿哲</dd>
+        </div>
+        <div>
+          <dt>在猜你的數字</dt>
+          <dd id="guessed-by">4 號 小明</dd>
+        </div>
+      </dl>
+    </section>
+    <div class="game-layout">
+      <section class="panel">
+        <h2>玩家(誰猜誰)</h2>
+        <ul class="seat-list" id="ring"></ul>
+      </section>
+      <section class="panel">
+        <h2>猜測紀錄</h2>
+        <div id="log"></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const PREVIEW = new URLSearchParams(location.search).get("state");
+    const game = PREVIEW ? structuredClone(MOCK.preview.game[PREVIEW]) : Proto.load("game");
+    if (!PREVIEW && game.phase !== "ended" && game.deadline === undefined) game.deadline = Date.now() + 30000;
+    let current = PREVIEW;
+    let previous = null;
+
+    const $ = (id) => document.getElementById(id);
+    const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]);
+    const fill = (cls, text) => document.querySelectorAll(`.${cls}`).forEach((el) => { el.textContent = text; });
+    const show = (name) => { current = name; Proto.showState(name); };
+    const saveGame = () => Proto.save("game", game);
+
+    const score = (secret, guess) => {
+      let a = 0;
+      let b = 0;
+      [...guess].forEach((d, i) => {
+        if (secret[i] === d) a += 1;
+        else if (secret.includes(d)) b += 1;
+      });
+      return `${a}A${b}B`;
+    };
+    const isValid = (digits) => /^\d{4}$/.test(digits) && new Set(digits).size === 4;
+    const randomSecret = () => {
+      const pool = [..."0123456789"];
+      for (let i = pool.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return pool.slice(0, 4).join("");
+    };
+
+    const player = (seat) => game.players.find((p) => p.seat === seat);
+    const me = () => player(game.mySeat);
+    const alive = () => game.players.filter((p) => p.inGame).sort((a, b) => a.seat - b.seat);
+    const nextOf = (seat) => {
+      const list = alive();
+      const i = list.findIndex((p) => p.seat === seat);
+      return list[(i + 1) % list.length];
+    };
+    const label = (p) => `${p.seat} 號 ${p.nickname}`;
+    const remaining = () => {
+      if (PREVIEW) return game.remaining;
+      if (!game.deadline) return 0;
+      return Math.max(0, Math.ceil((game.deadline - Date.now()) / 1000));
+    };
+    const resultOf = (entry) => (entry.timeout ? "逾時" : score(player(entry.to).secret, entry.digits));
+
+    const render = () => {
+      const turnPlayer = game.turn ? player(game.turn) : null;
+      $("phase").textContent = game.phase === "setup" ? "設定祕密數字"
+        : game.phase === "guessing" ? `第 ${game.round} 輪 · 輪到 ${turnPlayer.seat === game.mySeat ? "你" : label(turnPlayer)}`
+        : "遊戲結束";
+      const left = remaining();
+      $("countdown").textContent = game.phase === "ended" ? "" : `${game.phase === "setup" ? "設定倒數" : "這一回合剩"} ${left} 秒`;
+      $("countdown").classList.toggle("low", game.phase !== "ended" && left <= 10);
+      $("notice").textContent = game.notice ?? "";
+
+      const mine = me();
+      $("my-secret").textContent = mine.secret ? `${mine.secret}${game.autoSecret ? "(系統代設)" : ""}` : "還沒設定";
+      if (mine.inGame) {
+        $("my-target").textContent = label(nextOf(mine.seat));
+        const guessers = alive().filter((p) => p.seat !== mine.seat && nextOf(p.seat).seat === mine.seat);
+        $("guessed-by").textContent = guessers.map(label).join("、") || "沒有人";
+      }
+
+      $("ring").innerHTML = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => {
+        const isTurn = game.phase === "guessing" && game.turn === p.seat;
+        const tags = [
+          p.host ? "<span class=\"tag tag-host\">房主</span>" : "",
+          p.seat === game.mySeat ? "<span class=\"tag tag-me\">你</span>" : "",
+          p.conn === "offline" ? "<span class=\"tag tag-off\">斷線中</span>" : "",
+          !p.inGame ? "<span class=\"tag tag-off\">已離開</span>" : "",
+          p.inGame && game.phase === "setup" ? (p.secret ? "<span class=\"tag tag-ok\">已設定</span>" : "<span class=\"tag\">設定中</span>") : "",
+          isTurn ? "<span class=\"tag tag-ok\">輪到</span>" : "",
+        ].join("");
+        const target = p.inGame ? `猜 → ${esc(label(nextOf(p.seat)))}` : "出局";
+        return `<li class="${isTurn ? "seat-turn" : ""}"><span class="seat-no">${p.seat} 號</span><span class="seat-name">${esc(p.nickname)}</span>${tags}<span class="seat-target">${target}</span></li>`;
+      }).join("");
+
+      $("log").innerHTML = game.log.length === 0 ? "<p class=\"empty\">還沒有人猜</p>" : `
+        <table class="log">
+          <thead><tr><th>輪</th><th>誰猜誰</th><th>猜</th><th>結果</th></tr></thead>
+          <tbody>${[...game.log].reverse().map((entry) => {
+            const result = resultOf(entry);
+            const chip = entry.timeout ? "chip chip-skip" : result === "4A0B" ? "chip chip-win" : "chip";
+            return `<tr><td>${entry.round}</td><td>${entry.from} 號 → ${entry.to} 號</td><td class="digits-cell">${entry.digits ?? "—"}</td><td><span class="${chip}">${result}</span></td></tr>`;
+          }).join("")}</tbody>
+        </table>`;
+
+      fill("js-turn-name", turnPlayer ? label(turnPlayer) : "");
+      if (mine.inGame) fill("js-target-name", label(nextOf(mine.seat)));
+      fill("js-my-secret", mine.secret ?? "");
+      fill("js-set-count", `${alive().filter((p) => p.secret).length}/${alive().length}`);
+    };
+
+    const endGame = (seat, text) => {
+      game.phase = "ended";
+      game.winner = seat;
+      game.reason = "guess";
+      game.deadline = null;
+      game.notice = text;
+      saveGame();
+      render();
+      Proto.showState("ended");
+      Proto.later(1500, () => { location.href = "result.html"; });
+    };
+
+    const advance = () => {
+      const list = alive();
+      const i = list.findIndex((p) => p.seat === game.turn);
+      if (i + 1 >= list.length) game.round += 1;
+      game.turn = list[(i + 1) % list.length].seat;
+      game.deadline = Date.now() + 60000;
+      saveGame();
+      onTurn();
+    };
+
+    const submitGuess = (seat, digits) => {
+      const target = nextOf(seat);
+      game.log.push({ round: game.round, from: seat, to: target.seat, digits });
+      const result = score(target.secret, digits);
+      if (result === "4A0B") return endGame(seat, `${label(player(seat))} 猜中了 ${label(target)} 的數字 ${digits}!遊戲結束`);
+      game.notice = `${label(player(seat))} 猜 ${label(target)}:${digits} → ${result}`;
+      advance();
+    };
+
+    const otherGuess = (seat) => {
+      const target = nextOf(seat);
+      const closer = alive().filter((p) => p.seat !== game.mySeat).at(-1);
+      const pool = MOCK.guessPool;
+      const digits = game.round >= 3 && closer && closer.seat === seat
+        ? target.secret
+        : pool[(game.round * 5 + seat * 3 + game.log.length) % pool.length];
+      submitGuess(seat, digits);
+    };
+
+    const onTurn = () => {
+      render();
+      if (game.turn === game.mySeat) {
+        show("my-turn");
+        const input = $("guess-input");
+        input.value = "";
+        input.focus();
+        return;
+      }
+      const last = game.log.at(-1);
+      show(last && last.timeout ? "timeout" : "waiting-turn");
+      const seat = game.turn;
+      const round = game.round;
+      Proto.later(6000 + Math.floor(Math.random() * 3000), () => {
+        if (game.phase === "guessing" && game.turn === seat && game.round === round) otherGuess(seat);
+      });
+    };
+
+    const turnTimeout = () => {
+      const p = player(game.turn);
+      game.log.push({ round: game.round, from: p.seat, to: nextOf(p.seat).seat, timeout: true });
+      game.notice = `${label(p)} 60 秒內沒有猜,視為放棄這一次(不會出局)`;
+      advance();
+    };
+
+    const startGuessing = () => {
+      if (game.phase !== "setup") return;
+      game.phase = "guessing";
+      game.round = 1;
+      game.turn = alive()[0].seat;
+      game.deadline = Date.now() + 60000;
+      game.notice = `所有人都設定好了,從 ${label(player(game.turn))} 開始猜`;
+      saveGame();
+      onTurn();
+    };
+
+    const checkAllSet = () => {
+      if (game.phase !== "setup" || !game.deadline) return;
+      if (!alive().every((p) => p.secret)) return;
+      game.deadline = null;
+      game.notice = "所有人都設定好了,馬上開始猜";
+      saveGame();
+      render();
+      Proto.later(2000, startGuessing);
+    };
+
+    const setupTimeout = () => {
+      game.deadline = null;
+      const mine = me();
+      if (!mine.secret) {
+        mine.secret = randomSecret();
+        game.autoSecret = true;
+      }
+      alive().filter((p) => !p.secret).forEach((p, k) => { p.secret = MOCK.secretPool[k % MOCK.secretPool.length]; });
+      game.notice = "60 秒到了,所有人都設定好了,馬上開始猜";
+      saveGame();
+      render();
+      if (game.autoSecret) show("setup-auto");
+      Proto.later(3000, startGuessing);
+    };
+
+    const tick = () => {
+      render();
+      if (game.phase === "ended") return;
+      if (game.deadline && Date.now() >= game.deadline) {
+        if (game.phase === "setup") setupTimeout();
+        else turnTimeout();
+      }
+      Proto.later(1000, tick);
+    };
+
+    document.querySelectorAll(".js-secret-form").forEach((form) => form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (PREVIEW || game.phase !== "setup" || me().secret) return;
+      const value = form.querySelector("input").value.trim();
+      if (!isValid(value)) {
+        fill("js-bad-secret", value || "(空白)");
+        $("secret-input-retry").value = value;
+        show("setup-invalid");
+        return;
+      }
+      me().secret = value;
+      game.notice = "祕密數字已鎖定";
+      saveGame();
+      render();
+      show("setup-done");
+      checkAllSet();
+    }));
+
+    document.querySelectorAll(".js-guess-form").forEach((form) => form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (PREVIEW || game.phase !== "guessing" || game.turn !== game.mySeat) return;
+      const value = form.querySelector("input").value.trim();
+      if (!isValid(value)) {
+        fill("js-bad-guess", value || "(空白)");
+        $("guess-input-retry").value = value;
+        show("guess-invalid");
+        return;
+      }
+      const button = form.querySelector("button");
+      button.disabled = true;
+      Proto.later(400, () => {
+        button.disabled = false;
+        if (game.phase === "guessing" && game.turn === game.mySeat) submitGuess(game.mySeat, value);
+      });
+    }));
+
+    $("leave-game").addEventListener("click", () => {
+      if (PREVIEW || game.phase === "ended" || current === "leave-confirm") return;
+      previous = current;
+      show("leave-confirm");
+    });
+    document.querySelector(".js-stay").addEventListener("click", () => {
+      if (PREVIEW) return;
+      show(previous);
+    });
+    document.querySelector(".js-leave").addEventListener("click", () => {
+      if (PREVIEW) return;
+      location.href = "index.html";
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      render();
+      if (PREVIEW) {
+        if (game.inputValue) {
+          $("secret-input-retry").value = game.inputValue;
+          $("guess-input-retry").value = game.inputValue;
+          fill("js-bad-secret", game.inputValue);
+          fill("js-bad-guess", game.inputValue);
+        }
+        return;
+      }
+      if (game.phase === "ended") {
+        location.href = "result.html";
+        return;
+      }
+      if (game.phase === "setup") {
+        show(me().secret ? "setup-done" : "setup");
+        const delays = [5000, 9000, 14000];
+        alive().filter((p) => p.seat !== game.mySeat && !p.secret).forEach((p, k) => {
+          Proto.later(delays[k % delays.length], () => {
+            if (game.phase !== "setup" || p.secret) return;
+            p.secret = MOCK.secretPool[k % MOCK.secretPool.length];
+            game.notice = `${label(p)} 設定好了`;
+            saveGame();
+            render();
+            checkAllSet();
+          });
+        });
+        if (!game.deadline) Proto.later(2000, startGuessing);
+      } else {
+        onTurn();
+      }
+      tick();
+    });
+  </script>
+</body>
+</html>

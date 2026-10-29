@@ -1,0 +1,852 @@
+asyncapi: 3.0.0
+info:
+  title: 線上 1A2B 多人對戰 WebSocket 訊息協定
+  version: 0.1.0
+  description: |
+    S2(E2 後端(Node.js 22、`ws`))依 spec.md 與 plan.md 產出。
+
+    連線與共通約定:
+    - 所有訊息都是一個 JSON 物件文字框(text frame),以 `type` 欄位區分種類。
+    - 前端與 WebSocket 同源,連線入口是 `/ws`(research R2);主機與 port 由 S3 部署決定。
+    - 心跳:伺服器每 15 秒送一次 WebSocket 協定層的 ping,下一次 ping 之前沒收到 pong 就主動斷開(research R5);
+      瀏覽器自動回 pong,應用層不另送心跳訊息。
+    - 所有倒數都以「剩餘毫秒數」推送(`*RemainingMs`),前端只負責顯示;截止由伺服器判定(research R4、NFR-005)。
+    - 玩家以座位號(1–4)識別;座位號在房間存續期間不重排。
+    - 不需註冊或登入(NFR-001);重連身分是進房時拿到的 `resumeToken`,只在這次連線的分頁有效。
+    - 斷線(`close` 或心跳逾時)的玩家座位保留 60 秒,從最後一次確認在線起算(research R5);
+      60 秒內送 `session.resume` 回到原座位,逾時則視同離開(遊戲中判出局)。
+    - 祕密數字只出現在送給本人的訊息(`match.joined`、`session.resumed`、`secret.confirmed`),
+      其他人的祕密數字只在 `game.ended` 才公開(NFR-002、SC-005)。
+servers:
+  direct:
+    host: '{host}:{port}'
+    pathname: /ws
+    protocol: ws
+    description: |
+      頁面以 `http:` 開啟時使用(Q7、Q18)。前端依 `location.protocol` 選 `ws`,連同源的 `/ws`,
+      也就是 `ws://` + `location.host` + `/ws`;port 是部署對外開的 `${PUBLIC_PORT:-8080}`。
+      開發時就是 `ws://localhost:8080/ws`。
+    variables:
+      host:
+        default: localhost
+        description: 頁面的主機名稱(同源,取自 `location.hostname`)
+      port:
+        default: '8080'
+        description: 對外 port,部署時以 `PUBLIC_PORT` 設定,沒設就是 8080
+  tls:
+    host: '{host}'
+    pathname: /ws
+    protocol: wss
+    description: |
+      頁面以 `https:` 開啟時使用(Q14)。TLS 在外層既有的反向代理終止,這個服務本身不處理憑證;
+      前端依 `location.protocol` 選 `wss`,連同源的 `/ws`,也就是 `wss://` + `location.host` + `/ws`。
+      外層反向代理要把 `/ws` 的 Upgrade 轉發到 `${PUBLIC_PORT:-8080}`。
+    variables:
+      host:
+        description: 外層反向代理對外的網域(同源,取自 `location.host`);部署位置不在範圍內
+channels:
+  game:
+    address: /ws
+    messages:
+      matchStart:
+        $ref: '#/components/messages/matchStart'
+      sessionResume:
+        $ref: '#/components/messages/sessionResume'
+      roomLeave:
+        $ref: '#/components/messages/roomLeave'
+      gameStart:
+        $ref: '#/components/messages/gameStart'
+      secretSet:
+        $ref: '#/components/messages/secretSet'
+      guessSubmit:
+        $ref: '#/components/messages/guessSubmit'
+      matchJoined:
+        $ref: '#/components/messages/matchJoined'
+      sessionResumed:
+        $ref: '#/components/messages/sessionResumed'
+      sessionReplaced:
+        $ref: '#/components/messages/sessionReplaced'
+      roomLeft:
+        $ref: '#/components/messages/roomLeft'
+      roomUpdated:
+        $ref: '#/components/messages/roomUpdated'
+      gameSetupStarted:
+        $ref: '#/components/messages/gameSetupStarted'
+      secretConfirmed:
+        $ref: '#/components/messages/secretConfirmed'
+      setupProgress:
+        $ref: '#/components/messages/setupProgress'
+      turnStarted:
+        $ref: '#/components/messages/turnStarted'
+      guessResult:
+        $ref: '#/components/messages/guessResult'
+      turnSkipped:
+        $ref: '#/components/messages/turnSkipped'
+      playerEliminated:
+        $ref: '#/components/messages/playerEliminated'
+      gameEnded:
+        $ref: '#/components/messages/gameEnded'
+      error:
+        $ref: '#/components/messages/error'
+operations:
+  receiveMatchStart:
+    action: receive
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/matchStart'
+    summary: 輸入暱稱並開始配對
+    description: |
+      加入一間等待中且未滿 4 人的房間;沒有就開一間新房間,送出者成為房主並坐 1 號座位。
+      同時配對時任何房間都不超過 4 人,也不會各自開出多間 1 人房(FR-003);遊戲中的房間不會被配對到(FR-007)。
+      暱稱去除前後空白後計算長度;同房暱稱相同時,後進房者的顯示暱稱加上「 (2)」這類編號(FR-005)。
+      新進房者拿到最小的空座位號。
+      成功時送出者收到 `match.joined`,房內所有人(含送出者)收到 `room.updated`。
+    x-requirements: [FR-001, FR-002, FR-003, FR-004, FR-005, FR-007, NFR-001, NFR-005, SC-003]
+    x-callers: 任何連線,且這條連線目前不在任何房間
+    x-error-codes: [INVALID_MESSAGE, NICKNAME_EMPTY, NICKNAME_TOO_LONG, ALREADY_IN_ROOM]
+  receiveSessionResume:
+    action: receive
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/sessionResume'
+    summary: 斷線或重新整理後回到原座位
+    description: |
+      帶上進房時拿到的 `resumeToken`;座位仍在保留中就回到原座位,送出者收到 `session.resumed`(含完整猜測紀錄與自己的祕密數字),
+      房內所有人收到 `room.updated`。若這個座位目前仍有另一條在線的連線,舊連線收到 `session.replaced` 後被關閉。
+      回到座位不會重設任何倒數(FR-015 驗收情境 5)。
+    x-requirements: [FR-016, NFR-005, SC-006]
+    x-callers: 任何連線,且這條連線目前不在任何房間;token 對應的座位仍在 60 秒保留內或仍在線
+    x-error-codes: [INVALID_MESSAGE, ALREADY_IN_ROOM, RESUME_TOKEN_INVALID]
+  receiveRoomLeave:
+    action: receive
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/roomLeave'
+    summary: 離開房間
+    description: |
+      等待中:直接離開;房主離開時房主轉給座位號最小的玩家;最後一人離開時房間關閉(FR-006)。
+      遊戲中:判出局,房內其餘人收到 `player.eliminated`;只剩 1 人時接著收到 `game.ended`(FR-017、FR-018)。
+      送出者收到 `room.left`,其餘人收到 `room.updated`。
+    x-requirements: [FR-006, FR-017, FR-018, FR-019, NFR-003, SC-002]
+    x-callers: 在房間裡的玩家,不論房間等待中或遊戲中
+    x-error-codes: [INVALID_MESSAGE, NOT_IN_ROOM]
+  receiveGameStart:
+    action: receive
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/gameStart'
+    summary: 房主開始遊戲
+    description: 成功時房內所有人收到 `game.setupStarted`,房間不再被配對到。斷線保留中的玩家也算在人數裡。
+    x-requirements: [FR-007, FR-008, FR-010, FR-014, NFR-005]
+    x-callers: 等待中房間的房主,房內有 2 到 4 人
+    x-error-codes: [INVALID_MESSAGE, NOT_IN_ROOM, NOT_HOST, GAME_IN_PROGRESS, NOT_ENOUGH_PLAYERS]
+  receiveSecretSet:
+    action: receive
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/secretSet'
+    summary: 設定自己的祕密數字
+    description: |
+      成功時只有送出者收到 `secret.confirmed`(含祕密數字),房內所有人收到 `game.setupProgress`(只有座位號,沒有數字)。
+      設定後不能更改。全員設定完成後進入猜測階段,所有人收到 `turn.started`。
+    x-requirements: [FR-009, FR-010, NFR-002, NFR-005, SC-005]
+    x-callers: 遊戲中房間的玩家,對局在設定祕密數字階段,且自己還沒設定
+    x-error-codes: [INVALID_MESSAGE, NOT_IN_ROOM, NOT_SETUP_PHASE, SECRET_ALREADY_SET, DIGITS_FORMAT_INVALID, DIGITS_REPEATED]
+  receiveGuessSubmit:
+    action: receive
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/guessSubmit'
+    summary: 送出一次猜測
+    description: |
+      猜的對象固定是伺服器決定的「下一位仍在局中的玩家」,訊息裡不帶對象。
+      A、B 由伺服器計算(NFR-002);成功時房內所有人收到 `guess.result`,
+      猜中(4A0B)時接著收到 `game.ended`,否則接著收到下一位的 `turn.started`。
+      重複送出相同的猜測照常計算;非輪到的人送出(含網路延遲造成的重送)一律拒絕。
+    x-requirements: [FR-009, FR-011, FR-012, FR-013, NFR-002, NFR-005, SC-002]
+    x-callers: 遊戲中房間、對局在猜測階段、目前輪到的那位玩家;每個回合只受理一次
+    x-error-codes: [INVALID_MESSAGE, NOT_IN_ROOM, NOT_GUESS_PHASE, NOT_YOUR_TURN, DIGITS_FORMAT_INVALID, DIGITS_REPEATED]
+  sendMatchJoined:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/matchJoined'
+    summary: 配對成功,告知自己的座位與重連 token
+    x-requirements: [FR-002, FR-004, FR-005, FR-016, NFR-001]
+    x-callers: receiveMatchStart 成功之後
+    x-error-codes: []
+  sendSessionResumed:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/sessionResumed'
+    summary: 重連成功,送回完整的個人視圖
+    x-requirements: [FR-016, NFR-002, SC-005, SC-006]
+    x-callers: receiveSessionResume 成功之後
+    x-error-codes: []
+  sendSessionReplaced:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/sessionReplaced'
+    summary: 同一座位被另一條連線接手
+    x-requirements: [FR-016, NFR-005]
+    x-callers: 另一條連線以同一個 resumeToken 成功 receiveSessionResume 時,送給原本仍在線的那條連線,隨後關閉它
+    x-error-codes: []
+  sendRoomLeft:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/roomLeft'
+    summary: 確認已離開房間
+    x-requirements: [FR-006, FR-017]
+    x-callers: receiveRoomLeave 成功之後
+    x-error-codes: []
+  sendRoomUpdated:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/roomUpdated'
+    summary: 房間名單或狀態有變化
+    x-requirements: [FR-004, FR-005, FR-006, FR-014, FR-016, NFR-003, SC-002, SC-003]
+    x-callers: 有人進房、離開、斷線、重連、房主轉移、出局,或遊戲結束房間回到等待中時
+    x-error-codes: []
+  sendGameSetupStarted:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/gameSetupStarted'
+    summary: 遊戲開始,進入設定祕密數字階段
+    x-requirements: [FR-008, FR-010, FR-019, NFR-003]
+    x-callers: receiveGameStart 成功之後
+    x-error-codes: []
+  sendSecretConfirmed:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/secretConfirmed'
+    summary: 告知本人他的祕密數字已定
+    description: 玩家自己設定成功時 `source` 是 `player`;60 秒內沒設定、由伺服器隨機產生時 `source` 是 `auto`(FR-010)。
+    x-requirements: [FR-010, NFR-002, SC-005]
+    x-callers: receiveSecretSet 成功之後,或設定祕密數字的 60 秒到期、伺服器替未設定者產生之後
+    x-error-codes: []
+  sendSetupProgress:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/setupProgress'
+    summary: 誰已經設定好祕密數字
+    x-requirements: [FR-010, NFR-002, NFR-003]
+    x-callers: 任何一位玩家的祕密數字定下之後(自己設定或伺服器代設)
+    x-error-codes: []
+  sendTurnStarted:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/turnStarted'
+    summary: 換某位玩家猜測
+    x-requirements: [FR-010, FR-011, FR-015, FR-019, NFR-003, SC-002]
+    x-callers: 全員祕密數字定下之後(第一回合從座位號最小的在局玩家開始),或上一回合猜測未中、逾時跳過、輪到的人出局之後
+    x-error-codes: []
+  sendGuessResult:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/guessResult'
+    summary: 一次猜測的幾 A 幾 B
+    x-requirements: [FR-012, NFR-002, NFR-003, SC-002, SC-003]
+    x-callers: receiveGuessSubmit 成功之後
+    x-error-codes: []
+  sendTurnSkipped:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/turnSkipped'
+    summary: 回合逾時,跳過這一次
+    x-requirements: [FR-015, NFR-003, SC-006]
+    x-callers: 輪到的玩家 60 秒內沒有送出猜測時(不論他是否在線)
+    x-error-codes: []
+  sendPlayerEliminated:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/playerEliminated'
+    summary: 有玩家出局,重新決定誰猜誰
+    x-requirements: [FR-017, FR-019, NFR-003, SC-006]
+    x-callers: 遊戲中(設定祕密數字或猜測階段)有玩家送 room.leave,或斷線保留 60 秒到期時
+    x-error-codes: []
+  sendGameEnded:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/gameEnded'
+    summary: 遊戲結束,宣布獲勝者並公開所有祕密數字
+    description: 送出後房間回到等待中,房內所有人接著收到 `room.updated`(`status` 為 `waiting`),房主可以再開始一局(FR-014)。
+    x-requirements: [FR-013, FR-014, FR-018, NFR-002, NFR-003, SC-005, SC-006]
+    x-callers: 有人猜中(4A0B),或遊戲中只剩 1 位在局玩家時
+    x-error-codes: []
+  sendError:
+    action: send
+    channel:
+      $ref: '#/channels/game'
+    messages:
+      - $ref: '#/channels/game/messages/error'
+    summary: 拒絕一則玩家送出的訊息
+    description: 不是合法 JSON、`type` 不認得或欄位不符 schema 時回 `INVALID_MESSAGE`;其餘錯誤碼見各 receive 操作。被拒絕的訊息不改變任何狀態。
+    x-requirements: [NFR-005]
+    x-callers: 任何 receive 操作不符條件時
+    x-error-codes: []
+components:
+  messages:
+    matchStart:
+      name: match.start
+      summary: 以這個暱稱開始配對
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/MatchStart'
+    sessionResume:
+      name: session.resume
+      summary: 以重連 token 回到原座位
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/SessionResume'
+    roomLeave:
+      name: room.leave
+      summary: 離開目前的房間
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/RoomLeave'
+    gameStart:
+      name: game.start
+      summary: 房主開始一局
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/GameStart'
+    secretSet:
+      name: secret.set
+      summary: 設定自己的祕密數字
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/SecretSet'
+    guessSubmit:
+      name: guess.submit
+      summary: 猜下一位玩家的祕密數字
+      x-recipients: 伺服器
+      payload:
+        $ref: '#/components/schemas/GuessSubmit'
+    matchJoined:
+      name: match.joined
+      summary: 配對成功,含自己的座位、重連 token 與房間現況
+      x-recipients: 送出 match.start 的那位玩家本人
+      payload:
+        $ref: '#/components/schemas/MatchJoined'
+    sessionResumed:
+      name: session.resumed
+      summary: 重連成功,含自己的祕密數字與完整猜測紀錄
+      x-recipients: 送出 session.resume 的那位玩家本人
+      payload:
+        $ref: '#/components/schemas/SessionResumed'
+    sessionReplaced:
+      name: session.replaced
+      summary: 這個座位已在另一條連線上接手,這條連線即將關閉
+      x-recipients: 被接手的那條舊連線
+      payload:
+        $ref: '#/components/schemas/SessionReplaced'
+    roomLeft:
+      name: room.left
+      summary: 已離開房間
+      x-recipients: 送出 room.leave 的那位玩家本人
+      payload:
+        $ref: '#/components/schemas/RoomLeft'
+    roomUpdated:
+      name: room.updated
+      summary: 房間現在的名單、房主與狀態
+      x-recipients: 房內所有玩家(含斷線保留中、重連後的玩家)
+      payload:
+        $ref: '#/components/schemas/RoomUpdated'
+    gameSetupStarted:
+      name: game.setupStarted
+      summary: 遊戲開始,設定祕密數字的倒數與誰猜誰
+      x-recipients: 房內所有玩家
+      payload:
+        $ref: '#/components/schemas/GameSetupStarted'
+    secretConfirmed:
+      name: secret.confirmed
+      summary: 本人的祕密數字已定
+      x-recipients: 那位祕密數字被定下的玩家本人
+      payload:
+        $ref: '#/components/schemas/SecretConfirmed'
+    setupProgress:
+      name: game.setupProgress
+      summary: 已設定好祕密數字的座位,不含數字
+      x-recipients: 房內所有玩家
+      payload:
+        $ref: '#/components/schemas/SetupProgress'
+    turnStarted:
+      name: turn.started
+      summary: 輪到誰、他猜誰、這一回合的倒數
+      x-recipients: 房內所有玩家
+      payload:
+        $ref: '#/components/schemas/TurnStarted'
+    guessResult:
+      name: guess.result
+      summary: 一次猜測的猜測者、被猜者、內容與幾 A 幾 B
+      x-recipients: 房內所有玩家
+      payload:
+        $ref: '#/components/schemas/GuessResult'
+    turnSkipped:
+      name: turn.skipped
+      summary: 輪到的玩家逾時,這一次視為放棄
+      x-recipients: 房內所有玩家
+      payload:
+        $ref: '#/components/schemas/TurnSkipped'
+    playerEliminated:
+      name: player.eliminated
+      summary: 有玩家出局,以及重新決定後的誰猜誰
+      x-recipients: 房內其餘所有玩家(不含出局者)
+      payload:
+        $ref: '#/components/schemas/PlayerEliminated'
+    gameEnded:
+      name: game.ended
+      summary: 獲勝者與每位玩家的祕密數字
+      x-recipients: 房內所有玩家
+      payload:
+        $ref: '#/components/schemas/GameEnded'
+    error:
+      name: error
+      summary: 拒絕這則訊息的原因
+      x-recipients: 送出那則訊息的連線
+      payload:
+        $ref: '#/components/schemas/Error'
+  schemas:
+    MatchStart:
+      type: object
+      required: [type, nickname]
+      properties:
+        type:
+          type: string
+          const: match.start
+        nickname:
+          type: string
+          description: 暱稱;伺服器去除前後空白後須為 1 到 12 個字(以 Unicode 字元計)
+    SessionResume:
+      type: object
+      required: [type, resumeToken]
+      properties:
+        type:
+          type: string
+          const: session.resume
+        resumeToken:
+          $ref: '#/components/schemas/ResumeToken'
+    RoomLeave:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: room.leave
+    GameStart:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: game.start
+    SecretSet:
+      type: object
+      required: [type, secret]
+      properties:
+        type:
+          type: string
+          const: secret.set
+        secret:
+          $ref: '#/components/schemas/Digits'
+    GuessSubmit:
+      type: object
+      required: [type, guess]
+      properties:
+        type:
+          type: string
+          const: guess.submit
+        guess:
+          $ref: '#/components/schemas/Digits'
+    MatchJoined:
+      type: object
+      required: [type, mySeat, resumeToken, room]
+      properties:
+        type:
+          type: string
+          const: match.joined
+        mySeat:
+          $ref: '#/components/schemas/Seat'
+        resumeToken:
+          $ref: '#/components/schemas/ResumeToken'
+        room:
+          $ref: '#/components/schemas/Room'
+    SessionResumed:
+      type: object
+      required: [type, mySeat, room]
+      properties:
+        type:
+          type: string
+          const: session.resumed
+        mySeat:
+          $ref: '#/components/schemas/Seat'
+        room:
+          $ref: '#/components/schemas/Room'
+        game:
+          $ref: '#/components/schemas/GameViewForSelf'
+    SessionReplaced:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: session.replaced
+    RoomLeft:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          const: room.left
+    RoomUpdated:
+      type: object
+      required: [type, room]
+      properties:
+        type:
+          type: string
+          const: room.updated
+        room:
+          $ref: '#/components/schemas/Room'
+    GameSetupStarted:
+      type: object
+      required: [type, setupRemainingMs, targets]
+      properties:
+        type:
+          type: string
+          const: game.setupStarted
+        setupRemainingMs:
+          type: integer
+          minimum: 0
+          maximum: 60000
+          description: 設定祕密數字的剩餘時間,毫秒
+        targets:
+          type: array
+          description: 每位在局玩家要猜的對象
+          items:
+            $ref: '#/components/schemas/Target'
+    SecretConfirmed:
+      type: object
+      required: [type, secret, source]
+      properties:
+        type:
+          type: string
+          const: secret.confirmed
+        secret:
+          $ref: '#/components/schemas/Digits'
+        source:
+          type: string
+          enum: [player, auto]
+          description: player 是本人設定;auto 是 60 秒逾時由伺服器隨機產生
+    SetupProgress:
+      type: object
+      required: [type, readySeats, setupRemainingMs]
+      properties:
+        type:
+          type: string
+          const: game.setupProgress
+        readySeats:
+          type: array
+          description: 已定下祕密數字的座位號
+          items:
+            $ref: '#/components/schemas/Seat'
+        setupRemainingMs:
+          type: integer
+          minimum: 0
+          maximum: 60000
+          description: 設定祕密數字的剩餘時間,毫秒
+    TurnStarted:
+      type: object
+      required: [type, turn, guesserSeat, targetSeat, turnRemainingMs]
+      properties:
+        type:
+          type: string
+          const: turn.started
+        turn:
+          type: integer
+          minimum: 1
+          description: 這一局的第幾回合,從 1 開始
+        guesserSeat:
+          $ref: '#/components/schemas/Seat'
+        targetSeat:
+          $ref: '#/components/schemas/Seat'
+        turnRemainingMs:
+          type: integer
+          minimum: 0
+          maximum: 60000
+          description: 這一回合的剩餘時間,毫秒
+    GuessResult:
+      type: object
+      required: [type, entry]
+      properties:
+        type:
+          type: string
+          const: guess.result
+        entry:
+          $ref: '#/components/schemas/GuessEntry'
+    TurnSkipped:
+      type: object
+      required: [type, entry]
+      properties:
+        type:
+          type: string
+          const: turn.skipped
+        entry:
+          $ref: '#/components/schemas/GuessEntry'
+    PlayerEliminated:
+      type: object
+      required: [type, seat, nickname, reason, targets]
+      properties:
+        type:
+          type: string
+          const: player.eliminated
+        seat:
+          $ref: '#/components/schemas/Seat'
+        nickname:
+          type: string
+          description: 出局者的顯示暱稱,讓畫面能顯示「3 號(小明)已離開」
+        reason:
+          type: string
+          enum: [left, disconnect_timeout]
+          description: left 是主動離開;disconnect_timeout 是斷線超過 60 秒
+        targets:
+          type: array
+          description: 重新決定後每位在局玩家要猜的對象
+          items:
+            $ref: '#/components/schemas/Target'
+    GameEnded:
+      type: object
+      required: [type, winnerSeat, reason, secrets]
+      properties:
+        type:
+          type: string
+          const: game.ended
+        winnerSeat:
+          $ref: '#/components/schemas/Seat'
+        reason:
+          type: string
+          enum: [guessed, last_player_standing]
+          description: guessed 是有人猜中 4A0B;last_player_standing 是只剩 1 位在局玩家
+        secrets:
+          type: array
+          description: 這一局每位玩家(含已出局者)的祕密數字;只剩 1 人時若有人還沒定下祕密數字,該玩家不列入
+          items:
+            $ref: '#/components/schemas/RevealedSecret'
+    Room:
+      type: object
+      required: [status, hostSeat, players]
+      properties:
+        status:
+          type: string
+          enum: [waiting, playing]
+          description: waiting 是等待中(可被配對);playing 是遊戲中
+        hostSeat:
+          $ref: '#/components/schemas/Seat'
+        players:
+          type: array
+          description: 依座位號排序的房內玩家,最多 4 人
+          items:
+            $ref: '#/components/schemas/Player'
+    Player:
+      type: object
+      required: [seat, nickname, isHost, connection]
+      properties:
+        seat:
+          $ref: '#/components/schemas/Seat'
+        nickname:
+          type: string
+          description: 顯示暱稱;同房重名時已加上「 (2)」這類編號
+        isHost:
+          type: boolean
+        connection:
+          type: string
+          enum: [online, disconnected]
+          description: disconnected 是斷線、座位保留中
+    GameViewForSelf:
+      type: object
+      description: 只送給本人的對局視圖;不含其他玩家的祕密數字
+      required: [phase, targets, readySeats, history]
+      properties:
+        phase:
+          type: string
+          enum: [setup, guessing]
+        mySecret:
+          $ref: '#/components/schemas/Digits'
+        setupRemainingMs:
+          type: integer
+          minimum: 0
+          maximum: 60000
+          description: phase 是 setup 時才有;設定祕密數字的剩餘時間,毫秒
+        readySeats:
+          type: array
+          description: 已定下祕密數字的座位號
+          items:
+            $ref: '#/components/schemas/Seat'
+        targets:
+          type: array
+          description: 目前每位在局玩家要猜的對象
+          items:
+            $ref: '#/components/schemas/Target'
+        turn:
+          $ref: '#/components/schemas/TurnState'
+        history:
+          type: array
+          description: 這一局到目前為止的猜測紀錄,依時間排序
+          items:
+            $ref: '#/components/schemas/GuessEntry'
+    TurnState:
+      type: object
+      description: phase 是 guessing 時才有
+      required: [turn, guesserSeat, targetSeat, turnRemainingMs]
+      properties:
+        turn:
+          type: integer
+          minimum: 1
+        guesserSeat:
+          $ref: '#/components/schemas/Seat'
+        targetSeat:
+          $ref: '#/components/schemas/Seat'
+        turnRemainingMs:
+          type: integer
+          minimum: 0
+          maximum: 60000
+          description: 這一回合的剩餘時間,毫秒
+    GuessEntry:
+      type: object
+      required: [turn, guesserSeat, targetSeat, outcome, at]
+      properties:
+        turn:
+          type: integer
+          minimum: 1
+        guesserSeat:
+          $ref: '#/components/schemas/Seat'
+        targetSeat:
+          $ref: '#/components/schemas/Seat'
+        outcome:
+          type: string
+          enum: [scored, timeout]
+          description: scored 是有送出猜測;timeout 是逾時跳過,此時沒有 guess、a、b
+        guess:
+          $ref: '#/components/schemas/Digits'
+        a:
+          type: integer
+          minimum: 0
+          maximum: 4
+          description: 位置與數字都對的個數
+        b:
+          type: integer
+          minimum: 0
+          maximum: 4
+          description: 數字對但位置錯的個數
+        at:
+          type: string
+          format: date-time
+          description: 伺服器受理這次猜測或判定逾時的時間
+    Target:
+      type: object
+      required: [guesserSeat, targetSeat]
+      properties:
+        guesserSeat:
+          $ref: '#/components/schemas/Seat'
+        targetSeat:
+          $ref: '#/components/schemas/Seat'
+    RevealedSecret:
+      type: object
+      required: [seat, nickname, secret]
+      properties:
+        seat:
+          $ref: '#/components/schemas/Seat'
+        nickname:
+          type: string
+        secret:
+          $ref: '#/components/schemas/Digits'
+    Seat:
+      type: integer
+      minimum: 1
+      maximum: 4
+      description: 座位號;依進房先後分配,房間存續期間不重排
+    Digits:
+      type: string
+      pattern: '^(?!.*(.).*\1)[0-9]{4}$'
+      description: 4 個互不重複的 0–9 數字,允許 0 開頭;伺服器另以錯誤碼把關
+    ResumeToken:
+      type: string
+      format: uuid
+      description: 重連 token;只給本人,前端存在 sessionStorage
+    Error:
+      type: object
+      required: [type, code, message]
+      properties:
+        type:
+          type: string
+          const: error
+        code:
+          type: string
+          enum:
+            - INVALID_MESSAGE
+            - NICKNAME_EMPTY
+            - NICKNAME_TOO_LONG
+            - ALREADY_IN_ROOM
+            - RESUME_TOKEN_INVALID
+            - NOT_IN_ROOM
+            - NOT_HOST
+            - GAME_IN_PROGRESS
+            - NOT_ENOUGH_PLAYERS
+            - NOT_SETUP_PHASE
+            - SECRET_ALREADY_SET
+            - DIGITS_FORMAT_INVALID
+            - DIGITS_REPEATED
+            - NOT_GUESS_PHASE
+            - NOT_YOUR_TURN
+          description: |
+            INVALID_MESSAGE:不是合法 JSON、type 不認得或欄位不符 schema
+            NICKNAME_EMPTY:暱稱去除前後空白後是空的
+            NICKNAME_TOO_LONG:暱稱去除前後空白後超過 12 個字
+            ALREADY_IN_ROOM:這條連線已經在房間裡
+            RESUME_TOKEN_INVALID:token 不認得,或對應的座位已過 60 秒保留
+            NOT_IN_ROOM:這條連線不在任何房間
+            NOT_HOST:送出者不是房主
+            GAME_IN_PROGRESS:房間已在遊戲中
+            NOT_ENOUGH_PLAYERS:房內不到 2 人
+            NOT_SETUP_PHASE:對局不在設定祕密數字階段
+            SECRET_ALREADY_SET:自己的祕密數字已經定下
+            DIGITS_FORMAT_INVALID:不是剛好 4 個 0–9 的數字字元
+            DIGITS_REPEATED:4 個數字裡有重複
+            NOT_GUESS_PHASE:對局不在猜測階段
+            NOT_YOUR_TURN:目前不是送出者的回合(受理一次猜測後回合立即換人,所以同一回合的重送也落在這裡)
+        rejectedType:
+          type: string
+          description: 被拒絕的那則訊息的 type;讀不出 type 時省略
+        message:
+          type: string
+          description: 給玩家看的繁體中文說明,例如「必須是 4 個互不重複的數字」
