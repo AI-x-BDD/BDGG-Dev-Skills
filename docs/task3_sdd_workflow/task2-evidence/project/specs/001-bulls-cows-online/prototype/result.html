@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>遊戲結果|1A2B 線上對戰</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body data-requirements="FR-012 FR-013 FR-014 FR-018 NFR-004">
+  <header class="topbar">
+    <a class="brand" href="index.html">1A2B 線上對戰</a>
+    <nav></nav>
+  </header>
+  <main>
+    <section class="banner-lose" data-state="lose">
+      <div class="banner-title"><span class="js-winner">3 號 週五晚上只想猜數字的人類</span> 獲勝</div>
+      <p>猜中了 <span class="js-loser">4 號 小明</span> 的數字 <strong class="js-final">2759</strong></p>
+    </section>
+    <section class="banner-win" data-state="win">
+      <div class="banner-title">你贏了!</div>
+      <p>你猜中了 <span class="js-loser">2 號 阿哲</span> 的數字 <strong class="js-final">5803</strong></p>
+    </section>
+    <section class="banner-win" data-state="last-one">
+      <div class="banner-title">你贏了!</div>
+      <p>其他人都離開了,你是最後留在局裡的人</p>
+    </section>
+    <section class="banner-win" data-state="early-end">
+      <div class="banner-title">你贏了!</div>
+      <p>還沒開始猜,其他人就都離開了。沒設定祕密數字的人不公開數字</p>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" id="back-to-room">回到房間</button>
+      <button type="button" class="btn-ghost" id="leave-room">離開房間</button>
+    </div>
+
+    <div class="game-layout">
+      <section class="panel">
+        <h2>每個人的祕密數字</h2>
+        <ul class="seat-list" id="reveal"></ul>
+      </section>
+      <section class="panel">
+        <h2>這一局的猜測紀錄</h2>
+        <div id="log"></div>
+      </section>
+    </div>
+  </main>
+  <script>
+    const PREVIEW = new URLSearchParams(location.search).get("state");
+    const game = PREVIEW ? structuredClone(MOCK.preview.result[PREVIEW]) : Proto.load("game");
+    const $ = (id) => document.getElementById(id);
+    const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" })[c]);
+    const fill = (cls, text) => document.querySelectorAll(`.${cls}`).forEach((el) => { el.textContent = text; });
+
+    const score = (secret, guess) => {
+      let a = 0;
+      let b = 0;
+      [...guess].forEach((d, i) => {
+        if (secret[i] === d) a += 1;
+        else if (secret.includes(d)) b += 1;
+      });
+      return `${a}A${b}B`;
+    };
+    const player = (seat) => game.players.find((p) => p.seat === seat);
+    const label = (p) => `${p.seat} 號 ${p.nickname}`;
+    const resultOf = (entry) => (entry.timeout ? "逾時" : score(player(entry.to).secret, entry.digits));
+
+    const stateFor = () => {
+      if (game.winner !== game.mySeat) return "lose";
+      if (game.reason === "guess") return "win";
+      return game.log.length === 0 ? "early-end" : "last-one";
+    };
+
+    const render = () => {
+      const last = game.log.at(-1);
+      if (game.winner) fill("js-winner", label(player(game.winner)));
+      if (last && !last.timeout) {
+        fill("js-loser", label(player(last.to)));
+        fill("js-final", last.digits);
+      }
+      $("reveal").innerHTML = [...game.players].sort((a, b) => a.seat - b.seat).map((p) => {
+        const tags = [
+          p.seat === game.winner ? "<span class=\"tag tag-ok\">獲勝</span>" : "",
+          p.seat === game.mySeat ? "<span class=\"tag tag-me\">你</span>" : "",
+          !p.inGame ? "<span class=\"tag tag-off\">已離開</span>" : "",
+        ].join("");
+        const secret = p.secret ? `<strong class="big-digits">${p.secret}</strong>` : "<span class=\"hint\">沒有設定</span>";
+        return `<li><span class="seat-no">${p.seat} 號</span><span class="seat-name">${esc(p.nickname)}</span>${tags}<span class="seat-target">${secret}</span></li>`;
+      }).join("");
+      $("log").innerHTML = game.log.length === 0 ? "<p class=\"empty\">這一局還沒有人猜</p>" : `
+        <table class="log">
+          <thead><tr><th>輪</th><th>誰猜誰</th><th>猜</th><th>結果</th></tr></thead>
+          <tbody>${[...game.log].reverse().map((entry) => {
+            const result = resultOf(entry);
+            const chip = entry.timeout ? "chip chip-skip" : result === "4A0B" ? "chip chip-win" : "chip";
+            return `<tr><td>${entry.round}</td><td>${entry.from} 號 → ${entry.to} 號</td><td class="digits-cell">${entry.digits ?? "—"}</td><td><span class="${chip}">${result}</span></td></tr>`;
+          }).join("")}</tbody>
+        </table>`;
+    };
+
+    const roomAfterGame = () => {
+      const stay = game.players.filter((p) => p.inGame).sort((a, b) => a.seat - b.seat)
+        .map((p) => ({ seat: p.seat, nickname: p.nickname, host: p.host, conn: "online" }));
+      if (!stay.some((p) => p.host)) stay[0].host = true;
+      return stay;
+    };
+
+    $("back-to-room").addEventListener("click", () => {
+      if (PREVIEW) return;
+      Proto.save("room", { me: game.mySeat, players: roomAfterGame(), incoming: [], notice: "回到房間,等待下一局" });
+      location.href = "room.html";
+    });
+
+    $("leave-room").addEventListener("click", () => {
+      if (PREVIEW) return;
+      const others = roomAfterGame().filter((p) => p.seat !== game.mySeat);
+      if (others.length > 0) {
+        if (!others.some((p) => p.host)) others[0].host = true;
+        const lobby = Proto.load("lobby");
+        lobby.push({ me: null, players: others, incoming: [], notice: "" });
+        Proto.save("lobby", lobby);
+      }
+      location.href = "index.html";
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      render();
+      if (!PREVIEW) Proto.showState(stateFor());
+    });
+  </script>
+</body>
+</html>
