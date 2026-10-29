@@ -8,7 +8,7 @@ description: 要依功能規格開始規劃實作、需要先研究技術選型�
 ## Phase 1: 列出研究項
 1. Read **研究的依據**:spec.md 與使用者指定的技術方向。
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact technical-research/research --artifact technical-research/techstack` **取得套用到研究產出的憲法條文**。
-3. Think **列出研究項**:每個會影響實作的技術未知數或選型,標出它對應的 FR、NFR、SC、憲法條文或使用者指定。
+3. Think 依 `rules/研究項-規範.md` **列出研究項**:每個會影響實作的技術未知數或選型,標出它對應的 FR、NFR、SC、憲法條文或使用者指定。
 4. Ask **提出研究項清單**,問使用者是否要增減;若使用者要修改 → 跳至 Phase 1 Step 3。
 
 ## Phase 2: 寫出 research.md 與 techstack.md
