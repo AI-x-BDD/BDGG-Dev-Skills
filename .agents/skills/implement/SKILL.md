@@ -8,10 +8,11 @@ description: 要依 tasks.md 開始寫程式、把拆好的任務實作出來時
 ## Phase 1: 確認執行計畫
 1. Read **開工的依據**:使用者指定的範圍、tasks.md、plan.md 的待決問題,以及 spec.md、research.md、techstack.md。
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/check_tasks.py --tasks <tasks.md 的路徑> --package <spec package 的路徑>` **取得錨點與覆蓋的檢查結果**;若有不過 → 結束。
-3. Delegate 執行 `uv run scripts/plan_scope.py --tasks <tasks.md 的路徑> --plan <plan.md 的路徑> --scope <範圍>` **取得範圍內的任務與待決問題**。
-4. Think 依 `rules/執行計畫-規範.md` **排出執行計畫**:每個 phase 的任務順序、由主 agent 還是哪個端點的 subagent 做。
-5. Ask 依骨架 `templates/執行計畫.md` 與範例 `templates/執行計畫.example.md` **提出執行計畫與還沒決定的待決問題**,問使用者每一題怎麼決定、計畫要不要修改;若計畫要修改 → 跳至 Phase 1 Step 4。
-6. Write 把使用者的決定**寫回 plan.md 的待決問題**。
+3. Read spec package 裡 **analysis.md 最新一輪的判定**:沒有 analysis.md 就沒有判定;若判定是 ⛔ 不能進 `/implement` → 結束。
+4. Delegate 執行 `uv run scripts/plan_scope.py --tasks <tasks.md 的路徑> --plan <plan.md 的路徑> --scope <範圍>` **取得範圍內的任務與待決問題**。
+5. Think 依 `rules/執行計畫-規範.md` **排出執行計畫**:每個 phase 的任務順序、由主 agent 還是哪個端點的 subagent 做。
+6. Ask 依骨架 `templates/執行計畫.md` 與範例 `templates/執行計畫.example.md` **提出執行計畫與還沒決定的待決問題**,問使用者每一題怎麼決定、計畫要不要修改;若計畫要修改 → 跳至 Phase 1 Step 5。
+7. Write 把使用者的決定**寫回 plan.md 的待決問題**。
 
 ## Phase 2: 做完一個 phase
 1. Read **這個 phase 的任務依據**:每個任務 ⚙ 指到的規格元素與 📎 指到的段落。
@@ -39,11 +40,13 @@ flowchart TD
         P1S1["1. Read：開工的依據"]
         P1S2["2. Delegate：取得錨<br/>點與覆蓋的檢查結果"]
         G_P1S2_1{"有不過？"}
-        P1S3["3. Delegate：取得範<br/>圍內的任務與待決問題"]
-        P1S4["4. Think：排出執行計畫"]
-        P1S5["5. Ask：提出執行計畫<br/>與還沒決定的待決問題"]
-        G_P1S5_1{"計畫要修改？"}
-        P1S6["6. Write：寫回 plan.md 的待決問題"]
+        P1S3["3. Read：analysis.md 最新一輪的判定"]
+        G_P1S3_1{"判定是 ⛔ 不能進<br/>/implement？"}
+        P1S4["4. Delegate：取得範<br/>圍內的任務與待決問題"]
+        P1S5["5. Think：排出執行計畫"]
+        P1S6["6. Ask：提出執行計畫<br/>與還沒決定的待決問題"]
+        G_P1S6_1{"計畫要修改？"}
+        P1S7["7. Write：寫回 plan.md 的待決問題"]
     end
     subgraph P2["Phase 2: 做完一個 phase"]
         P2S1["1. Read：這個 phase 的任務依據"]
@@ -72,12 +75,15 @@ flowchart TD
     P1S2 --> G_P1S2_1
     G_P1S2_1 -->|是| End
     G_P1S2_1 -->|否| P1S3
-    P1S3 --> P1S4
+    P1S3 --> G_P1S3_1
+    G_P1S3_1 -->|是| End
+    G_P1S3_1 -->|否| P1S4
     P1S4 --> P1S5
-    P1S5 --> G_P1S5_1
-    G_P1S5_1 -->|是| P1S4
-    G_P1S5_1 -->|否| P1S6
-    P1S6 --> P2S1
+    P1S5 --> P1S6
+    P1S6 --> G_P1S6_1
+    G_P1S6_1 -->|是| P1S5
+    G_P1S6_1 -->|否| P1S7
+    P1S7 --> P2S1
     P2S1 --> P2S2
     P2S2 --> G_P2S2_1
     G_P2S2_1 -->|是| P2S4
@@ -110,7 +116,7 @@ sequenceDiagram
     participant Sub_1 as git-conventional-commit commit 驗收過的一組任務
     participant Sub_2 as git-conventional-commit commit 寫回決定的 plan.md
     Note over User,Sub_2: Phase 1: 確認執行計畫
-    Main->>User: 5. Ask：提出執行計畫與還沒決定的待決問題
+    Main->>User: 6. Ask：提出執行計畫與還沒決定的待決問題
     User-->>Main: 回覆確認
     Note over User,Sub_2: Phase 2: 做完一個 phase
     Main->>Sub_1: 6. Delegate：commit 驗收過的一組任務
