@@ -12,7 +12,7 @@ description: 要依功能規格與系統分析的產出開始拆實作任務時,
 
 ## Phase 2: 寫出 tasks.md
 1. Read **這次會改到的既有程式與測試**:plan.md Source Code 樹列出要改或移除的既有檔、前一迭代 tasks.md 的介面覆蓋表,以及被改掉或移除的符號在既有程式裡的每一個呼叫端。
-2. Think 依 `rules/任務-規範.md` **把介面元素排成任務**:每個元素歸到一個 phase,至少有一個實作任務與一個測試任務。
+2. Think 依 `rules/任務-規範.md` **把介面元素排成任務**:每個元素歸到一個 phase,至少有一個實作任務與一個測試任務;每條 SC 都有量測任務。
 3. Write 依 `rules/憲法-規範.md`、骨架 `templates/tasks.md` 與範例 `templates/tasks.example.md` 在 spec.md 所在的資料夾**寫出 tasks.md**。
 4. Write 在 plan.md 的待決問題**登記排任務時先採用的做法**:「提出的步驟」欄寫 `tasks`、「擋住」欄寫「—」、「決定」欄寫「待決」,每一題附上可選的做法並標出先採用的那一種。
 5. Delegate 執行 `uv run scripts/check_tasks.py --tasks <tasks.md 的路徑> --package <spec package 的路徑>` **取得錨點與覆蓋的檢查結果**;若有不過 → 跳至 Phase 2 Step 3。
