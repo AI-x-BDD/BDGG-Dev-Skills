@@ -13,7 +13,7 @@ description: 要依功能規格開始規劃實作、需要先研究技術選型�
 
 ## Phase 2: 寫出 research.md 與 techstack.md
 1. Read 依 `rules/證據-規範.md` **逐項取得證據**:能實測的在 session 暫存區寫探針實測,不能實測的估算或查證來源,記下環境、依據或來源。
-2. Think 依 `rules/憲法-規範.md` **決定每個研究項的方案**,以及考慮過但否決的替代方案與原因。
+2. Think 依 `rules/憲法-規範.md` **決定每個研究項的方案**,以及考慮過但否決的替代方案與原因;若方案依賴 Phase 2 Step 1 沒有取得證據的技術事實(SDK 或函式庫呼叫的行為、既有程式碼做了什麼) → 跳至 Phase 2 Step 1。
 3. Write 依骨架 `templates/research.template.md` 與範例 `templates/research.template.example.md` 在 spec.md 所在的資料夾**寫出 research.md**。
 4. Write 依骨架 `templates/techstack.template.md` 與範例 `templates/techstack.template.example.md` 在 research.md 所在的資料夾**寫出 techstack.md**。
 
@@ -38,6 +38,7 @@ flowchart TD
     subgraph P2["Phase 2: 寫出 research.md 與 techstack.md"]
         P2S1["1. Read：逐項取得證據"]
         P2S2["2. Think：決定每個研究項的方案"]
+        G_P2S2_1{"方案依賴 Phase 2 Step 1<br/>沒有取得證據的技術事實<br/>(SDK 或函式庫呼叫的行為、<br/>既有程式碼做了什麼)？"}
         P2S3["3. Write：寫出 research.md"]
         P2S4["4. Write：寫出 techstack.md"]
     end
@@ -59,7 +60,9 @@ flowchart TD
     G_P1S4_1 -->|是| P1S3
     G_P1S4_1 -->|否| P2S1
     P2S1 --> P2S2
-    P2S2 --> P2S3
+    P2S2 --> G_P2S2_1
+    G_P2S2_1 -->|是| P2S1
+    G_P2S2_1 -->|否| P2S3
     P2S3 --> P2S4
     P2S4 --> P3S1
     P3S1 --> G_P3S1_1
