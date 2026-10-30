@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["pyyaml>=6,<7"]
+# dependencies = ["pyyaml>=6,<7", "pydbml>=1.1,<2"]
 # ///
 """列出一個 spec package 裡規格檔的每一個介面元素,錨點的寫法和 tasks.md 的 ⚙ 一致。
 
@@ -22,10 +22,9 @@ import sys
 from pathlib import Path
 
 import yaml
+from pydbml import PyDBML
 
 HTTP_METHODS = {"get", "put", "post", "delete", "patch", "head", "options", "trace"}
-DBML_TABLE = re.compile(r"^\s*Table\s+(\"[^\"]+\"|[\w.]+)", re.MULTILINE)
-DBML_COLUMN = re.compile(r"^\s*(\"[^\"]+\"|\w+)\s+[\w(),.\[\]]+")
 DATA_STATE = re.compile(r'data-state="([^"]+)"')
 HTML_ID = re.compile(r'\bid="([^"]+)"')
 HTML_CLASS = re.compile(r'\bclass="([^"]+)"')
@@ -49,6 +48,20 @@ def read_yaml(path: Path) -> dict:
         print(f"錯誤: {path} 不是合法的 YAML:{error}。請先修好這個檔再執行。", file=sys.stderr)
         sys.exit(2)
     return data if isinstance(data, dict) else {}
+
+
+def read_dbml(path: Path) -> list:
+    """回傳 pydbml 解析出的表;引號裡的 `{}` 與 note_id 這類欄位名稱交給解析器判斷,不自己切字串。"""
+    try:
+        return PyDBML(read_text(path)).tables
+    except Exception as error:  # pydbml 的語法與參照錯誤種類很多,一律當成解析不了
+        print(f"錯誤: {path} 不是 pydbml 解析得了的 DBML:{error}。請先回 data-plan 修好這個檔再執行。", file=sys.stderr)
+        sys.exit(2)
+
+
+def table_name(table) -> str:
+    """和 DBML 原文的寫法一致:預設的 public schema 不寫出來。"""
+    return table.name if table.schema == "public" else f"{table.schema}.{table.name}"
 
 
 def collect(package: Path) -> tuple[list[dict], list[dict]]:
@@ -88,15 +101,10 @@ def collect(package: Path) -> tuple[list[dict], list[dict]]:
             add(anchors, path, "servers", "servers")
 
     for path in sorted(contracts.glob("*.dbml")):
-        text = read_text(path)
-        for match in DBML_TABLE.finditer(text):
-            table = match.group(1).strip('"')
-            add(required, path, f"Table {table}", "dbml-table")
-            body = text[match.end():].split("{", 1)[-1].split("}", 1)[0]
-            for line in body.splitlines():
-                column = DBML_COLUMN.match(line)
-                if column and not line.strip().lower().startswith(("indexes", "note", "ref")):
-                    add(anchors, path, f"Table {table}.{column.group(1).strip(chr(34))}", "dbml-column")
+        for table in read_dbml(path):
+            add(required, path, f"Table {table_name(table)}", "dbml-table")
+            for column in table.columns:
+                add(anchors, path, f"Table {table_name(table)}.{column.name}", "dbml-column")
 
     for folder in sorted(p for p in package.glob("prototype*") if p.is_dir()):
         for path in sorted(folder.glob("*.html")):
