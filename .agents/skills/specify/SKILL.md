@@ -12,7 +12,7 @@ description: 要把一段功能描述寫成功能規格、開始做一個新功�
 
 ## Phase 2: 釐清需求
 1. Think 依 `rules/釐清-規範.md` **列出功能描述裡會影響範圍的不確定處**。
-2. Ask **一次問一題不確定處**並記下回答;若還有影響範圍的不確定處 → 跳至 Phase 2 Step 2。
+2. Ask **一次問 1 到 4 題不確定處**,請使用者依題號回答選項,並記下回答;若還有影響範圍的不確定處 → 跳至 Phase 2 Step 2。
 
 ## Phase 3: 寫出規格
 1. Delegate 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact specify/spec` **取得套用到 spec.md 的憲法條文**。
@@ -39,7 +39,7 @@ flowchart TD
     end
     subgraph P2["Phase 2: 釐清需求"]
         P2S1["1. Think：列出功能描述<br/>裡會影響範圍的不確定處"]
-        P2S2["2. Ask：一次問一題不確定處"]
+        P2S2["2. Ask：一次問 1 到 4 題不確定處"]
         G_P2S2_1{"還有影響範圍的不確定處？"}
     end
     subgraph P3["Phase 3: 寫出規格"]
