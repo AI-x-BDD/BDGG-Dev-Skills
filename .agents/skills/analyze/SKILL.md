@@ -6,8 +6,8 @@ description: /tasks 交出 tasks.md 之後、開始實作之前,要交叉檢查 
 # SOP
 
 ## Phase 1: 取得前置檢查結果
-1. Read **要分析的 spec package**:使用者沒有指定時,用 `specs/` 底下編號最大的資料夾。
-2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/preflight.py --package <spec package 的路徑>` **取得前置檢查的結果**;若有不過 → 跳至 Phase 3 Step 3。
+1. Read **要分析的 spec package 與前一次迭代**:使用者沒有指定時,用 `specs/` 底下編號最大的資料夾;spec.md 有註明時記下那一次迭代的 plan.md。
+2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/preflight.py --package <spec package 的路徑>`(spec.md 註明建立在前一次迭代之上時,再加 `--previous-plan <前一次迭代的 plan.md 的路徑>`)**取得前置檢查的結果**;若有不過 → 跳至 Phase 3 Step 3。
 
 ## Phase 2: 列出跨檔問題
 1. Read **全部產出物與憲法**:spec.md、research.md、techstack.md、plan.md,plan.md Documentation 樹列出的每一個規格檔與原型,tasks.md,`<專案根目錄>/constitution/` 底下的條文,以及既有的 analysis.md。
@@ -24,7 +24,7 @@ description: /tasks 交出 tasks.md 之後、開始實作之前,要交叉檢查 
 ```mermaid
 flowchart TD
     subgraph P1["Phase 1: 取得前置檢查結果"]
-        P1S1["1. Read：要分析的 spec package"]
+        P1S1["1. Read：要分析的 spec<br/>package 與前一次迭代"]
         P1S2["2. Delegate：取得前置檢查的結果"]
         G_P1S2_1{"有不過？"}
     end

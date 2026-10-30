@@ -23,12 +23,15 @@ from pathlib import Path
 SKILLS = Path(__file__).resolve().parent.parent.parent
 
 
-def checks_for(package: Path) -> list[tuple[str, Path, list[str]]]:
+def checks_for(package: Path, previous_plan: Path | None) -> list[tuple[str, Path, list[str]]]:
     """回傳 (檢查的檔名, 腳本路徑, 參數) 三筆。"""
     spec = package / "spec.md"
+    plan_args = ["--plan", str(package / "plan.md"), "--spec", str(spec)]
+    if previous_plan:
+        plan_args += ["--previous-plan", str(previous_plan)]
     return [
         ("spec.md", SKILLS / "specify" / "scripts" / "check_spec.py", ["--spec", str(spec)]),
-        ("plan.md", SKILLS / "system-analysis" / "scripts" / "check_plan.py", ["--plan", str(package / "plan.md"), "--spec", str(spec)]),
+        ("plan.md", SKILLS / "system-analysis" / "scripts" / "check_plan.py", plan_args),
         ("tasks.md", SKILLS / "tasks" / "scripts" / "check_tasks.py", ["--tasks", str(package / "tasks.md"), "--package", str(package)]),
     ]
 
@@ -50,6 +53,11 @@ def main() -> int:
         type=Path,
         help="要分析的 spec package 資料夾,也就是 spec.md、plan.md、tasks.md 所在的那一層,例如 specs/001-bulls-cows-online",
     )
+    parser.add_argument(
+        "--previous-plan",
+        type=Path,
+        help="spec.md 註明建立在前一次迭代之上時,那一次迭代的 plan.md 路徑;轉交給 check_plan.py 檢查端點沿用的編號",
+    )
     args = parser.parse_args()
 
     sys.stdout.reconfigure(encoding="utf-8")
@@ -65,7 +73,7 @@ def main() -> int:
         return 2
 
     results = []
-    for target, script, script_args in checks_for(args.package):
+    for target, script, script_args in checks_for(args.package, args.previous_plan):
         if not script.is_file():
             print(
                 f"找不到 {target} 的檢查腳本:{script}。"
