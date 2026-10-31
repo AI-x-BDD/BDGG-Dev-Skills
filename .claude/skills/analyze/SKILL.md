@@ -10,7 +10,7 @@ description: /tasks 交出 tasks.md 之後、開始實作之前,要交叉檢查 
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/preflight.py --package <spec package 的路徑>`(spec.md 註明建立在前一次迭代之上時,再加 `--previous-plan <前一次迭代的 plan.md 的路徑>`)**取得前置檢查的結果**;若有不過 → 跳至 Phase 3 Step 3。
 
 ## Phase 2: 列出跨檔問題
-1. Read **全部產出物與憲法**:spec.md、research.md、techstack.md、plan.md,plan.md Documentation 樹列出的每一個規格檔與原型,tasks.md,`<專案根目錄>/constitution/` 底下的條文,以及既有的 analysis.md。
+1. Read **全部產出物與憲法**:spec.md、research.md、techstack.md、plan.md,plan.md Documentation 樹列出的每一個規格檔與原型,spec.md 所在資料夾的 verify-plan.md(有的話),tasks.md,`<專案根目錄>/constitution/` 底下的條文,以及既有的 analysis.md。
 2. Think 依 `rules/問題-規範.md` **列出跨檔問題、要轉交的模糊與修正順序**:上一輪的問題逐一重判狀態,新問題寫出類別、嚴重度、位置與回哪一步。
 
 ## Phase 3: 交出 analysis.md
