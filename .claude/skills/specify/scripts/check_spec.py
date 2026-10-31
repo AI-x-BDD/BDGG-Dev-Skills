@@ -5,7 +5,7 @@
 """檢查一份 spec.md 的結構是否符合本 skill 的骨架 templates/spec.template.md。
 
 檢查項目:每一行都對得回骨架、沒有殘留填位符號、必填段落齊全且順序正確、每個使用者故事都有驗收情境、功能需求與非功能需求、
-FR / NFR / SC 各自全檔連號、全域需求的每一條都標出兩個以上存在的故事、內文引用的編號都存在。
+FR / NFR / SC 各自從 001 連號、不重複(改既有的規格時新編號接在最大編號後面,所以不要求依出現順序)、全域需求的每一條都標出兩個以上存在的故事、內文引用的編號都存在。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -26,7 +26,7 @@ STORY_PARTS = ["**驗收情境**:", "**功能需求**:", "**非功能需求**:"]
 R_LINES = "每一行都對得回骨架"
 R_SECTIONS = "必填段落齊全且順序正確"
 R_STORY = "每個使用者故事都有驗收情境、功能需求與非功能需求"
-R_NUMBER = "FR、NFR、SC 各自全檔連號"
+R_NUMBER = "FR、NFR、SC 各自從 001 連號、不重複"
 R_GLOBAL = "全域需求標出兩個以上存在的故事"
 R_REFERENCE = "引用的編號都存在"
 RULES = [R_LINES, R_SECTIONS, R_STORY, R_NUMBER, R_GLOBAL, R_REFERENCE]
@@ -119,16 +119,19 @@ def main() -> int:
         if not any(ITEM.match(text) for text in texts if text.startswith("- **FR-")):
             bad(R_STORY, block[0][0], block[0][1].strip(), f"使用者故事 {story} 的功能需求底下沒有任何一條 FR")
 
-    # FR、NFR、SC 各自全檔連號
+    # FR、NFR、SC 各自從 001 連號、不重複
     defined: dict[str, list[int]] = {"FR": [], "NFR": [], "SC": []}
     for number, line in lines:
         item = ITEM.match(line.strip())
         if item:
             kind, value = item.group(1), int(item.group(2))
-            expected_value = len(defined[kind]) + 1
-            if value != expected_value:
-                bad(R_NUMBER, number, line.strip(), f"預期是 {kind}-{expected_value:03d};編號要依出現順序全檔連號、不重複")
+            if value in defined[kind]:
+                bad(R_NUMBER, number, line.strip(), f"{kind}-{value:03d} 重複;新需求接在最大編號後面")
             defined[kind].append(value)
+
+    for kind, values in defined.items():
+        for missing in sorted(set(range(1, max(values, default=0) + 1)) - set(values)):
+            bad(R_NUMBER, 0, f"{kind}-{missing:03d}", f"缺 {kind}-{missing:03d};編號要從 001 連號,整條拿掉的需求保留編號")
 
     # 全域需求標出兩個以上存在的故事
     for number, line in global_lines:

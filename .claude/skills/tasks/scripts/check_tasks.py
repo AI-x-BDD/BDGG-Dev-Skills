@@ -14,6 +14,7 @@
   介面覆蓋      規格檔裡必須覆蓋的每個介面元素(與 list_elements.py 的 required 相同)都出現在某一張介面覆蓋表,
                 那一列的實作欄與測試欄都有任務,表上的任務都存在,而且它的 ⚙ 列了那一列的元素
                 (AsyncAPI operation 的訊息 payload 指到的 schema 也算列了那個 operation)
+  SC 量測       spec.md 的每一條 SC 都在 `## SC 量測` 表上,量測任務存在,量測條件有寫
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -39,6 +40,8 @@ TASK_LINE = re.compile(r"^- \[[ xX]\] T(\d{3}[a-z]?)\b")
 SUB_LINE = re.compile(r"^\s+- (⚙|📎) (.*)$")
 REFERENCE = re.compile(r"^`([^`]+)`\s*§\s*(.+)$")
 COVERAGE_HEADING = re.compile(r"^### 介面覆蓋[((](.+?)[))]")
+SC_HEADING = re.compile(r"^## SC 量測")
+SC_ROW = re.compile(r"^\| (SC-\d{3}) \| (.*?) \| (.*?) \|$")
 COVERAGE_ROW = re.compile(r"^\| (`.+?) \| (.*?) \| (.*?) \|$")
 TASK_ID = re.compile(r"T(\d{3}[a-z]?)(?![A-Za-z0-9])")
 SPEC_ID = re.compile(r"\b((?:FR|NFR|SC)-\d{3})\b")
@@ -53,7 +56,8 @@ C_GEAR = "⚙ 的錨點在規格檔裡找得到"
 C_CLIP = "📎 的編號在依據文件裡找得到"
 C_COVER = "必須覆蓋的介面元素都在介面覆蓋表上"
 C_ROW = "介面覆蓋表的每一列都有存在、且 ⚙ 列了該元素的實作與測試任務"
-CHECKS = [C_IDS, C_ANCHOR, C_GEAR, C_CLIP, C_COVER, C_ROW]
+C_SC = "每條 SC 都在 SC 量測表上,量測任務存在、量測條件有寫"
+CHECKS = [C_IDS, C_ANCHOR, C_GEAR, C_CLIP, C_COVER, C_ROW, C_SC]
 
 
 def next_task_ids(previous: str | None) -> list[str]:
@@ -311,7 +315,15 @@ def main() -> int:
     current: str | None = None
     coverage: list[tuple[int, str, str, str, str]] = []
     table: str | None = None
+    sc_rows: dict[str, tuple[int, str, str]] = {}
+    in_sc_table = False
     for number, line in enumerate(lines, start=1):
+        if line.startswith("## "):
+            in_sc_table = bool(SC_HEADING.match(line))
+        sc_row = SC_ROW.match(line) if in_sc_table else None
+        if sc_row:
+            sc_rows[sc_row.group(1)] = (number, sc_row.group(2), sc_row.group(3))
+            continue
         task = TASK_LINE.match(line)
         if task:
             current = "T" + task.group(1)
@@ -424,6 +436,21 @@ def main() -> int:
     for file, anchor in sorted(required - covered):
         bad(C_COVER, 0, f"{file} § {anchor}", "這個介面元素沒有出現在任何一張介面覆蓋表上")
 
+    spec_scs = sorted(set(re.findall(r"^\s*- \*\*(SC-\d{3})\*\*", docs.get("spec.md", ""), re.MULTILINE)))
+    for sc in spec_scs:
+        if sc not in sc_rows:
+            bad(C_SC, 0, sc, "這條 SC 不在 `## SC 量測` 表上;補一列量測任務與量測條件,沒有量到它的任務就加一個")
+            continue
+        number, cell, condition = sc_rows[sc]
+        task_ids = ["T" + t for t in TASK_ID.findall(cell)]
+        if not task_ids:
+            bad(C_SC, number, cell[:60] or sc, f"{sc} 的量測任務欄沒有任務編號")
+        for task_id in task_ids:
+            if task_id not in tasks:
+                bad(C_SC, number, cell[:60], f"{sc} 的量測任務寫了 {task_id},但沒有這個任務")
+        if not condition.strip():
+            bad(C_SC, number, sc, f"{sc} 的量測條件是空的;照抄 SC 寫的樣本、環境與門檻")
+
     evidence = {
         C_IDS: f"{len(order)} 個任務從 T001 連號到 {order[-1] if order else 'T000'}",
         C_ANCHOR: "每個 ⚙ 與 📎 的引用都有 § 錨點",
@@ -431,6 +458,7 @@ def main() -> int:
         C_CLIP: "📎 引用的 FR / NFR / SC、R、Q 編號都找得到",
         C_COVER: f"{len(required)} 個必須覆蓋的介面元素都在介面覆蓋表上",
         C_ROW: f"{len(coverage)} 列介面覆蓋的實作與測試任務都存在且 ⚙ 列了該元素",
+        C_SC: f"{len(spec_scs)} 條 SC 都有量測任務與量測條件",
     }
     checks = [
         {
