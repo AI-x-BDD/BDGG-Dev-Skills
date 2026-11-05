@@ -52,7 +52,7 @@ flowchart LR
 
 | Skill | 做什麼 |
 |---|---|
-| `invoke-codex` · `invoke-agy` · `invoke-copilot` | 2026-10-28 起搬到 [skills/agent-ops-skills](https://git.example.test/skills/agent-ops-skills)(本家自訂,不屬於課程內容);歷史留在本 repo |
+| `invoke-codex` · `invoke-agy` · `invoke-copilot` | 2026-10-28 起搬到 獨立的 agent-ops-skills 儲存庫(本家自訂,不屬於課程內容);歷史留在本 repo |
 
 ### SDD workflow
 
