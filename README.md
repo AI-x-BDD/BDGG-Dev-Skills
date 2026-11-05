@@ -56,17 +56,7 @@ flowchart LR
 
 ### SDD workflow
 
-道館三新增的主要流程與輔助 Skills:
-
-```text
-specify → technical-research → system-analysis → verify-plan → tasks → analyze → implement
-                                 ├ api-plan
-                                 ├ data-plan
-                                 ├ ui-plan
-                                 └ deploy-plan
-```
-
-`constitution` 管理共同規則,`clarify` 與 `clarify-over-specs` 在需求或產出物不清楚時介入。`verify-plan` 從五次真實開發的落差中加入,在拆任務前先規劃真實環境驗收。流程證據與結構檢視放在 [`docs/task3_sdd_workflow/`](./docs/task3_sdd_workflow/)。
+道館三的完整流程、Skills 索引、五次作品迭代與公開證據集中在 [作業三說明](./docs/task3_sdd_workflow/README.md)。作品為 [watchlater-notes](https://github.com/YongRui0402/watchlater-notes),公開版本保留匿名化的迭代歷史與規格。
 
 ## 一支 Skill 的結構
 
@@ -101,7 +91,7 @@ cp -r BDGG-Dev-Skills/.claude/skills/<Skill 名稱> <你的專案>/.claude/skill
 |---|---|---|
 | 一:組合三支 Skills(git / TBD / 雙菱形) | [`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1) | [`docs/task1_skill_creator/`](./docs/task1_skill_creator/) |
 | 二:自己做出 Skill Engineering,再用它優化道館一的三支 Skills | [`task2-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1) | [`docs/task2_skill_engineering/`](./docs/task2_skill_engineering/) |
-| 三:SDD workflow、五次作品迭代與新 Skill | 尚未建立繳交 tag | [題目](./docs/task3_sdd_workflow/題目.md)、[輔助 Skills 證據](./docs/task3_sdd_workflow/task2-evidence/)、[結構檢視](./docs/task3_sdd_workflow/結構檢視.md) |
+| 三:SDD workflow、五次作品迭代與新 Skill | 尚未建立繳交 tag | [作業三說明與證據入口](./docs/task3_sdd_workflow/README.md) |
 
 ## 驗證狀態
 
