@@ -122,6 +122,14 @@
 
 ---
 
+## SC 量測
+
+| SC | 量測任務 | 量測條件 |
+|---|---|---|
+| {{spec.md 的 SC 編號,每條一列}} | {{照這條 SC 的條件量到它的任務編號,多個用、分隔}} | {{照抄 SC 寫的樣本、環境與門檻}} |
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

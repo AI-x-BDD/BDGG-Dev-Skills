@@ -5,8 +5,8 @@
 """驗證 api-plan 交出的 OpenAPI 與 AsyncAPI 規格檔。
 
 檢查項目:OpenAPI 通過 openapi-spec-validator、AsyncAPI 3.0 的參照都接得上、
-每個操作都有 x-requirements、每個成功回應與訊息都有 x-recipients、
-x-error-codes 用到的錯誤碼都在 Error 的 code enum、plan.md 這一步端點的需求出處都對得到操作、
+每個操作都有 x-requirements、每個成功回應(2xx 與 3xx 重新導向)與訊息都有 x-recipients、
+4xx、5xx 與 default 回應都有 x-error-codes、x-error-codes 用到的錯誤碼都在 Error 的 code enum、plan.md 這一步端點的需求出處都對得到操作、
 x-requirements 的需求編號都在 spec.md 裡。
 --openapi 與 --asyncapi 至少給一個;沒給的那一份相關檢查標成略過。
 被憲法以 `--waive "<規範檔名>〈Rule 名稱〉"` 取代的檢查標成略過,不算不過;只有下面 WAIVABLE 列的檢查接受取代。
@@ -162,7 +162,7 @@ def main() -> int:
                 for status, resp in (op.get("responses") or {}).items():
                     if not isinstance(resp, dict):
                         continue
-                    if str(status).startswith("2"):
+                    if str(status)[:1] in ("2", "3"):  # 3xx 重新導向也是成功,不是錯誤
                         if not resp.get("x-recipients"):
                             bad(R_RECIPIENTS, f"{where} {status}", "成功回應沒有 x-recipients")
                     else:

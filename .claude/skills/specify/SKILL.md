@@ -6,13 +6,13 @@ description: 要把一段功能描述寫成功能規格、開始做一個新功�
 # SOP
 
 ## Phase 1: 建立規格資料夾
-1. Read **使用者的功能描述**。
+1. Read **使用者的功能描述**;若要改的是已經交出的 spec.md → 跳至 Phase 2 Step 1。
 2. Think **決定功能簡稱**:2 到 4 個英文單字的 kebab-case。
 3. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/create_feature.py --short-name <功能簡稱>` **建立規格資料夾**。
 
 ## Phase 2: 釐清需求
 1. Think 依 `rules/釐清-規範.md` **列出功能描述裡會影響範圍的不確定處**。
-2. Ask **一次問一題不確定處**並記下回答;若還有影響範圍的不確定處 → 跳至 Phase 2 Step 2。
+2. Ask **一次問 1 到 4 題不確定處**,請使用者依題號回答選項,並記下回答;若還有影響範圍的不確定處 → 跳至 Phase 2 Step 2。
 
 ## Phase 3: 寫出規格
 1. Delegate 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact specify/spec` **取得套用到 spec.md 的憲法條文**。
@@ -34,12 +34,13 @@ description: 要把一段功能描述寫成功能規格、開始做一個新功�
 flowchart TD
     subgraph P1["Phase 1: 建立規格資料夾"]
         P1S1["1. Read：使用者的功能描述"]
+        G_P1S1_1{"要改的是已經交<br/>出的 spec.md？"}
         P1S2["2. Think：決定功能簡稱"]
         P1S3["3. Delegate：建立規格資料夾"]
     end
     subgraph P2["Phase 2: 釐清需求"]
         P2S1["1. Think：列出功能描述<br/>裡會影響範圍的不確定處"]
-        P2S2["2. Ask：一次問一題不確定處"]
+        P2S2["2. Ask：一次問 1 到 4 題不確定處"]
         G_P2S2_1{"還有影響範圍的不確定處？"}
     end
     subgraph P3["Phase 3: 寫出規格"]
@@ -61,7 +62,9 @@ flowchart TD
         P4S5["5. Report：交出 spec.md<br/>的路徑與可選的下一步"]
     end
     End["結束"]
-    P1S1 --> P1S2
+    P1S1 --> G_P1S1_1
+    G_P1S1_1 -->|是| P2S1
+    G_P1S1_1 -->|否| P1S2
     P1S2 --> P1S3
     P1S3 --> P2S1
     P2S1 --> P2S2
