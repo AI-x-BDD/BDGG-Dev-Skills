@@ -47,7 +47,7 @@
   | api-plan | `openapi`、`asyncapi` |
   | data-plan | `schema` |
   | deploy-plan | `compose` |
-  | uiux-plan | `style`、`mock`、`page`、`states` |
+  | ui-plan | `style`、`mock`、`page`、`states` |
   | tasks | `tasks` |
 
 - **沒有檔的產出物就照 Skill 預設**,不需要建空檔
@@ -70,7 +70,7 @@
 | specify、technical-research、system-analysis、tasks 的全部規範 | 編號、段落與錨點被下游腳本讀取;這幾份文件的條文只能加嚴 |
 | api-plan〈前幾步定下的照原文用,不另起〉、data-plan〈欄位對應前幾步規格檔的原文〉、deploy-plan〈port 與路徑照前幾步規格檔的原文〉 | 跨規格檔的一致性 |
 | deploy-plan〈機密只寫成 ${變數},值不進任何檔〉 | 機密 |
-| uiux-plan〈每個驗收情境都看得到〉 | `data-state` 是 tasks 的錨點 |
+| ui-plan〈每個驗收情境都看得到〉 | `data-state` 是 tasks 的錨點 |
 | 樣板的固定內容、腳本的流程契約檢查 | 它們不是 Rule,點名不到 |
 
 ## Skill 怎麼接上(流程不變,加兩步)

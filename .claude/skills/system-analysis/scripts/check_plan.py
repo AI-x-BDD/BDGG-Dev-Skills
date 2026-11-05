@@ -4,10 +4,12 @@
 # ///
 """檢查一份 plan.md 的分析流程規劃是否前後一致。
 
-檢查項目:端點從 E1 連號且個數和敘述一致、每個端點在波段表恰好出現一次、步驟與 wave 的編號、
+檢查項目:端點編號不重複、沿用前一次迭代的編號且個數和敘述一致、每個端點在波段表恰好出現一次、步驟與 wave 的編號、
 「Planner」欄只有四支 planner 或「無合適的 planner」、「平行」欄和同一波的步驟一致、結尾的總數、
 Documentation 樹裡每一支指派的 planner 都有產出且步驟、端點與檔案種類對得上、同一波不共用產出路徑、
-「待決問題」表的編號與步驟都存在,以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
+「待決問題」表的編號與步驟都存在(「提出的步驟」可以是 S<步驟>、tasks 或 implement T<編號>)、
+Documentation 樹列出的產出檔裡引用的待決問題都登記在表裡,以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
+給了 --previous-plan 時,同名端點要沿用前一次的編號、新端點接在最大編號之後;沒給時端點要從 E1 連號。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -19,23 +21,25 @@ from pathlib import Path
 
 ENDPOINT_ROW = re.compile(r"^\| E(\d+) \|(.*)\|$")
 CELL_SPLIT = re.compile(r"(?<!\\)\|")  # Markdown 表格裡跳脫的 \| 是內容,不是欄分隔
+ENDPOINT_NAME_END = re.compile(r"[((]")
 ENDPOINT_COUNT = re.compile(r"這次需求涉及 (\d+) 個端點")
 WAVE_ROW = re.compile(r"^\| (\d+) \| S(\d+) \| E(\d+) (?:\\.|[^|\\])+\| ((?:\\.|[^|\\])+) \| ((?:\\.|[^|\\])+) \|.*\|$")
 PARALLEL = re.compile(r"^✅ 與 (S\d+(?:、S\d+)*) 平行$")
 SUMMARY = re.compile(r"共 (\d+) 個 wave、(\d+) 個步驟")
 DOC_OUTPUT = re.compile(r"^(\s*)[├└]── (\S+)\s+# (S\d+(?:、S\d+)*) 產出[((](.+?)[,,]\s*([a-z]+-plan)[))]")
-QUESTION_ROW = re.compile(r"^\| Q(\d+) \| S(\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
-PLANNERS = {"uiux-plan", "data-plan", "api-plan", "deploy-plan"}
+QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|implement T\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
+QUESTION_REF = re.compile(r"待決問題\s*(Q\d+(?:\s*(?:[–-]\s*Q?\d+|[、,,和與及]\s*Q\d+))*)?")
+PLANNERS = {"ui-plan", "data-plan", "api-plan", "deploy-plan"}
 NO_PLANNER = "無合適的 planner"
 PLANNER_PATHS = {
-    "uiux-plan": ("prototype 開頭的資料夾", lambda path: re.fullmatch(r"prototype(-[\w-]+)?/", path) is not None),
+    "ui-plan": ("prototype 開頭的資料夾", lambda path: re.fullmatch(r"prototype(-[\w-]+)?/", path) is not None),
     "deploy-plan": ("deploy/", lambda path: path == "deploy/"),
     "api-plan": ("contracts/ 底下的 .openapi.yaml 或 .asyncapi.yaml", lambda path: path.startswith("contracts/") and path.endswith((".openapi.yaml", ".asyncapi.yaml"))),
     "data-plan": ("contracts/ 底下的 .dbml", lambda path: path.startswith("contracts/") and path.endswith(".dbml")),
 }
 REQUIREMENT_ID = re.compile(r"\b((?:FR|NFR|SC)-\d+)\b")
 
-R_ENDPOINTS = "端點從 E1 連號且個數和敘述一致"
+R_ENDPOINTS = "端點編號不重複、沿用前一次迭代的編號且個數和敘述一致"
 R_ONCE = "每個端點在波段表恰好出現一次"
 R_NUMBERING = "步驟從 S1 連號,wave 從 1 起不遞減不跳號"
 R_PLANNER = "「Planner」欄只有四支 planner 或「無合適的 planner」"
@@ -43,8 +47,9 @@ R_PARALLEL = "「平行」欄和同一波的其他步驟一致"
 R_SUMMARY = "結尾的 wave 數與步驟數和波段表一致"
 R_OUTPUTS = "每支指派的 planner 在 Documentation 樹都有產出且對得上"
 R_QUESTIONS = "「待決問題」表的編號與步驟都存在"
+R_REFERENCES = "規格檔引用的待決問題都登記在表裡"
 R_SOURCES = "需求出處的編號都在 spec.md 裡"
-RULES = [R_ENDPOINTS, R_ONCE, R_NUMBERING, R_PLANNER, R_PARALLEL, R_SUMMARY, R_OUTPUTS, R_QUESTIONS, R_SOURCES]
+RULES = [R_ENDPOINTS, R_ONCE, R_NUMBERING, R_PLANNER, R_PARALLEL, R_SUMMARY, R_OUTPUTS, R_QUESTIONS, R_REFERENCES, R_SOURCES]
 
 
 def section(lines: list[tuple[int, str]], heading: str) -> list[tuple[int, str]]:
@@ -60,16 +65,31 @@ def section(lines: list[tuple[int, str]], heading: str) -> list[tuple[int, str]]
     return picked
 
 
+def endpoint_rows(lines: list[tuple[int, str]]) -> list[tuple[int, int, str]]:
+    """取出 `### 端點盤點` 底下每一列的行號、端點編號與編號之後的欄位。"""
+    return [(n, int(m.group(1)), m.group(2)) for n, l in section(lines, "### 端點盤點") if (m := ENDPOINT_ROW.match(l.strip()))]
+
+
+def endpoint_name(row: str) -> str:
+    """端點欄在第一個 ( 或 ( 之前的文字,去掉前後空白。"""
+    return ENDPOINT_NAME_END.split(CELL_SPLIT.split(row)[0], maxsplit=1)[0].strip()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--plan", required=True, type=Path, help="plan.md 的路徑")
     parser.add_argument("--spec", type=Path, help="spec.md 的路徑;給了才檢查需求出處的編號")
+    parser.add_argument(
+        "--previous-plan",
+        type=Path,
+        help="前一次迭代的 plan.md 的路徑;spec.md 註明這次建立在前一次迭代之上時給,端點編號改成檢查同名端點沿用前一次的編號、新端點接在最大編號之後",
+    )
     args = parser.parse_args()
 
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
-    for path in [args.plan] + ([args.spec] if args.spec else []):
+    for path in [args.plan] + [p for p in (args.spec, args.previous_plan) if p]:
         if not path.is_file():
             print(f"錯誤: 找不到 {path}。", file=sys.stderr)
             return 2
@@ -82,12 +102,38 @@ def main() -> int:
 
     # 端點盤點
     inventory = section(lines, "### 端點盤點")
-    endpoints = [(n, int(m.group(1)), m.group(2)) for n, l in inventory if (m := ENDPOINT_ROW.match(l.strip()))]
+    endpoints = endpoint_rows(lines)
     if not endpoints:
         bad(R_ENDPOINTS, "`### 端點盤點` 底下找不到 `| E<序號> |` 開頭的列")
-    for expected, (number, actual, _) in enumerate(endpoints, start=1):
-        if actual != expected:
-            bad(R_ENDPOINTS, f"第 {expected} 列的端點是 E{actual},要從 E1 連號", number)
+    reused, added, previous_max = 0, 0, 0
+    if args.previous_plan is None:
+        for expected, (number, actual, _) in enumerate(endpoints, start=1):
+            if actual != expected:
+                bad(R_ENDPOINTS, f"第 {expected} 列的端點是 E{actual},要從 E1 連號;spec.md 註明建立在前一次迭代之上時,加上 --previous-plan <前一次迭代的 plan.md>", number)
+    else:
+        previous_lines = list(enumerate(args.previous_plan.read_text(encoding="utf-8").splitlines(), start=1))
+        previous = endpoint_rows(previous_lines)
+        occurrences: dict[int, list[int]] = {}
+        for number, actual, _ in endpoints:
+            occurrences.setdefault(actual, []).append(number)
+        for actual, numbers in occurrences.items():
+            if len(numbers) > 1:
+                bad(R_ENDPOINTS, f"E{actual} 出現 {len(numbers)} 次,端點編號不能重複", numbers[1])
+        if not previous:
+            bad(R_ENDPOINTS, f"--previous-plan 的 {args.previous_plan} 在 `### 端點盤點` 底下找不到 `| E<序號> |` 開頭的列")
+        else:
+            previous_ids = {endpoint_name(row): actual for _, actual, row in previous}
+            previous_max = max(actual for _, actual, _ in previous)
+            for number, actual, row in endpoints:
+                name = endpoint_name(row)
+                if name in previous_ids:
+                    reused += 1
+                    if actual != previous_ids[name]:
+                        bad(R_ENDPOINTS, f"「{name}」在前一次的 plan.md 是 E{previous_ids[name]},要沿用 E{previous_ids[name]}", number)
+                else:
+                    added += 1
+                    if actual != previous_max + added:
+                        bad(R_ENDPOINTS, f"「{name}」是前一次的 plan.md 沒有的端點,要接在最大編號 E{previous_max} 之後,編成 E{previous_max + added}", number)
     count = next(((n, int(m.group(1))) for n, l in inventory if (m := ENDPOINT_COUNT.search(l))), None)
     if count is None:
         bad(R_ENDPOINTS, "找不到「這次需求涉及 N 個端點」")
@@ -197,11 +243,11 @@ def main() -> int:
     for expected, (number, line) in enumerate(question_rows, start=1):
         m = QUESTION_ROW.match(line)
         if not m:
-            bad(R_QUESTIONS, "列要寫成「| Q<序號> | S<步驟> | 問題 | 擋住 | 決定 |」", number, line)
+            bad(R_QUESTIONS, "列要寫成「| Q<序號> | S<步驟>、tasks 或 implement T<編號> | 問題 | 擋住 | 決定 |」", number, line)
             continue
         if int(m.group(1)) != expected:
             bad(R_QUESTIONS, f"第 {expected} 列是 Q{m.group(1)},要從 Q1 連號", number)
-        if int(m.group(2)) not in step_endpoint:
+        if m.group(2) and int(m.group(2)) not in step_endpoint:
             bad(R_QUESTIONS, f"Q{m.group(1)} 的提出步驟 S{m.group(2)} 不在波段表", number)
         blocked = m.group(4).strip()
         if blocked != "—":
@@ -210,6 +256,35 @@ def main() -> int:
                     bad(R_QUESTIONS, f"Q{m.group(1)} 的「擋住」欄是「{blocked}」,要是波段表裡的步驟或「—」", number)
         if not m.group(5).strip():
             bad(R_QUESTIONS, f"Q{m.group(1)} 的「決定」欄是空的,還沒決定要寫「待決」", number)
+
+    # 規格檔引用的待決問題
+    registered = {int(m.group(1)) for _, l in question_rows if (m := QUESTION_ROW.match(l))}
+    raised = {int(m.group(2)) for _, l in question_rows if (m := QUESTION_ROW.match(l)) and m.group(2)}
+    scanned = 0
+    for output, steps in sorted(path_steps.items()):
+        target = args.plan.parent / output
+        files = sorted(f for f in target.rglob("*") if f.is_file()) if target.is_dir() else ([target] if target.is_file() else [])
+        for file in files:
+            try:
+                text = file.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            scanned += 1
+            name = file.relative_to(args.plan.parent).as_posix()
+            unnumbered = []
+            for number, line in enumerate(text.splitlines(), start=1):
+                for ref in QUESTION_REF.finditer(line):
+                    if not ref.group(1):
+                        unnumbered.append(number)
+                        continue
+                    for a, b in re.findall(r"Q(\d+)(?:\s*[–-]\s*Q?(\d+))?", ref.group(1)):
+                        for q in range(int(a), int(b or a) + 1):
+                            if q not in registered:
+                                bad(R_REFERENCES, f"{name} 第 {number} 行引用待決問題 Q{q},表裡沒有這一題")
+            if unnumbered and not steps & raised:
+                owners = "、".join(f"S{s}" for s in sorted(steps))
+                where = "、".join(str(n) for n in unnumbered)
+                bad(R_REFERENCES, f"{name} 第 {where} 行寫了待決問題但沒有 Q 號,表裡沒有任何一列是 {owners} 提出的")
 
     # 需求出處
     skipped = args.spec is None
@@ -222,7 +297,11 @@ def main() -> int:
                     bad(R_SOURCES, f"E{endpoint} 的需求出處 {rid} 在 spec.md 裡沒有定義", number, rid)
 
     passed_evidence = {
-        R_ENDPOINTS: f"E1–E{len(endpoints)} 連號,和「涉及 {len(endpoints)} 個端點」一致",
+        R_ENDPOINTS: (
+            f"E1–E{len(endpoints)} 連號,和「涉及 {len(endpoints)} 個端點」一致"
+            if args.previous_plan is None
+            else f"{reused} 個端點沿用前一次 plan.md 的編號、{added} 個新端點接在 E{previous_max} 之後,和「涉及 {len(endpoints)} 個端點」一致"
+        ),
         R_ONCE: f"{len(endpoint_ids)} 個端點在波段表各出現 1 次",
         R_NUMBERING: f"S1–S{len(rows)} 連號,wave 1–{len(by_wave)} 不遞減不跳號",
         R_PLANNER: f"{len(rows)} 列的「Planner」欄都是四支 planner 或「{NO_PLANNER}」",
@@ -230,6 +309,7 @@ def main() -> int:
         R_SUMMARY: f"結尾的 {len(by_wave)} 個 wave、{len(rows)} 個步驟和波段表一致",
         R_OUTPUTS: f"{len(produced)} 個步驟與 planner 的組合在 Documentation 樹都有產出,步驟、端點與檔案種類對得上",
         R_QUESTIONS: f"「待決問題」表的 {len(question_rows)} 列編號與步驟都存在",
+        R_REFERENCES: f"Documentation 樹列出的 {scanned} 個產出檔裡引用的待決問題都登記在表裡",
         R_SOURCES: "沒有給 --spec,沒有檢查" if skipped else "需求出處的編號都在 spec.md 裡有定義",
     }
     checks = []
@@ -244,7 +324,7 @@ def main() -> int:
             }
         )
     passed = not any(violations.values())
-    report = {"plan": str(args.plan), "spec": str(args.spec) if args.spec else None, "passed": passed, "checks": checks}
+    report = {"plan": str(args.plan), "spec": str(args.spec) if args.spec else None, "previous_plan": str(args.previous_plan) if args.previous_plan else None, "passed": passed, "checks": checks}
     print(f"檢查了 {len(endpoints)} 個端點、{len(rows)} 個步驟,{sum(len(v) for v in violations.values())} 個不符項", file=sys.stderr)
     json.dump(report, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")

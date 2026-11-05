@@ -1,0 +1,42 @@
+name: bulls-cows-online
+x-source: S3(E3 部署與網路)依 spec.md、plan.md 與前幾步的規格檔產出
+services:
+  proxy:
+    # 唯一對外的入口:`/` 轉發前端建置產物,`/ws` 轉發並升級 WebSocket(contracts/game.asyncapi.yaml 的 channel address)
+    x-requirements: [SC-002, SC-003]
+    image: nginx:1.27-alpine
+    ports:
+      - "${PUBLIC_PORT:-8080}:80"
+    volumes:
+      - ./proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+  app:
+    # 單一 Node 行程:同一個 port 送前端建置產物並把 /ws 升級成 WebSocket;狀態只在記憶體(research R2、R3、R11)
+    x-requirements: [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, NFR-001, NFR-002, NFR-003, NFR-004, NFR-005, SC-002, SC-003, SC-005, SC-006]
+    image: bulls-cows-online:0.1.0
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    expose:
+      - "8080"
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      STATIC_DIR: /app/frontend/dist
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # 單一行程、狀態在記憶體:只能跑 1 份,重啟會清掉所有房間(research R3、R8)
+    deploy:
+      replicas: 1
+    restart: unless-stopped

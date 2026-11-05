@@ -2,7 +2,7 @@
 
 ## 任務與 commit
 
-- 任務:{{這個 phase 勾成 [X] 的任務數}} / {{這個 phase 的任務總數}} 已勾選;停下的任務:{{停下的任務編號與原因,沒有寫「無」}}
+- 任務:{{這個 phase 勾成 [X] 的任務數}} / {{這個 phase 扣掉 ⏸ 延後任務的任務數}} 已勾選,延後 {{這個 phase 的 ⏸ 延後任務數,check_phase.py 的 paused_tasks,沒有寫 0}};停下的任務:{{停下的任務編號與原因,沒有寫「無」}}
 - commit:`{{commit SHA 前 7 碼}}` {{commit 訊息的第一行}}(Refs: {{這個 commit 的任務編號,用、分隔}})
 
 ## Checkpoint 指令
@@ -13,7 +13,7 @@
 
 ## 介面覆蓋表
 
-{{check_phase.py 的結果:幾列全勾;等後面 phase 的列寫成「`元素`(等 T 編號,Phase N)」,用、分隔;沒有寫「沒有等後面 phase 的列」}}
+{{check_phase.py 的結果:幾列全勾;等後面 phase 的列寫成「`元素`(等 T 編號,Phase N)」,用、分隔;沒有寫「沒有等後面 phase 的列」;只缺 ⏸ 延後任務的列(paused_rows)另寫「`元素`(⏸ T 編號)」,沒有就不寫}}
 
 ## 未驗證
 

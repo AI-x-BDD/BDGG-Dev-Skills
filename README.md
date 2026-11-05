@@ -1,8 +1,8 @@
 # BDGG-Dev-Skills
 
-我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 17 支。
+我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 29 支。
 
-每一支都是同一種結構:`SKILL.md` 只放一段短的 SOP,規則、樣板與腳本拆成獨立的檔,走到用得到的那一步才載入。這個結構本身也由這裡的 Skill 把關 —— 其中 10 支就是用來造 Skill 的。
+每一支都是同一種結構:`SKILL.md` 只放一段短的 SOP,規則、樣板與腳本拆成獨立的檔,走到用得到的那一步才載入。這個結構本身也由這裡的 Skill 把關,包含從產出物範例反推 Skill 的入口。
 
 ## Skills
 
@@ -22,6 +22,7 @@
 | [`skill-derive-script`](./.claude/skills/skill-derive-script/) | 把某一步的機械工作委派給腳本 |
 | [`skill-conform`](./.claude/skills/skill-conform/) | 規範改了之後,檢查既有的 Skill 並改到符合 |
 | [`skill-diagnose`](./.claude/skills/skill-diagnose/) | Skill 的產出不符預期、原因又不確定時,用假說排查與對照實驗找出根因 |
+| [`artifact-to-skill-engineering`](./.claude/skills/artifact-to-skill-engineering/) | 先把參考產出物調整到可檢查,再抽出骨架與範例,交給 skill-engineering 設計流程 |
 
 ```mermaid
 flowchart LR
@@ -51,7 +52,11 @@ flowchart LR
 
 | Skill | 做什麼 |
 |---|---|
-| [`invoke-codex`](./.claude/skills/invoke-codex/) · [`invoke-agy`](./.claude/skills/invoke-agy/) · [`invoke-copilot`](./.claude/skills/invoke-copilot/) | 組裝任務指示,以非互動模式調用 Codex、Antigravity 或 GitHub Copilot CLI,判定這次調用有沒有成功並驗收結果 |
+| `invoke-codex` · `invoke-agy` · `invoke-copilot` | 2026-10-28 起搬到 獨立的 agent-ops-skills 儲存庫(本家自訂,不屬於課程內容);歷史留在本 repo |
+
+### SDD workflow
+
+道館三的完整流程、Skills 索引、五次作品迭代與公開證據集中在 [作業三說明](./docs/task3_sdd_workflow/README.md)。作品為 [watchlater-notes](https://github.com/YongRui0402/watchlater-notes),公開版本保留匿名化的迭代歷史與規格。
 
 ## 一支 Skill 的結構
 
@@ -74,7 +79,7 @@ cp -r BDGG-Dev-Skills/.claude/skills/<Skill 名稱> <你的專案>/.claude/skill
 
 - Codex 這類讀 `.agents/` 的 agent 改從 `.agents/skills/` 複製,兩份內容相同。
 - 帶 `scripts/` 的 Skill 以 [uv](https://docs.astral.sh/uv/) 執行腳本,要先裝好。
-- 造 Skill 的那 10 支會互相轉交,請整組一起複製。
+- 造 Skill 的那一組會互相轉交,請整組一起複製。
 
 要在這個 repo 裡改 Skill,先執行一次 `git config core.hooksPath .githooks`:只改 `.claude/skills/` 那一份,提交時會自動鏡像到 `.agents/skills/`,並檢查每一支是否符合格式規範。
 
@@ -86,10 +91,11 @@ cp -r BDGG-Dev-Skills/.claude/skills/<Skill 名稱> <你的專案>/.claude/skill
 |---|---|---|
 | 一:組合三支 Skills(git / TBD / 雙菱形) | [`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1) | [`docs/task1_skill_creator/`](./docs/task1_skill_creator/) |
 | 二:自己做出 Skill Engineering,再用它優化道館一的三支 Skills | [`task2-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1) | [`docs/task2_skill_engineering/`](./docs/task2_skill_engineering/) |
+| 三:SDD workflow、五次作品迭代與新 Skill | 尚未建立繳交 tag | [作業三說明與證據入口](./docs/task3_sdd_workflow/README.md) |
 
 ## 驗證狀態
 
-17 支的 `description` 都以「(未驗證)」結尾。格式由檢查腳本把關;行為上實際跑過什麼、還沒跑過什麼,寫在各座道館的證據頁。
+各支的 `description` 仍標示「(未驗證)」。格式由檢查腳本把關;行為上實際跑過什麼、還沒跑過什麼,寫在各座道館的證據頁,不以格式通過宣稱全面驗證。
 
 ## 交流
 

@@ -128,7 +128,7 @@
 | `game.asyncapi.yaml` § `servers` | T026 | T028 |
 | `prototype/style.css` § `:root`、`@media (max-width: 600px)` | T024 | T086 |
 | `prototype/states.html` § 4 個畫面的切換 | T027 | T028 |
-| `deploy/proxy.conf` § `location /`;`compose.yaml` § `services.app.healthcheck` | T020 | T045 |
+| `deploy/proxy.conf` § `location /`;`compose.yaml` § `services.app.healthcheck` | T020 | T045a、T045b |
 
 **Checkpoint**: `npm run lint`、`npm run typecheck`、`npm test` 全綠;`node backend/src/server.ts` 能送出前端外殼,`/ws` 能升級、15 秒心跳在運作
 
@@ -211,8 +211,11 @@
 
 ### E3 部署與網路(對外入口,`deploy/`)
 
-- [ ] T045 [US1] 以 `docker compose -f deploy/compose.yaml up --build` 啟動,確認 `proxy` 與 `app` 的 healthcheck 都變 healthy,經 `http://localhost:${PUBLIC_PORT:-8080}/` 用兩個瀏覽器分頁配對進同一房(確認 `/` 與 `/ws` 都經 nginx 轉發、Upgrade 成功);結果記錄在 `docs/deploy-check.md`
-  - ⚙ `deploy/compose.yaml` § `services.proxy.ports`、`services.proxy.healthcheck`、`services.app.healthcheck`;`deploy/proxy.conf` § `location /`、`location = /ws`;`deploy/Dockerfile` § `CMD`
+- [ ] T045a [US1] 以 `docker compose -f deploy/compose.yaml up --build` 啟動,確認 `proxy` 與 `app` 的 healthcheck 都變 healthy;結果記錄在 `docs/deploy-check.md`
+  - ⚙ `deploy/compose.yaml` § `services.proxy.ports`、`services.proxy.healthcheck`、`services.app.healthcheck`
+  - 📎 `plan.md` § 待決問題 Q15–Q18
+- [ ] T045b [US1] 在 T045a 的環境下,經 `http://localhost:${PUBLIC_PORT:-8080}/` 用兩個瀏覽器分頁配對進同一房(確認 `/` 與 `/ws` 都經 nginx 轉發、Upgrade 成功);結果補記在 `docs/deploy-check.md`
+  - ⚙ `deploy/proxy.conf` § `location /`、`location = /ws`;`deploy/Dockerfile` § `CMD`
   - 📎 `plan.md` § 待決問題 Q15–Q18
 
 ### 介面覆蓋(US1)
@@ -232,7 +235,7 @@
 | `prototype/index.html` § `[data-state="normal"]`、`nickname-empty`、`nickname-long`、`loading`、`error` | T041 | T028 |
 | `prototype/room.html` § `[data-state="alone"]`、`host-ready`、`guest`、`host-transferred`、`seat-refill`、`loading` | T043 | T028 |
 | `prototype/room.html` § `#seat-list` | T042 | T028 |
-| `deploy/compose.yaml` § `services.proxy`、`services.app`;`proxy.conf` § `location /`、`location = /ws` | T009 | T045 |
+| `deploy/compose.yaml` § `services.proxy`、`services.app`;`proxy.conf` § `location /`、`location = /ws` | T009 | T045a、T045b |
 
 **Checkpoint**: US1 可獨立運作;T028–T034 全綠,手動用 5 個分頁跑一次 Independent Test,且 MVP 已能經 compose 部署
 
@@ -476,6 +479,19 @@
 - [ ] T089 依 research「待驗證」在部署環境重測:手機切飛航模式後 30 秒內被判斷線(R5)、經反向代理跑 `scripts/load-test.ts`(R8)、反向代理閒置逾時大於 15 秒(R11);結果附在 `docs/deploy-check.md`
   - ⚙ `deploy/proxy.conf` § `location = /ws`
   - 📎 `research.md` § 待驗證、§ R5、§ R8、§ R11
+
+---
+
+## SC 量測
+
+| SC | 量測任務 | 量測條件 |
+|---|---|---|
+| SC-001 | T087 | 從開啟網站到看到房間名單,30 秒內;腳本量下限,「不看說明」另以真人測試記錄 |
+| SC-002 | T084 | 400 個 client、100 間房,p95 不超過 200ms |
+| SC-003 | T033、T084 | 同時配對不超過 4 人一房 |
+| SC-004 | T011、T047 | 5 040 × 5 040 組合法數字全部窮舉 |
+| SC-005 | T046、T052 | 3 個 browser context 跑一局,推送不含別人的祕密數字 |
+| SC-006 | T073 | 全員掛線等情境,以 `mock.timers` 斷言不會卡住 |
 
 ---
 

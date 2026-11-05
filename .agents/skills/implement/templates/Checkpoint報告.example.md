@@ -2,7 +2,7 @@
 
 ## 任務與 commit
 
-- 任務:18 / 18 已勾選;停下的任務:無
+- 任務:18 / 18 已勾選,延後 0;停下的任務:無
 - commit:`3f2a9c1` feat(shared): 新增祕密數字的格式檢查與分數計算(Refs: T010、T011、T013、T014)
 - commit:`8b71e04` feat(shared): 依合約定義協定型別(Refs: T015)
 - commit:`c40d5a2` feat(backend): 實作訊息檢查、推送與連線層(Refs: T012、T016、T017、T018、T019、T020、T021、T022)

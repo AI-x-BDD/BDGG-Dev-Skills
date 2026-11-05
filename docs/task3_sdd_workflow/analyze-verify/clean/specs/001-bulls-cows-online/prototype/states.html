@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>狀態總覽|1A2B 線上對戰</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="mock.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">1A2B 線上對戰 · 狀態總覽</span>
+    <nav>
+      <a href="index.html">開啟原型</a>
+      <button type="button" onclick="Proto.reset()">重設假資料</button>
+    </nav>
+  </header>
+  <main>
+    <section>
+      <h2><a href="index.html">輸入暱稱</a></h2>
+      <div class="states-grid">
+        <figure>
+          <iframe src="index.html?state=normal" title="輸入暱稱:剛打開" loading="lazy"></iframe>
+          <figcaption>剛打開:FR-001、SC-001 輸入暱稱就能配對</figcaption>
+        </figure>
+        <figure>
+          <iframe src="index.html?state=nickname-empty" title="輸入暱稱:沒有輸入" loading="lazy"></iframe>
+          <figcaption>沒有輸入:FR-001 去除前後空白後不得為空</figcaption>
+        </figure>
+        <figure>
+          <iframe src="index.html?state=nickname-long" title="輸入暱稱:超過 12 個字" loading="lazy"></iframe>
+          <figcaption>超過 12 個字:FR-001,依 Q5 允許多打、送出時說明目前幾個字</figcaption>
+        </figure>
+        <figure>
+          <iframe src="index.html?state=loading" title="輸入暱稱:配對中" loading="lazy"></iframe>
+          <figcaption>配對中:FR-002 按下開始配對之後</figcaption>
+        </figure>
+        <figure>
+          <iframe src="index.html?state=error" title="輸入暱稱:連不上伺服器" loading="lazy"></iframe>
+          <figcaption>連不上伺服器:research R9 的錯誤狀態(連線失敗或被拒)</figcaption>
+        </figure>
+      </div>
+    </section>
+    <section>
+      <h2><a href="room.html">房間</a></h2>
+      <div class="states-grid">
+        <figure>
+          <iframe src="room.html?state=alone" title="房間:只有房主一人" loading="lazy"></iframe>
+          <figcaption>只有房主一人:US1 情境 1 開新房坐 1 號;US2 情境 1 開始遊戲不可按並提示至少 2 人</figcaption>
+        </figure>
+        <figure>
+          <iframe src="room.html?state=host-ready" title="房間:房主可以開始" loading="lazy"></iframe>
+          <figcaption>房主可以開始:FR-004 名單與座位、FR-005 同名加編號「小明 (2)」、FR-008 2 到 4 人時房主可開始</figcaption>
+        </figure>
+        <figure>
+          <iframe src="room.html?state=guest" title="房間:非房主" loading="lazy"></iframe>
+          <figcaption>非房主:US1 情境 2 加入有 2 人的房間坐 3 號;US2 情境 1 非房主看不到開始按鈕</figcaption>
+        </figure>
+        <figure>
+          <iframe src="room.html?state=host-transferred" title="房間:房主轉移" loading="lazy"></iframe>
+          <figcaption>房主轉移:US1 情境 4、FR-006 房主離開,轉給座位最前面的玩家;座位號不重排(Q9)</figcaption>
+        </figure>
+        <figure>
+          <iframe src="room.html?state=seat-refill" title="房間:新進的人補空號" loading="lazy"></iframe>
+          <figcaption>新進的人補空號:依 Q1 (b) 保留空位,新進的人坐最小的空號</figcaption>
+        </figure>
+        <figure>
+          <iframe src="room.html?state=disconnected" title="房間:有人斷線" loading="lazy"></iframe>
+          <figcaption>有人斷線:依 Q20 (a) 名單標「斷線中」、照樣佔座位,依 Q2 (b) 不顯示秒數</figcaption>
+        </figure>
+        <figure>
+          <iframe src="room.html?state=loading" title="房間:開始遊戲中" loading="lazy"></iframe>
+          <figcaption>開始遊戲中:US2 情境 2 房主按下開始遊戲之後</figcaption>
+        </figure>
+      </div>
+    </section>
+    <section>
+      <h2><a href="game.html">對局</a></h2>
+      <div class="states-grid">
+        <figure>
+          <iframe src="game.html?state=setup" title="對局:設定祕密數字" loading="lazy"></iframe>
+          <figcaption>設定祕密數字:US2 情境 2 顯示自己要猜誰;FR-010 60 秒倒數;依 Q6 顯示誰在猜你與整圈誰猜誰</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=setup-invalid" title="對局:祕密數字不合規則" loading="lazy"></iframe>
+          <figcaption>祕密數字不合規則:US2 情境 3、FR-009 輸入「1123」被拒並說明規則</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=setup-done" title="對局:已鎖定,等其他人" loading="lazy"></iframe>
+          <figcaption>已鎖定,等其他人:FR-010 全員設定完成才進入猜測;依 Q10 鎖定後不能改</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=setup-auto" title="對局:逾時代設" loading="lazy"></iframe>
+          <figcaption>逾時代設:FR-010 60 秒沒設定,系統隨機產生並只告知本人</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=my-turn" title="對局:輪到你" loading="lazy"></iframe>
+          <figcaption>輪到你:FR-011 只有輪到的人能送出;FR-012 猜測紀錄所有人看得到;FR-015 回合倒數</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=guess-invalid" title="對局:猜測不合規則" loading="lazy"></iframe>
+          <figcaption>猜測不合規則:FR-009 輸入「12a4」被拒並說明規則</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=waiting-turn" title="對局:等別人猜" loading="lazy"></iframe>
+          <figcaption>等別人猜:US2 情境 4 其餘人看到「等待 N 號猜測」;US2 情境 5 的 1A1B 類結果即時出現在紀錄</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=timeout" title="對局:逾時跳過" loading="lazy"></iframe>
+          <figcaption>逾時跳過:US3 情境 1、FR-015 60 秒內沒猜就換下一位,不會出局</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=disconnected" title="對局:輪到的人斷線中" loading="lazy"></iframe>
+          <figcaption>輪到的人斷線中:US3 情境 5 仍照該回合倒數;依 Q2 (b) 只顯示「斷線中」</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=eliminated" title="對局:有人出局" loading="lazy"></iframe>
+          <figcaption>有人出局:US3 情境 3、FR-017 通知所有人;FR-019 重新決定誰猜誰(2 號改猜 4 號)</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=reconnecting" title="對局:自己斷線重連中" loading="lazy"></iframe>
+          <figcaption>自己斷線重連中:US3 情境 2、FR-016 60 秒內連回原座位,紀錄與祕密數字都還在</figcaption>
+        </figure>
+        <figure>
+          <iframe src="game.html?state=leave-confirm" title="對局:確認離開" loading="lazy"></iframe>
+          <figcaption>確認離開:依 Q3 (a) 遊戲中離開要二次確認,寫明離開就判出局(FR-017)</figcaption>
+        </figure>
+      </div>
+    </section>
+    <section>
+      <h2><a href="result.html">遊戲結果</a></h2>
+      <div class="states-grid">
+        <figure>
+          <iframe src="result.html?state=lose" title="遊戲結果:別人獲勝" loading="lazy"></iframe>
+          <figcaption>別人獲勝:US2 情境 6、FR-013 宣布獲勝者並公開每個人的數字;依 Q4 (a) 停在結果頁</figcaption>
+        </figure>
+        <figure>
+          <iframe src="result.html?state=win" title="遊戲結果:你獲勝" loading="lazy"></iframe>
+          <figcaption>你獲勝:FR-013 第一位猜中 4A0B 的人獲勝;US2 情境 7、FR-014 按「回到房間」回到等待中</figcaption>
+        </figure>
+        <figure>
+          <iframe src="result.html?state=last-one" title="遊戲結果:只剩你一人" loading="lazy"></iframe>
+          <figcaption>只剩你一人:US3 情境 4、FR-018 其他人離開或斷線逾時,剩下的人獲勝</figcaption>
+        </figure>
+        <figure>
+          <iframe src="result.html?state=early-end" title="遊戲結果:設定階段就只剩你" loading="lazy"></iframe>
+          <figcaption>設定階段就只剩你:邊界情況「設定完成前只剩 1 人」;依 Q13 (a) 只公開已經定下的數字</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
