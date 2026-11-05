@@ -6,8 +6,8 @@
 
 | 題目要的 | 位置 |
 |---|---|
-| 所有 Skills 的 skill package | [`.claude/skills/`](../../.claude/skills/)(17 支;`.agents/skills/` 內容相同) |
-| 自己做出的 `/skill-engineering` | [`skill-engineering`](../../.claude/skills/skill-engineering/),以及它調度的七支 primitive |
+| 所有 Skills 的 skill package | [`.claude/skills/`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1/.claude/skills)(17 支;`.agents/skills/` 內容相同) |
+| 自己做出的 `/skill-engineering` | [`skill-engineering`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1/.claude/skills/skill-engineering),以及它調度的七支 primitive |
 | `/skill-engineering` 完成一次「創建 Skill」與一次「優化 Skill」的 git commit 紀錄 | 創建:[`f5dd87b`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/commit/f5dd87b)(`skill-diagnose`)· 優化:[`04dda91`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/commit/04dda91)(`trunk-based-development`;這一場從根因報告到驗收,form 與 derive 都有照順序叫用)。全部的紀錄見[創建與優化的紀錄](#skill-engineering-創建與優化的紀錄) |
 | 道館一三支 Skills 的優化前版本與優化後版本 | 優化前:tag [`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills) · 優化後:tag [`task2-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1/.claude/skills)。對照見[三支 Skill 的優化前後](#三支-skill-的優化前後) |
 | 人類觀察 | [`觀察紀錄.md`](./觀察紀錄.md) |
@@ -81,9 +81,9 @@
 
 | Skill | 優化前([`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills)) | 優化後 | 動到它的 commit |
 |---|---|---|---|
-| `git-conventional-commit` | [4 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills/git-conventional-commit):243 行的 `SKILL.md`、`references/`、`evals/`、1 支腳本 | [12 個檔](../../.claude/skills/git-conventional-commit/):2 個 Phase 共 8 步的 SOP、5 份 Rule File、2 組樣板、2 支腳本 | `cee56be` 重建 · `e8861f3` |
-| `trunk-based-development` | [3 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills/trunk-based-development):249 行的 `SKILL.md`、`references/`、`evals/` | [6 個檔](../../.claude/skills/trunk-based-development/):4 個 Phase 共 13 步的 SOP、3 份 Rule File(共 22 條)、1 組樣板 | `57b8830` 重構 · `1201d81` `5a20536` `fba5d5c` `655ceda` `0586f48` `04dda91` |
-| `double-diamond-principle` | [3 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills/double-diamond-principle):197 行的 `SKILL.md`、`references/`、`evals/` | [7 個檔](../../.claude/skills/double-diamond-principle/):4 個 Phase 共 12 步的 SOP、4 份 Rule File、1 組樣板 | `aa5c56f` 重構 · `1201d81` `0ea4e4a` `77a1bfd` `4c7b49a` `4a42fce` |
+| `git-conventional-commit` | [4 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills/git-conventional-commit):243 行的 `SKILL.md`、`references/`、`evals/`、1 支腳本 | [12 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1/.claude/skills/git-conventional-commit):2 個 Phase 共 8 步的 SOP、5 份 Rule File、2 組樣板、2 支腳本 | `cee56be` 重建 · `e8861f3` |
+| `trunk-based-development` | [3 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills/trunk-based-development):249 行的 `SKILL.md`、`references/`、`evals/` | [6 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1/.claude/skills/trunk-based-development):4 個 Phase 共 13 步的 SOP、3 份 Rule File(共 22 條)、1 組樣板 | `57b8830` 重構 · `1201d81` `5a20536` `fba5d5c` `655ceda` `0586f48` `04dda91` |
+| `double-diamond-principle` | [3 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills/double-diamond-principle):197 行的 `SKILL.md`、`references/`、`evals/` | [7 個檔](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1/.claude/skills/double-diamond-principle):4 個 Phase 共 12 步的 SOP、4 份 Rule File、1 組樣板 | `aa5c56f` 重構 · `1201d81` `0ea4e4a` `77a1bfd` `4c7b49a` `4a42fce` |
 
 三支共通的還有格式遷移(`2927a67` `4a018c0` `ac2dfb7` `dfdea5b` `79688af`),以及拿掉沒有任何步驟會載入的 `references/` 與 `evals/`(`cee56be`、`2281192`)。
 
