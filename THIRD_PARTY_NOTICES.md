@@ -8,6 +8,7 @@
 |---|---|---|
 | [github/spec-kit](https://github.com/github/spec-kit) | MIT | `specify` 的 `templates/spec.template.md` 譯自其 `templates/spec-template.md`;其餘列出的 skill 參考其流程與產出檔(spec.md、research.md、plan.md、tasks.md)的概念,文字為重新撰寫 |
 | [dceoy/speckit-agent-skills](https://github.com/dceoy/speckit-agent-skills) | AGPL-3.0 | 只作為設計參考閱讀(`speckit-implement`、`speckit-clarify`、`speckit-constitution`),未複製其文字;該專案的 skill 內容本身轉寫自 github/spec-kit 的 `templates/commands/` |
+| [mattpocock/skills](https://github.com/mattpocock/skills) | MIT | `tdd` 改寫自其 `skills/engineering/tdd`(commit `4ae2317`):規則的要求取自原版,SOP、規則文字、範例與樣板為本 repo 重寫 |
 
 ## 涉及的 skill
 
@@ -21,6 +22,7 @@
 | `technical-research` | 概念參考 | github/spec-kit 的 Phase 0 `research.md` |
 | `system-analysis` | 概念參考 | github/spec-kit 的 `plan.md` |
 | `constitution` | 概念參考 | github/spec-kit 的 `templates/constitution-template.md`;dceoy/speckit-agent-skills `skills/speckit-constitution` 只作閱讀 |
+| `tdd` | 改寫 | mattpocock/skills `skills/engineering/tdd` |
 
 ## github/spec-kit 授權全文
 
@@ -28,6 +30,32 @@
 MIT License
 
 Copyright GitHub, Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## mattpocock/skills 授權全文
+
+```
+MIT License
+
+Copyright (c) 2026 Matt Pocock
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
