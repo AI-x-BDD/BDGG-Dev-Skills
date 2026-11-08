@@ -11,7 +11,7 @@ description: 要先寫測試再寫程式、用測試驅動新增功能或修 bug
 3. Ask 依骨架 `templates/接縫清單.md` 與範例 `templates/接縫清單.example.md` **提出接縫清單**,問使用者是否同意只在這些接縫測試;若使用者要修改 → 跳至 Phase 1 Step 2。
 
 ## Phase 2: 逐片紅綠實作功能
-1. Write 依 `rules/測試-規範.md` 在一個確認過的接縫**寫一個測試**。
+1. Write 依 `rules/測試-規範.md`、骨架 `templates/測試.py` 與範例 `templates/測試.example.py` 在一個確認過的接縫**寫一個測試**。
 2. Read **執行這個測試確認它失敗**;若它沒有失敗 → 跳至 Phase 2 Step 1。
 3. Write 依 `rules/實作-規範.md` **只寫剛好讓它通過的程式碼**。
 4. Read **執行全部測試確認都通過**;若有測試失敗 → 跳至 Phase 2 Step 3;若還有這次要做的行為沒有測試 → 跳至 Phase 2 Step 1。
