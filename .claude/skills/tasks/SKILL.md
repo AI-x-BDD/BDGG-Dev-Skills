@@ -6,7 +6,7 @@ description: 跑完 /testplan、要依測試計劃與系統分析的產出拆實
 # SOP
 
 ## Phase 1: 列出介面元素
-1. Read **任務的依據**:spec.md、testplan.md、research.md、techstack.md、plan.md,以及 plan.md Documentation 樹列出的每一個規格檔與原型,以及 spec.md 所在資料夾的 verify-plan.md(有的話);若 testplan.md 不存在 → 結束。
+1. Read **任務的依據**:spec.md、testplan.md、research.md、techstack.md、plan.md,以及 plan.md Documentation 樹列出的每一個規格檔與原型;若 testplan.md 不存在 → 結束。
 2. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/list_elements.py --package <spec package 的路徑>` **取得規格檔裡的每一個介面元素**。
 3. Delegate 執行 `uv run scripts/constitution_rules.py --constitution <專案根目錄>/constitution --artifact tasks/tasks` **取得套用到 tasks.md 的憲法條文**。
 

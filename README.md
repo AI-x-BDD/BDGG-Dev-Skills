@@ -1,6 +1,6 @@
 # BDGG-Dev-Skills
 
-我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 31 支。
+我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 30 支。
 
 每一支都是同一種結構:`SKILL.md` 只放一段短的 SOP,規則、樣板與腳本拆成獨立的檔,走到用得到的那一步才載入。這個結構本身也由這裡的 Skill 把關,包含從產出物範例反推 Skill 的入口。
 

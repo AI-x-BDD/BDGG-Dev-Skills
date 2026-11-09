@@ -27,7 +27,7 @@ SEVERITIES = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}
 BLOCKING = {"CRITICAL", "HIGH"}
 STATUSES = {"✅ 已修正", "✅ 已澄清", "❌ 仍存在"}
 SKILLS = {
-    "/specify", "/clarify-over-specs", "/technical-research", "/system-analysis", "/verify-plan", "/api-plan",
+    "/specify", "/clarify-over-specs", "/technical-research", "/system-analysis", "/testplan", "/api-plan",
     "/data-plan", "/ui-plan", "/deploy-plan", "/tasks", "/constitution",
 }
 
