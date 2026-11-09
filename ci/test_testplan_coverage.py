@@ -15,6 +15,7 @@ ROOT = Path(os.environ.get("SKILLS_ROOT", Path(__file__).resolve().parent.parent
 CHECK_TESTPLAN = ROOT / "testplan" / "scripts" / "check_testplan.py"
 
 SPEC = "# 規格\n\n### 使用者故事 1\n\n- **FR-001** 範例需求\n"
+EDGE_SPEC = SPEC + "\n### 邊界情況\n\n- 空輸入\n"
 HEAD = "# Testplan\n\n- **範疇**:使用者故事 1\n\n### 受測操作\n\n| 寫法 | 說明 |\n|---|---|\n| `GET /x` | 取得 |\n\n"
 CASES = (
     "| ID | 受測操作 | 則 | 要抓的錯 |\n|---|---|---|---|\n"
@@ -25,10 +26,10 @@ EXCLUDED = "## 5. 不在本次範疇\n\n| 需求 | 為什麼不測 | 之後怎�
 
 
 class TestplanCoverageTest(unittest.TestCase):
-    def check(self, plan: str) -> tuple[int, dict]:
+    def check(self, plan: str, spec: str = SPEC) -> tuple[int, dict]:
         with tempfile.TemporaryDirectory() as tmp:
             spec_path, plan_path = Path(tmp) / "spec.md", Path(tmp) / "testplan.md"
-            spec_path.write_text(SPEC, encoding="utf-8")
+            spec_path.write_text(spec, encoding="utf-8")
             plan_path.write_text(plan, encoding="utf-8")
             done = subprocess.run(
                 [sys.executable, str(CHECK_TESTPLAN), "--spec", str(spec_path), "--plan", str(plan_path)],
@@ -64,6 +65,24 @@ class TestplanCoverageTest(unittest.TestCase):
         rows = "| FR-001 範例 | 負向事實,測不出 | code review 確認 |"
         plan = HEAD + COVERAGE.format(row="| FR-001 範例 | 故事 1 | 不在範疇 | — |") + EXCLUDED.format(rows=rows)
         code, result = self.check(plan)
+        self.assertEqual(code, 0, result)
+
+    def edge_plan(self, edge_row: str, rows: str) -> str:
+        row = "| FR-001 範例 | 故事 1 | US1-BE-01 | 🔴🟢 |\n" + edge_row
+        return HEAD + CASES + COVERAGE.format(row=row) + EXCLUDED.format(rows=rows)
+
+    def test_edge_excluded_without_reason_fails(self):
+        code, result = self.check(self.edge_plan("| 邊界:空輸入 | 故事 1 | 不在範疇 | — |", ""), EDGE_SPEC)
+        self.assertEqual(code, 1)
+        self.assertTrue(any(v["item"] == "邊界:空輸入" for c in result["checks"] for v in c["violations"]))
+
+    def test_edge_excluded_with_blank_follow_up_fails(self):
+        code, _ = self.check(self.edge_plan("| 邊界:空輸入 | 故事 1 | 不在範疇 | — |", "| 邊界:空輸入 | 前端已擋 | |"), EDGE_SPEC)
+        self.assertEqual(code, 1)
+
+    def test_edge_excluded_with_reason_passes(self):
+        rows = "| 邊界:空輸入 | 前端已擋 | 手動驗收 |"
+        code, result = self.check(self.edge_plan("| 邊界:空輸入 | 故事 1 | 不在範疇 | — |", rows), EDGE_SPEC)
         self.assertEqual(code, 0, result)
 
 

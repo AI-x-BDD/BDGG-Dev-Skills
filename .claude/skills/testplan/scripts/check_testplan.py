@@ -246,21 +246,35 @@ def main() -> int:
     excluded = section(plan, re.compile(r"^## .*不在本次範疇\s*$")) or []
     excluded_rows = [cells for _, rows in tables(excluded) for cells in rows]
     case_set = set(defined)
+    def reason_given(label: str, ids: list[str]) -> bool:
+        """「不在本次範疇」表有一列提到這條需求(或邊界情況),且「為什麼不測」「之後怎麼驗」都有寫。"""
+        topic = label.removeprefix("邊界:").strip()
+        for row in excluded_rows:
+            mentioned = any(i in REQ_REF.findall(row[0]) for i in ids) or (not ids and topic and topic in row[0])
+            if mentioned and len(row) >= 3 and row[1] and row[2]:
+                return True
+        return False
+
     for req in required:
         cells = row_of.get(req)
         if cells is None or expand(" ".join(cells[1:]), prefixes) & case_set:
             continue
         if any(cell == "不在範疇" for cell in cells[1:]):
-            reasons = [r for r in excluded_rows if req in REQ_REF.findall(r[0])]
-            if not any(len(r) >= 3 and r[1] and r[2] for r in reasons):
+            if not reason_given(req, [req]):
                 violations[R_REQ].append(
                     {"item": req, "reason": "標了「不在範疇」,但「不在本次範疇」表沒有提到這條需求,或沒寫「為什麼不測」與「之後怎麼驗」"}
                 )
         else:
             violations[R_REQ].append({"item": req, "reason": "需求覆蓋表這一列沒有任何有定義的案例 ID,也沒有標「不在範疇」;補案例,或標不在範疇並寫理由"})
     for cells in coverage_rows:
-        if cells[0].startswith("邊界:") and not (expand(" ".join(cells[1:]), prefixes) & case_set) and "不在範疇" not in cells[1:]:
+        if not cells[0].startswith("邊界:") or expand(" ".join(cells[1:]), prefixes) & case_set:
+            continue
+        if "不在範疇" not in cells[1:]:
             violations[R_REQ].append({"item": cells[0], "reason": "這條邊界情況的列沒有任何有定義的案例 ID,也沒有標「不在範疇」"})
+        elif not reason_given(cells[0], []):
+            violations[R_REQ].append(
+                {"item": cells[0], "reason": "標了「不在範疇」,但「不在本次範疇」表沒有提到這條邊界情況,或沒寫「為什麼不測」與「之後怎麼驗」"}
+            )
 
     # 5. 格式、連續與不重複
     for case_id in defined:
