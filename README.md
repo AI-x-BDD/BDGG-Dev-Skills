@@ -1,6 +1,6 @@
 # BDGG-Dev-Skills
 
-我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 30 支。
+我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 31 支。
 
 每一支都是同一種結構:`SKILL.md` 只放一段短的 SOP,規則、樣板與腳本拆成獨立的檔,走到用得到的那一步才載入。這個結構本身也由這裡的 Skill 把關,包含從產出物範例反推 Skill 的入口。
 
@@ -39,7 +39,7 @@ flowchart LR
 | [`trunk-based-development`](./.claude/skills/trunk-based-development/) | 把變更切小,本機建置通過後整合回 trunk,並確認 trunk 維持綠燈 |
 | [`git-conventional-commit`](./.claude/skills/git-conventional-commit/) | 把混在一起的變更拆成一筆一筆的 commit,依 Conventional Commits 1.0.0 寫訊息 |
 | [`plan-with-class-diagram`](./.claude/skills/plan-with-class-diagram/) | 寫程式之前先用 Mermaid 類別圖提案,確認後按圖實作 |
-| [`tdd`](./.claude/skills/tdd/) | 先和使用者確認要測的接縫,再一次一個切片走紅燈到綠燈,回報每片的紅綠證據與留給 code-review 的整理 |
+| [`tdd`](./.claude/skills/tdd/) | 先和使用者確認要測的接縫,再一次一個切片走紅燈到綠燈、在綠燈下重構;也可以只做 tasks 指定的那一步 |
 
 前三支整理自公開的文獻,原文在這裡可以核對:
 
