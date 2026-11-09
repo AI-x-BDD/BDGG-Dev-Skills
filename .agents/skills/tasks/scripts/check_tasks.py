@@ -14,7 +14,15 @@
   介面覆蓋      規格檔裡必須覆蓋的每個介面元素(與 list_elements.py 的 required 相同)都出現在某一張介面覆蓋表,
                 那一列的實作欄與測試欄都有任務,表上的任務都存在,而且它的 ⚙ 列了那一列的元素
                 (AsyncAPI operation 的訊息 payload 指到的 schema 也算列了那個 operation)
-  SC 量測       spec.md 的每一條 SC 都在 `## SC 量測` 表上,量測任務存在,量測條件有寫
+  SC 量測       spec.md 的每一條 SC 都在 `## SC 量測` 表上,量測任務存在,量測條件有寫;
+                給了 --testplan 時 SC 改由 testplan.md 的案例涵蓋,這一項不檢查
+給了 --testplan 時另外檢查:
+  步驟標記      [US<k>] 與 [G] 的任務都標了 🔴 /tdd 紅燈、🟢 /tdd 綠燈、🔵 /tdd 重構、📏 量測 其中一種;
+                不標步驟的任務只在 Setup
+  紅綠成對      testplan.md 每個行為測試案例都有同一個三位數的 a(🔴)與 b(🟢),兩個的 🧪 都只指到這個案例
+  量測任務      testplan.md 驗證方式為 📏 的每個案例,都有一個 📏 任務的 🧪 指到它
+  重構任務      每個有 🟢 任務的節(### 標題,沒有 ### 時是整個 phase)恰好有一個 🔵,排在這一節最後一個 🟢 之後
+  🧪 引用       🔴、🟢、🔵、📏 任務都有 🧪,引用的案例 ID(X~Y 展開成範圍)都在 testplan.md 裡
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
 
@@ -38,6 +46,14 @@ DOCKER_INSTRUCTION = re.compile(r"^\s*([A-Z]+)\s", re.MULTILINE)
 
 TASK_LINE = re.compile(r"^- \[[ xX]\] T(\d{3}[a-z]?)\b")
 SUB_LINE = re.compile(r"^\s+- (⚙|📎) (.*)$")
+FLASK_LINE = re.compile(r"^\s+- 🧪 (.*)$")
+STORY = re.compile(r"\[(US\d+|G)\]")
+STEP = re.compile(r"\] (🔴 /tdd 紅燈|🟢 /tdd 綠燈|🔵 /tdd 重構|📏 量測)")
+STEP_NAMES = {"🔴 /tdd 紅燈": "red", "🟢 /tdd 綠燈": "green", "🔵 /tdd 重構": "refactor", "📏 量測": "measure"}
+CASE_ID = r"(?:US\d+-[A-Z]+-\d{2}|G-\d{2})"
+CASE_ROW = re.compile(rf"^\| ({CASE_ID}) \|(.*)$")
+CASE_REF = re.compile(rf"({CASE_ID})(?:\s*~\s*({CASE_ID}))?")
+PHASE_HEADING = re.compile(r"^## Phase \d+:\s*(.*)$")
 REFERENCE = re.compile(r"^`([^`]+)`\s*§\s*(.+)$")
 COVERAGE_HEADING = re.compile(r"^### 介面覆蓋[((](.+?)[))]")
 SC_HEADING = re.compile(r"^## SC 量測")
@@ -57,7 +73,45 @@ C_CLIP = "📎 的編號在依據文件裡找得到"
 C_COVER = "必須覆蓋的介面元素都在介面覆蓋表上"
 C_ROW = "介面覆蓋表的每一列都有存在、且 ⚙ 列了該元素的實作與測試任務"
 C_SC = "每條 SC 都在 SC 量測表上,量測任務存在、量測條件有寫"
+C_STEP = "故事與全域任務都標了步驟,不標步驟的只在 Setup"
+C_PAIR = "每個行為測試案例都有同一個三位數的紅燈 a 與綠燈 b"
+C_MEASURE = "每個量測案例都有量測任務"
+C_REFACTOR = "每個有綠燈任務的節恰好有一個重構任務,排在最後一個綠燈之後"
+C_FLASK = "步驟任務都有 🧪,引用的案例都在 testplan.md 裡"
 CHECKS = [C_IDS, C_ANCHOR, C_GEAR, C_CLIP, C_COVER, C_ROW, C_SC]
+PLAN_CHECKS = [C_STEP, C_PAIR, C_MEASURE, C_REFACTOR, C_FLASK]
+
+
+def read_cases(text: str) -> dict[str, str]:
+    """回傳 testplan.md 每個案例 ID 的驗證方式:measure(驗證方式含 📏)或 behavior。"""
+    cases: dict[str, str] = {}
+    for line in text.splitlines():
+        row = CASE_ROW.match(line)
+        if row:
+            cells = [cell.strip() for cell in row.group(2).split("|")]
+            # 非功能案例與全域案例的第三欄是驗證方式;功能案例那一欄是假如,不會出現 📏
+            cases[row.group(1)] = "measure" if len(cells) > 1 and "📏" in cells[1] else "behavior"
+    return cases
+
+
+def expand_cases(text: str, known: dict[str, str]) -> tuple[list[str], list[str]]:
+    """把 🧪 的引用展開成案例 ID;回傳(找得到的,找不到的)。"""
+    found: list[str] = []
+    missing: list[str] = []
+    for match in CASE_REF.finditer(text):
+        first, last = match.group(1), match.group(2)
+        if not last:
+            (found if first in known else missing).append(first)
+            continue
+        prefix, start = first.rsplit("-", 1)
+        prefix_end, end = last.rsplit("-", 1)
+        if prefix != prefix_end:
+            missing.append(f"{first}~{last}")
+            continue
+        for number in range(int(start), int(end) + 1):
+            case = f"{prefix}-{number:02d}"
+            (found if case in known else missing).append(case)
+    return found, missing
 
 
 def next_task_ids(previous: str | None) -> list[str]:
@@ -290,6 +344,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--tasks", required=True, type=Path, help="要檢查的 tasks.md 的路徑")
     parser.add_argument("--package", required=True, type=Path, help="spec package 的路徑(spec.md 所在的資料夾)")
+    parser.add_argument("--testplan", type=Path, help="testplan.md 的路徑;給了才檢查步驟標記、紅綠成對、量測、重構與 🧪 引用,SC 改由 testplan 涵蓋")
     args = parser.parse_args()
 
     sys.stdout.reconfigure(encoding="utf-8")
@@ -301,10 +356,15 @@ def main() -> int:
     if not (args.package / "spec.md").is_file():
         print(f"錯誤: {args.package} 底下沒有 spec.md。--package 要給 spec.md 所在的資料夾。", file=sys.stderr)
         return 2
+    if args.testplan and not args.testplan.is_file():
+        print(f"錯誤: 找不到 {args.testplan}。--testplan 要給 testplan.md 的路徑。", file=sys.stderr)
+        return 2
+    cases = read_cases(read_text(args.testplan)) if args.testplan else {}
+    checks_used = CHECKS + PLAN_CHECKS if args.testplan else CHECKS
 
     required, anchors, message_schemas = collect(args.package)
     docs = {name: read_text(args.package / name) for name in ("spec.md", "research.md", "plan.md") if (args.package / name).is_file()}
-    violations: dict[str, list[dict]] = {check: [] for check in CHECKS}
+    violations: dict[str, list[dict]] = {check: [] for check in CHECKS + PLAN_CHECKS}
 
     def bad(check: str, line: int, text: str, reason: str) -> None:
         violations[check].append({"line": line, "text": text, "reason": reason})
@@ -317,9 +377,16 @@ def main() -> int:
     table: str | None = None
     sc_rows: dict[str, tuple[int, str, str]] = {}
     in_sc_table = False
+    phase_title = ""
+    section = ""
     for number, line in enumerate(lines, start=1):
         if line.startswith("## "):
             in_sc_table = bool(SC_HEADING.match(line))
+            phase_match = PHASE_HEADING.match(line)
+            phase_title = phase_match.group(1) if phase_match else line[3:]
+            section = phase_title
+        elif line.startswith("### ") and not COVERAGE_HEADING.match(line) and not line.startswith("### 測試案例覆蓋"):
+            section = phase_title + " › " + line[4:]
         sc_row = SC_ROW.match(line) if in_sc_table else None
         if sc_row:
             sc_rows[sc_row.group(1)] = (number, sc_row.group(2), sc_row.group(3))
@@ -329,8 +396,19 @@ def main() -> int:
             current = "T" + task.group(1)
             if current in tasks:
                 bad(C_IDS, number, line[:60], f"{current} 重複出現")
-            tasks[current] = {"line": number, "gear": set(), "whole": set()}
+            story = STORY.search(line)
+            step = STEP.search(line)
+            tasks[current] = {
+                "line": number, "gear": set(), "whole": set(), "text": line,
+                "story": story.group(1) if story else None,
+                "step": STEP_NAMES[step.group(1)] if step else None,
+                "phase": phase_title, "section": section, "flask": None,
+            }
             order.append(current)
+            continue
+        flask = FLASK_LINE.match(line)
+        if flask and current:
+            tasks[current]["flask"] = (number, flask.group(1))
             continue
         heading = COVERAGE_HEADING.match(line)
         if heading:
@@ -423,7 +501,7 @@ def main() -> int:
                 if ok:
                     elements.append((resolved, anchor))
         covered.update(elements)
-        for column, cell_text in (("實作", implement), ("測試", test)):
+        for column, cell_text in (("綠燈(實作)", implement), ("紅燈(測試)", test)):
             ids = ["T" + i for i in TASK_ID.findall(cell_text)]
             if not ids:
                 bad(C_ROW, number, cell[:60], f"介面覆蓋({table_name})這一列的{column}欄沒有任務")
@@ -437,7 +515,7 @@ def main() -> int:
         bad(C_COVER, 0, f"{file} § {anchor}", "這個介面元素沒有出現在任何一張介面覆蓋表上")
 
     spec_scs = sorted(set(re.findall(r"^\s*- \*\*(SC-\d{3})\*\*", docs.get("spec.md", ""), re.MULTILINE)))
-    for sc in spec_scs:
+    for sc in ([] if args.testplan else spec_scs):
         if sc not in sc_rows:
             bad(C_SC, 0, sc, "這條 SC 不在 `## SC 量測` 表上;補一列量測任務與量測條件,沒有量到它的任務就加一個")
             continue
@@ -451,6 +529,58 @@ def main() -> int:
         if not condition.strip():
             bad(C_SC, number, sc, f"{sc} 的量測條件是空的;照抄 SC 寫的樣本、環境與門檻")
 
+    if args.testplan:
+        refs: dict[str, list[str]] = {}
+        for task_id in order:
+            info = tasks[task_id]
+            if info["story"] and not info["step"]:
+                bad(C_STEP, info["line"], info["text"][:60], f"{task_id} 是 [{info['story']}] 的任務,卻沒有標 🔴 /tdd 紅燈、🟢 /tdd 綠燈、🔵 /tdd 重構或 📏 量測")
+            if not info["story"] and not info["step"] and "Setup" not in info["phase"]:
+                bad(C_STEP, info["line"], info["text"][:60], f"{task_id} 沒有標步驟,但不在 Setup;不標步驟的只限 Setup 的工具鏈設定、原樣複製規格檔、CI 設定")
+            if not info["step"]:
+                continue
+            if not info["flask"]:
+                bad(C_FLASK, info["line"], info["text"][:60], f"{task_id} 標了步驟,底下卻沒有 🧪 指到 testplan.md 的案例")
+                refs[task_id] = []
+                continue
+            found, missing = expand_cases(info["flask"][1], cases)
+            refs[task_id] = found
+            for case in missing:
+                bad(C_FLASK, info["flask"][0], info["flask"][1][:60], f"{task_id} 的 🧪 引用 {case},testplan.md 裡沒有這個案例")
+            if not found and not missing:
+                bad(C_FLASK, info["flask"][0], info["flask"][1][:60], f"{task_id} 的 🧪 沒有寫任何案例 ID")
+            if info["step"] in ("red", "green"):
+                suffix = "a" if info["step"] == "red" else "b"
+                if not task_id.endswith(suffix):
+                    bad(C_PAIR, info["line"], task_id, f"{task_id} 是{'紅燈' if suffix == 'a' else '綠燈'},編號要以 {suffix} 結尾")
+                if len(found) > 1:
+                    bad(C_PAIR, info["flask"][0], info["flask"][1][:60], f"{task_id} 的 🧪 指到 {len(found)} 個案例;一組紅綠只對應一個案例")
+        for case, kind in cases.items():
+            if kind == "measure":
+                if not any(tasks[t]["step"] == "measure" and case in refs.get(t, []) for t in order):
+                    bad(C_MEASURE, 0, case, "這個量測案例沒有 📏 量測任務的 🧪 指到它")
+                continue
+            reds = [t for t in order if tasks[t]["step"] == "red" and refs.get(t) == [case]]
+            pair = [t for t in reds if t[:-1] + "b" in tasks and tasks[t[:-1] + "b"]["step"] == "green" and refs.get(t[:-1] + "b") == [case]]
+            if not pair:
+                bad(C_PAIR, 0, case, "這個行為測試案例沒有同一個三位數的 🔴 a 與 🟢 b 任務,兩個的 🧪 都只指到它")
+        sections: dict[str, list[str]] = {}
+        for task_id in order:
+            sections.setdefault(tasks[task_id]["section"], []).append(task_id)
+        for name, ids in sections.items():
+            greens = [t for t in ids if tasks[t]["step"] == "green"]
+            refactors = [t for t in ids if tasks[t]["step"] == "refactor"]
+            if not greens:
+                for t in refactors:
+                    bad(C_REFACTOR, tasks[t]["line"], t, f"「{name}」沒有任何綠燈任務,不該有重構任務 {t}")
+                continue
+            if len(refactors) != 1:
+                bad(C_REFACTOR, tasks[greens[-1]]["line"], name, f"「{name}」有 {len(greens)} 個綠燈任務,重構任務卻有 {len(refactors)} 個;要恰好一個")
+            elif ids.index(refactors[0]) < ids.index(greens[-1]):
+                bad(C_REFACTOR, tasks[refactors[0]]["line"], refactors[0], f"{refactors[0]} 排在「{name}」最後一個綠燈 {greens[-1]} 之前")
+
+    behavior = sum(1 for k in cases.values() if k == "behavior")
+    measure = len(cases) - behavior
     evidence = {
         C_IDS: f"{len(order)} 個任務從 T001 連號到 {order[-1] if order else 'T000'}",
         C_ANCHOR: "每個 ⚙ 與 📎 的引用都有 § 錨點",
@@ -459,7 +589,14 @@ def main() -> int:
         C_COVER: f"{len(required)} 個必須覆蓋的介面元素都在介面覆蓋表上",
         C_ROW: f"{len(coverage)} 列介面覆蓋的實作與測試任務都存在且 ⚙ 列了該元素",
         C_SC: f"{len(spec_scs)} 條 SC 都有量測任務與量測條件",
+        C_STEP: f"{sum(1 for t in tasks.values() if t['step'])} 個任務標了步驟,其餘 {sum(1 for t in tasks.values() if not t['step'])} 個都在 Setup",
+        C_PAIR: f"testplan.md 的 {behavior} 個行為測試案例都有一組紅綠任務",
+        C_MEASURE: f"testplan.md 的 {measure} 個量測案例都有量測任務",
+        C_REFACTOR: "每個有綠燈任務的節都恰好有一個重構任務,排在最後一個綠燈之後",
+        C_FLASK: "每個步驟任務的 🧪 都指到 testplan.md 裡的案例",
     }
+    if args.testplan:
+        evidence[C_SC] = "給了 --testplan,SC 由 testplan.md 的案例涵蓋,不檢查 `## SC 量測` 表"
     checks = [
         {
             "check": check,
@@ -469,7 +606,7 @@ def main() -> int:
             else evidence[check],
             "violations": violations[check],
         }
-        for check in CHECKS
+        for check in checks_used
     ]
     passed = not any(violations.values())
     print(f"檢查了 {len(order)} 個任務、{len(coverage)} 列介面覆蓋,{sum(len(v) for v in violations.values())} 個不符項", file=sys.stderr)
