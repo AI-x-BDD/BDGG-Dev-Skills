@@ -1,4 +1,4 @@
-"""check_testplan.py 的需求覆蓋:範疇內的需求要有存在的案例,或明確不在範疇並寫理由。
+"""check_testplan.py 的需求覆蓋:範疇內的需求要有存在的案例,或明確不在範疇並寫理由;待測端點表的替身要指到 📏 實跑案例,或寫明無法實跑。
 
 SKILLS_ROOT 沒設定時檢查 .agents/skills 底下的腳本。
 """
@@ -84,6 +84,56 @@ class TestplanCoverageTest(unittest.TestCase):
         rows = "| 邊界:空輸入 | 前端已擋 | 手動驗收 |"
         code, result = self.check(self.edge_plan("| 邊界:空輸入 | 故事 1 | 不在範疇 | — |", rows), EDGE_SPEC)
         self.assertEqual(code, 0, result)
+
+    def double_plan(self, double: str) -> str:
+        endpoints = (
+            "## 1. 待測端點\n\n| 端點 | 介面規格檔 | 公開接縫 | 測試等級 | 工具 | 測試環境 | 替身 |\n|---|---|---|---|---|---|---|\n"
+            f"| E2 後端 | `api.yaml` | `GET /x` | 整合 | pytest | 暫存庫 | {double} |\n\n"
+        )
+        measured = (
+            "| ID | 品質屬性 | 驗證方式 | 受測操作 | 則 | 要抓的錯 | 副作用與護欄 | 判定者與樣本 |\n|---|---|---|---|---|---|---|---|\n"
+            "| US1-BE-02 | 實跑 | 📏 量測 | `GET /x` | 則1:回 200 | 回 500 | 只寫暫存庫 | 判定者:腳本;樣本:不適用 |\n"
+            "| US1-BE-03 | 隔離 | 🔴🟢 行為測試 | `GET /x` | 則1:回 200 | 回 500 | — | — |\n\n"
+        )
+        row = "| FR-001 範例 | 故事 1 | US1-BE-01~US1-BE-03 | 🔴🟢、📏 量測 |"
+        return HEAD + endpoints + CASES + measured + COVERAGE.format(row=row) + EXCLUDED.format(rows="")
+
+    def double_violations(self, result: dict) -> list:
+        return [v for c in result["checks"] if c["rule"].startswith("每個替身") for v in c["violations"]]
+
+    def test_double_pointing_to_measured_case_passes(self):
+        code, result = self.check(self.double_plan("`FakeX`(X 服務)→ US1-BE-02"))
+        self.assertEqual(code, 0, result)
+
+    def test_double_pointing_to_undefined_case_fails(self):
+        code, result = self.check(self.double_plan("`FakeX`(X 服務)→ US1-BE-09"))
+        self.assertEqual(code, 1)
+        self.assertTrue(self.double_violations(result), result)
+
+    def test_double_cannot_run_with_reason_passes(self):
+        code, result = self.check(self.double_plan("`FakeX`(X 服務)→ 無法實跑:X 服務停機維護"))
+        self.assertEqual(code, 0, result)
+
+    def test_double_cannot_run_without_reason_fails(self):
+        code, result = self.check(self.double_plan("`FakeX`(X 服務)→ 無法實跑:"))
+        self.assertEqual(code, 1)
+        self.assertTrue(self.double_violations(result), result)
+
+    def test_double_pointing_to_behaviour_case_fails(self):
+        for target in ("US1-BE-03", "US1-BE-01"):
+            code, result = self.check(self.double_plan(f"`FakeX`(X 服務)→ {target}"))
+            self.assertEqual(code, 1, target)
+            self.assertTrue(self.double_violations(result), result)
+
+    def test_second_double_without_case_fails(self):
+        code, result = self.check(self.double_plan("`FakeX`(X 服務)→ US1-BE-02<br>`FakeY`(Y 工具)→ US1-BE-03"))
+        self.assertEqual(code, 1)
+        self.assertEqual([v["item"] for v in self.double_violations(result)], ["E2 後端:`FakeY`(Y 工具)→ US1-BE-03"])
+
+    def test_no_double_is_not_checked(self):
+        for cell in ("無", "—"):
+            code, result = self.check(self.double_plan(cell))
+            self.assertEqual(code, 0, result)
 
 
 if __name__ == "__main__":

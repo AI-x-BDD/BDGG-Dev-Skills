@@ -11,13 +11,13 @@
 
 端點、介面規格檔與公開接縫照抄 `plan.md` § 端點盤點與它指到的規格檔,本計劃不另做系統規劃;測試等級、工具與環境取自 `techstack.md` § 測試。上游沒寫到的,登記到 `plan.md` 的待決問題,不在這裡自行補上。
 
-| 端點 | 介面規格檔 | 公開接縫 | 測試等級 | 工具 | 測試環境 |
-|---|---|---|---|---|---|
-| E2 後端 | `contracts/game.asyncapi.yaml` | WebSocket `/ws?client_id=...` 收發的 JSON 訊息 | E2E(真的 app、真的 MySQL) | pytest + TestClient,沿用 `tests/helpers.py` | `guess_number_test` 庫;限時與寬限由 `create_app` 注入成短秒數 |
-| E1 前端 | `prototype/room.html`、`prototype/match.html`、`prototype/result.html` | — | — | — | 本故事沒有不靠後端就看得到的行為,不測;畫面行為都放在跨端點驗收 |
-| 跨端點驗收 | E1、E2 的規格檔 | 瀏覽器畫面上的文字、按鈕、輸入框與聊天室的位置 | E2E(真的瀏覽器、真的後端) | Playwright,兩個 browser context 扮演雙方,沿用 `e2e/fixtures.js` | 後端 port 8765 + `guess_number_e2e` 庫,限時 8 秒、寬限 5 秒;視窗 1280×720 |
-| E3 資料庫 | `contracts/game.dbml` | — | — | — | 使用者故事 5 不涉及(聊天不寫入資料庫,見第 5 節) |
-| E4 部署與網路 | `deploy/compose.yaml`、`deploy/proxy.conf` | — | — | — | 範疇內沒有涉及它的需求(NFR-003、NFR-006 不適用故事 5) |
+| 端點 | 介面規格檔 | 公開接縫 | 測試等級 | 工具 | 測試環境 | 替身 |
+|---|---|---|---|---|---|---|
+| E2 後端 | `contracts/game.asyncapi.yaml` | WebSocket `/ws?client_id=...` 收發的 JSON 訊息 | E2E(真的 app、真的 MySQL) | pytest + TestClient,沿用 `tests/helpers.py` | `guess_number_test` 庫;限時與寬限由 `create_app` 注入成短秒數 | TestClient(uvicorn 與真的 WebSocket 連線)→ G-01 |
+| E1 前端 | `prototype/room.html`、`prototype/match.html`、`prototype/result.html` | — | — | — | 本故事沒有不靠後端就看得到的行為,不測;畫面行為都放在跨端點驗收 | — |
+| 跨端點驗收 | E1、E2 的規格檔 | 瀏覽器畫面上的文字、按鈕、輸入框與聊天室的位置 | E2E(真的瀏覽器、真的後端) | Playwright,兩個 browser context 扮演雙方,沿用 `e2e/fixtures.js` | 後端 port 8765 + `guess_number_e2e` 庫,限時 8 秒、寬限 5 秒;視窗 1280×720 | 無 |
+| E3 資料庫 | `contracts/game.dbml` | — | — | — | 使用者故事 5 不涉及(聊天不寫入資料庫,見第 5 節) | — |
+| E4 部署與網路 | `deploy/compose.yaml`、`deploy/proxy.conf` | — | — | — | 範疇內沒有涉及它的需求(NFR-003、NFR-006 不適用故事 5) | — |
 
 ### 受測操作
 
@@ -74,9 +74,9 @@
 
 #### 非功能案例
 
-| ID | 品質屬性 | 驗證方式 | 受測操作 | 假如 | 當 | 則 | 要抓的錯 | 需求 |
-|---|---|---|---|---|---|---|---|---|
-| US5-BE-18 | 隔離 | 🔴🟢 行為測試 | `/ws` › 送 `chat` | 1234 房有 Alice、Bob;5678 房有 Carol、Dave;另有一條未 `join` 的連線 | Alice 送 `chat{text:"秘密"}`;Carol 送 `chat{text:"別房"}` | 則1:Carol 沒收到「秘密」<br>則2:Dave 沒收到「秘密」<br>則3:未入房的連線沒收到任何 `chat_message`<br>則4:Alice 沒收到「別房」 | 聊天廣播給所有連線,而不是只給同房的兩人 | NFR-007 |
+| ID | 品質屬性 | 驗證方式 | 受測操作 | 假如 | 當 | 則 | 要抓的錯 | 需求 | 副作用與護欄 | 判定者與樣本 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| US5-BE-18 | 隔離 | 🔴🟢 行為測試 | `/ws` › 送 `chat` | 1234 房有 Alice、Bob;5678 房有 Carol、Dave;另有一條未 `join` 的連線 | Alice 送 `chat{text:"秘密"}`;Carol 送 `chat{text:"別房"}` | 則1:Carol 沒收到「秘密」<br>則2:Dave 沒收到「秘密」<br>則3:未入房的連線沒收到任何 `chat_message`<br>則4:Alice 沒收到「別房」 | 聊天廣播給所有連線,而不是只給同房的兩人 | NFR-007 | — | — |
 
 ### 2.2 E1 前端
 
@@ -115,10 +115,10 @@
 
 #### 非功能案例
 
-| ID | 品質屬性 | 驗證方式 | 受測操作 | 假如 | 當 | 則 | 要抓的錯 | 需求 |
-|---|---|---|---|---|---|---|---|---|
-| US5-AJ-07 | 安全(XSS) | 🔴🟢 行為測試 | 房間畫面 › 「送出訊息」 | 雙方在設定答案的房間畫面 | Alice 送出 `<b>粗</b><script>window.__x=1</script>` | 則1:Bob 的聊天室泡泡原樣顯示這串文字<br>則2:Bob 的頁面上沒有 `<b>` 元素<br>則3:Bob 的 `window.__x` 未被設定 | 為了泡泡排版改用 `dangerouslySetInnerHTML` 畫訊息內容 | NFR-008 |
-| US5-AJ-13 | 隔離 | 🔴🟢 行為測試 | 房間畫面 › 「送出訊息」 | 1234 房與另一間房各有一對玩家(Carol、Dave) | 1234 房的 Alice 送出「暗號」 | 則1:Carol 的畫面沒有「暗號」<br>則2:Dave 的畫面沒有「暗號」 | 聊天廣播給所有連線 | NFR-007 |
+| ID | 品質屬性 | 驗證方式 | 受測操作 | 假如 | 當 | 則 | 要抓的錯 | 需求 | 副作用與護欄 | 判定者與樣本 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| US5-AJ-07 | 安全(XSS) | 🔴🟢 行為測試 | 房間畫面 › 「送出訊息」 | 雙方在設定答案的房間畫面 | Alice 送出 `<b>粗</b><script>window.__x=1</script>` | 則1:Bob 的聊天室泡泡原樣顯示這串文字<br>則2:Bob 的頁面上沒有 `<b>` 元素<br>則3:Bob 的 `window.__x` 未被設定 | 為了泡泡排版改用 `dangerouslySetInnerHTML` 畫訊息內容 | NFR-008 | — | — |
+| US5-AJ-13 | 隔離 | 🔴🟢 行為測試 | 房間畫面 › 「送出訊息」 | 1234 房與另一間房各有一對玩家(Carol、Dave) | 1234 房的 Alice 送出「暗號」 | 則1:Carol 的畫面沒有「暗號」<br>則2:Dave 的畫面沒有「暗號」 | 聊天廣播給所有連線 | NFR-007 | — | — |
 
 ### 2.6 交給 `/tdd` 的順序
 
@@ -143,9 +143,9 @@
 
 ### 3.2 全域案例
 
-| ID | 品質屬性 | 驗證方式 | 受測操作 | 假如 | 當 | 則 | 要抓的錯 | 需求 |
-|---|---|---|---|---|---|---|---|---|
-| G-01 | 效能(延遲與承載) | 📏 量測 | `/ws` › 送 `guess` | 50 間房同時在對局,每間房兩條連線 | 每間房每 2 秒輪流送一次 `guess`,持續 5 分鐘;同時每間房每 5 秒送一則 `chat` | 則1:從送出 `guess` 到雙方都收到 `guess_result`,p95 ≤ 1 秒<br>則2:從送出 `chat` 到對手收到 `chat_message`,p95 ≤ 1 秒 | 廣播時逐一 `await` 每條連線,房間一多推送就排隊;或計時任務每房一條執行緒,50 房時 CPU 滿載 | NFR-005、SC-003 |
+| ID | 品質屬性 | 驗證方式 | 受測操作 | 假如 | 當 | 則 | 要抓的錯 | 需求 | 副作用與護欄 | 判定者與樣本 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| G-01 | 效能(延遲與承載) | 📏 量測 | `/ws` › 送 `guess` | 後端以 uvicorn 起在 port 8766(真的 WebSocket 連線,不經 TestClient),50 間房同時在對局,每間房兩條連線 | 每間房每 2 秒輪流送一次 `guess`,持續 5 分鐘;同時每間房每 5 秒送一則 `chat` | 則1:從送出 `guess` 到雙方都收到 `guess_result`,p95 ≤ 1 秒<br>則2:從送出 `chat` 到對手收到 `chat_message`,p95 ≤ 1 秒 | 廣播時逐一 `await` 每條連線,房間一多推送就排隊;或計時任務每房一條執行緒,50 房時 CPU 滿載 | NFR-005、SC-003 | 只寫 `guess_number_load` 庫,量完 drop;uvicorn 只綁 127.0.0.1:8766,不用 `deploy/compose.yaml` 起服務,不連正式的 `guess_number` 庫;不呼叫外部服務 | 判定者:腳本(p95 和門檻比較);樣本:腳本產生的 50 房合成對局(未用於調整) |
 
 ## 4. 需求覆蓋
 

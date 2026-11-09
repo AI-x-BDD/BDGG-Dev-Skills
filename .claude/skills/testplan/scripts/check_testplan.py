@@ -2,14 +2,14 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""檢查 testplan.md 有沒有涵蓋範疇內的每一條需求,以及測試案例的編號、歸屬、受測操作與驗證方式是否對得上。
+"""檢查 testplan.md 有沒有涵蓋範疇內的每一條需求,測試案例的編號、歸屬、受測操作與驗證方式是否對得上,以及每個替身有沒有實跑案例。
 
 範疇:讀 testplan 開頭「- **範疇**:使用者故事 5、6;…」裡列出的故事序號;沒有這一行就是 spec 的全部故事。
 一條需求在範疇內,是指它寫在範疇內某個「### 使用者故事 N」底下,或它在「## 全域需求」寫的「適用」
 列到範疇內的故事;SC 在範疇內,是指範疇內某條需求的內文引用了它。範疇是全部故事時,spec 的每一條
 FR、NFR、SC 都在範疇內。範疇外的需求可以出現在需求覆蓋表,但不要求。
 
-檢查九件事:
+檢查十件事:
 1. 範疇內每個 FR-、NFR-、SC- 編號,在「需求覆蓋」表都有一列;這一列要指到至少一個有定義的案例,
    或標「不在範疇」並在「不在本次範疇」表寫了為什麼不測與之後怎麼驗(全是 — 的列不算涵蓋);「邊界:」開頭的列同樣要求有案例或「不在範疇」
 2. 範疇是全部故事時,spec「### 邊界情況」有幾條,需求覆蓋表就有幾列以「邊界:」開頭;範疇只含部分故事時不檢查
@@ -23,6 +23,8 @@ FR、NFR、SC 都在範疇內。範疇外的需求可以出現在需求覆蓋表
 7. 每個案例的「則」從 則1 起以 <br> 分隔、依序編號,「要抓的錯」不是空白
 8. 有「驗證方式」欄的案例,驗證方式是「🔴🟢 行為測試」「📏 量測」「📏 人工」其中一種
 9. 範疇內每條 NFR(需求覆蓋表沒標不在範疇的)至少被一個有「驗證方式」欄的案例在「需求」欄列出
+10. 待測端點表「替身」欄不是「無」或「—」時,以 <br> 分隔的每個替身寫成「替身(代替的真元件)→ …」,
+   → 後面指到至少一個有定義、驗證方式是「📏 量測」或「📏 人工」的案例 ID,或寫「無法實跑:」加原因
 
 結果以 JSON 寫到 stdout,第一行是摘要;有任何一項不過時 exit code 是 1。
 """
@@ -42,9 +44,13 @@ R_OPS = "受測操作取自受測操作表"
 R_THEN = "則依序編號,要抓的錯有寫"
 R_VERIFY = "驗證方式是三種之一"
 R_NFR = "範疇內每條 NFR 都有標明驗證方式的案例"
-RULES = [R_REQ, R_EDGE, R_SCOPE, R_COVER, R_SEQ, R_OPS, R_THEN, R_VERIFY, R_NFR]
+R_DOUBLE = "每個替身都指到一個 📏 實跑案例,或寫明無法實跑"
+RULES = [R_REQ, R_EDGE, R_SCOPE, R_COVER, R_SEQ, R_OPS, R_THEN, R_VERIFY, R_NFR, R_DOUBLE]
 
 VERIFY_KINDS = {"🔴🟢 行為測試", "📏 量測", "📏 人工"}
+REAL_RUN_KINDS = {"📏 量測", "📏 人工"}
+NO_DOUBLE = {"無", "—", "-", ""}
+CANNOT_RUN = re.compile(r"^無法實跑[::]\s*(\S.*)?$")
 SPEC_REQ = re.compile(r"\*\*((?:FR|NFR|SC)-\d+)\*\*")
 REQ_REF = re.compile(r"\b((?:FR|NFR|SC)-\d+)\b")
 CASE_LIKE = re.compile(r"^(?:US\d+-[A-Z]+|[A-Z]+)-\d+$")
@@ -144,7 +150,7 @@ def spec_scopes(spec: str) -> tuple[dict[str, set[int]], dict[str, str], set[int
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="檢查 testplan.md 是否涵蓋範疇內的每一條需求,案例 ID、歸屬、受測操作與驗證方式是否對得上。"
+        description="檢查 testplan.md 是否涵蓋範疇內的每一條需求,案例 ID、歸屬、受測操作與驗證方式是否對得上,待測端點表的每個替身是否指到 📏 實跑案例。"
     )
     parser.add_argument("--spec", required=True, type=Path, help="功能規格 spec.md 的路徑")
     parser.add_argument("--plan", required=True, type=Path, help="要檢查的 testplan.md 的路徑")
@@ -353,6 +359,44 @@ def main() -> int:
         if req not in nfr_cases:
             violations[R_NFR].append({"item": req, "reason": "沒有任何有「驗證方式」欄的案例在「需求」欄列出這條 NFR"})
 
+    # 10. 替身與實跑案例
+    verify_of = {case_id: cells[header.index("驗證方式")] for case_id, header, cells in cases if "驗證方式" in header and len(cells) == len(header)}
+    doubles = 0
+    for header, rows in plan_tables:
+        if header[:1] != ["端點"] or "替身" not in header:
+            continue
+        at = header.index("替身")
+        for cells in rows:
+            cell = cells[at] if len(cells) > at else ""
+            if cell in NO_DOUBLE:
+                continue
+            for entry in [part.strip() for part in cell.split("<br>")]:
+                doubles += 1
+                item = f"{cells[0]}:{entry}"
+                double, arrow, target = (part.strip() for part in entry.partition("→"))
+                if not arrow or not double:
+                    violations[R_DOUBLE].append(
+                        {"item": item, "reason": "替身要寫成「替身(代替的真元件)→ 實跑案例 ID」或「替身(代替的真元件)→ 無法實跑:原因」,多個替身以 <br> 分隔"}
+                    )
+                    continue
+                cannot = CANNOT_RUN.match(target)
+                if cannot:
+                    if not cannot.group(1):
+                        violations[R_DOUBLE].append({"item": item, "reason": "寫了「無法實跑:」但沒有寫原因"})
+                    continue
+                ids = expand(target, prefixes | {m.rsplit("-", 1)[0] for m in re.findall(rf"\b{ID_TOKEN}-\d+\b", target)})
+                real = [case_id for case_id in sorted(ids) if verify_of.get(case_id) in REAL_RUN_KINDS]
+                if real:
+                    continue
+                if not ids:
+                    reason = f"→ 後面「{target}」沒有案例 ID;指到接真元件的 📏 案例,或寫「無法實跑:原因」"
+                elif not ids & set(defined):
+                    reason = f"指到的 {sorted(ids)} 沒有任何案例定義它"
+                else:
+                    kinds = {case_id: verify_of.get(case_id, "功能案例(🔴🟢)") for case_id in sorted(ids & set(defined))}
+                    reason = f"指到的案例驗證方式是 {kinds},不是 📏 量測或 📏 人工;實跑案例要接真元件"
+                violations[R_DOUBLE].append({"item": item, "reason": reason})
+
     scope_text = "全部故事" if full_scope else "故事 " + "、".join(str(n) for n in sorted(in_scope_stories))
     evidence = {
         R_REQ: f"範疇({scope_text})內的 {len(required)} 條 FR/NFR/SC 都在需求覆蓋表,且各有案例或明確不在範疇",
@@ -364,6 +408,7 @@ def main() -> int:
         R_THEN: f"{len(cases)} 個案例的則都從 則1 起依序編號,要抓的錯都有寫",
         R_VERIFY: f"{sum(1 for _, h, _ in cases if '驗證方式' in h)} 個非功能與全域案例的驗證方式都是三種之一",
         R_NFR: f"範疇內 {len(required_nfrs)} 條 NFR 都有標明驗證方式的案例",
+        R_DOUBLE: f"待測端點表的 {doubles} 個替身都指到 📏 實跑案例或寫明無法實跑",
     }
     checks = [
         {
@@ -376,7 +421,7 @@ def main() -> int:
     ]
     total = sum(len(v) for v in violations.values())
     passed = total == 0
-    print(f"檢查了 {len(cases)} 個案例與範疇({scope_text})內 {len(required)} 條需求,{total} 個不符項")
+    print(f"檢查了 {len(cases)} 個案例、{doubles} 個替身與範疇({scope_text})內 {len(required)} 條需求,{total} 個不符項")
     print(json.dumps({"spec": str(args.spec), "plan": str(args.plan), "passed": passed, "checks": checks}, ensure_ascii=False, indent=2))
     return 0 if passed else 1
 
