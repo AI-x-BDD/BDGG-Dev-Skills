@@ -10,7 +10,8 @@
 FR、NFR、SC 都在範疇內。範疇外的需求可以出現在需求覆蓋表,但不要求。
 
 檢查九件事:
-1. 範疇內每個 FR-、NFR-、SC- 編號,在「需求覆蓋」表都有一列
+1. 範疇內每個 FR-、NFR-、SC- 編號,在「需求覆蓋」表都有一列;這一列要指到至少一個有定義的案例,
+   或標「不在範疇」並在「不在本次範疇」表寫了為什麼不測與之後怎麼驗(全是 — 的列不算涵蓋);「邊界:」開頭的列同樣要求有案例或「不在範疇」
 2. 範疇是全部故事時,spec「### 邊界情況」有幾條,需求覆蓋表就有幾列以「邊界:」開頭;範疇只含部分故事時不檢查
    (邊界情況沒有標它屬於哪個故事,沒辦法只挑出範疇內的)
 3. 需求覆蓋表的「歸屬」:spec 只屬於一個故事的需求寫「故事 N」;適用兩個以上故事的需求與 SC 寫「全域」,
@@ -32,7 +33,7 @@ import re
 import sys
 from pathlib import Path
 
-R_REQ = "範疇內每條需求在需求覆蓋表都有一列"
+R_REQ = "範疇內每條需求在需求覆蓋表都有一列,列上有存在的案例或明確不在範疇"
 R_EDGE = "每條邊界情況在需求覆蓋表都有一列"
 R_SCOPE = "需求的歸屬對得上 spec,全域需求列在涵蓋彙整"
 R_COVER = "每個案例都在需求覆蓋表,引用的案例都有定義"
@@ -241,6 +242,26 @@ def main() -> int:
     for ref in sorted(expand(plan, prefixes) - set(defined)):
         violations[R_COVER].append({"item": ref, "reason": "計劃裡引用了這個案例 ID,但沒有任何案例定義它"})
 
+    # 1b. 每一列要有案例,或明確不在範疇並寫理由
+    excluded = section(plan, re.compile(r"^## .*不在本次範疇\s*$")) or []
+    excluded_rows = [cells for _, rows in tables(excluded) for cells in rows]
+    case_set = set(defined)
+    for req in required:
+        cells = row_of.get(req)
+        if cells is None or expand(" ".join(cells[1:]), prefixes) & case_set:
+            continue
+        if any(cell == "不在範疇" for cell in cells[1:]):
+            reasons = [r for r in excluded_rows if req in REQ_REF.findall(r[0])]
+            if not any(len(r) >= 3 and r[1] and r[2] for r in reasons):
+                violations[R_REQ].append(
+                    {"item": req, "reason": "標了「不在範疇」,但「不在本次範疇」表沒有提到這條需求,或沒寫「為什麼不測」與「之後怎麼驗」"}
+                )
+        else:
+            violations[R_REQ].append({"item": req, "reason": "需求覆蓋表這一列沒有任何有定義的案例 ID,也沒有標「不在範疇」;補案例,或標不在範疇並寫理由"})
+    for cells in coverage_rows:
+        if cells[0].startswith("邊界:") and not (expand(" ".join(cells[1:]), prefixes) & case_set) and "不在範疇" not in cells[1:]:
+            violations[R_REQ].append({"item": cells[0], "reason": "這條邊界情況的列沒有任何有定義的案例 ID,也沒有標「不在範疇」"})
+
     # 5. 格式、連續與不重複
     for case_id in defined:
         if not CASE_ID.match(case_id):
@@ -320,7 +341,7 @@ def main() -> int:
 
     scope_text = "全部故事" if full_scope else "故事 " + "、".join(str(n) for n in sorted(in_scope_stories))
     evidence = {
-        R_REQ: f"範疇({scope_text})內的 {len(required)} 條 FR/NFR/SC 都在需求覆蓋表",
+        R_REQ: f"範疇({scope_text})內的 {len(required)} 條 FR/NFR/SC 都在需求覆蓋表,且各有案例或明確不在範疇",
         R_EDGE: f"spec 的 {edge_count} 條邊界情況,需求覆蓋表各有一列" if full_scope else f"範疇只含{scope_text},不檢查邊界情況條數",
         R_SCOPE: f"需求覆蓋表 {len(row_of)} 條需求的歸屬都對得上 spec,全域需求都在涵蓋彙整",
         R_COVER: f"{len(defined)} 個案例都在需求覆蓋表,引用的案例 ID 都有定義",
