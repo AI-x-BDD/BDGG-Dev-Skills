@@ -29,7 +29,9 @@ SDD_SKILLS = [
     "data-plan",
     "deploy-plan",
     "ui-plan",
+    "testplan",
     "tasks",
+    "analyze",
 ]
 NOT_ARTIFACTS = {"委派指示"}
 

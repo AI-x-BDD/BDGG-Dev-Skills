@@ -13,7 +13,7 @@
 ⏸ 延後    描述開頭(在 [US1] 這類標籤與 🔴、🟢、🔵、📏 步驟標記之後)是 ⏸ 的未勾任務是排除或延後的任務,列在 paused_tasks,
             不算進 unchecked_tasks;覆蓋列沒勾的只有 ⏸ 任務時,那一列列在 paused_rows,不算不過
 待決問題    給了 --plan 時,plan.md「待決問題」表的每一列是否寫成
-            「| Q<序號> | S<步驟>、tasks 或 implement T<編號> | 問題 | 擋住 | 決定 |」;不符的列在 bad_question_rows
+            「| Q<序號> | S<步驟>、tasks、testplan 或 implement T<編號>(編號可帶小寫字尾,例如 T122b) | 問題 | 擋住 | 決定 |」;不符的列在 bad_question_rows
 結果以 JSON 寫到 stdout;這個 phase 或前面 phase 有沒勾的任務、覆蓋列,或待決問題表有不符的列時 exit code 是 1,
 參數或檔案有誤時是 2。
 """
@@ -45,8 +45,8 @@ def task_ids(cell: str, known: list[str]) -> list[str]:
     return list(dict.fromkeys(found))
 QUESTION_HEADING = "## 待決問題"
 QUESTION_LINE = re.compile(r"\| Q\d")
-# 和 system-analysis 的 check_plan.py 同一個樣式:「提出的步驟」只能是一個 S<步驟>、tasks 或一個 implement T<編號>
-QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|implement T\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
+# 和 system-analysis 的 check_plan.py 同一個樣式:「提出的步驟」只能是一個 S<步驟>、tasks、testplan 或一個 implement T<編號>(可帶小寫字尾)
+QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|testplan|implement T\d+[a-z]?) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
 
 
 def main() -> int:
