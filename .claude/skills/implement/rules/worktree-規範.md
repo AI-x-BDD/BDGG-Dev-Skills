@@ -1,6 +1,7 @@
 # Rule 1 [must] - 每個交給 subagent 的端點節開一個自己的 worktree
 - 委派前,替每個端點節從目前的分支開一個 worktree:`git worktree add ../<repo 名稱>-wt-p<phase 序號>-E<端點序號> -b impl/p<phase 序號>-E<端點序號>`
 - 被 gitignore、又是執行測試需要的相依(例如 `.venv`、`node_modules`),用 symlink 從主工作區連進 worktree,不在 worktree 裡重新安裝
+- 專案本身以 editable 方式裝在共用的環境裡時(例如 `.venv` 的 `_editable_impl_*.pth` 指向主工作區的 `src/`),worktree 裡跑測試要讓匯入指向 worktree 自己的原始碼(例如 `PYTHONPATH=<worktree>/src uv run --no-sync pytest …`),不讓工具重新同步共用環境;第一次跑測試前,先印出模組的 `__file__` 確認載入的是 worktree 的版本,端點指示的測試指令照這個寫法
 - 端點指示的「你在…工作」寫這個 worktree 的路徑;主 agent 驗收這一節時,在同一個 worktree 裡跑測試、勾選與 commit
 - 為什麼:subagent 共用一個工作區時,一個的對照組改壞會被另一個的測試跑到、被主 agent 一起 stage,撤回後還可能跑到舊的 `.pyc`;colab-gpu-bridge 002 的 E2 subagent 斷在改壞的半途,三行錯誤實作就留在大家共用的檔裡
 
@@ -11,6 +12,8 @@ git worktree add ../colab-gpu-bridge-wt-p3-E8 -b impl/p3-E8
 git worktree add ../colab-gpu-bridge-wt-p3-E2 -b impl/p3-E2
 ln -s /home/dev/projects/colab-gpu-bridge/.venv ../colab-gpu-bridge-wt-p3-E8/.venv
 ln -s /home/dev/projects/colab-gpu-bridge/.venv ../colab-gpu-bridge-wt-p3-E2/.venv
+PYTHONPATH=../colab-gpu-bridge-wt-p3-E8/src uv run --no-sync python -c "import cgb; print(cgb.__file__)"
+→ /home/dev/projects/colab-gpu-bridge-wt-p3-E8/src/cgb/__init__.py
 ```
 
 ## bad example
@@ -18,6 +21,23 @@ ln -s /home/dev/projects/colab-gpu-bridge/.venv ../colab-gpu-bridge-wt-p3-E2/.ve
 ```
 subagent E8:/home/dev/projects/colab-gpu-bridge
 subagent E2:/home/dev/projects/colab-gpu-bridge
+```
+
+## good example
+- E8 的 worktree 連了共用的 `.venv`,專案是 editable 安裝;**跑測試時用 `PYTHONPATH` 指向 worktree 的 `src`,先確認載入的是 worktree 的版本**
+```
+cd ../colab-gpu-bridge-wt-p3-E8
+PYTHONPATH=$PWD/src uv run --no-sync python -c "import cgb; print(cgb.__file__)"
+→ /home/dev/projects/colab-gpu-bridge-wt-p3-E8/src/cgb/__init__.py
+PYTHONPATH=$PWD/src uv run --no-sync pytest tests/integration/test_model_library.py -q
+```
+
+## bad example
+- 同兩節,**開了 worktree、連了 `.venv`,但直接 `uv run pytest`**;editable 安裝指向主工作區的 `src/`,worktree 裡改的程式沒有被載入,測試跑的是主工作區的舊版,綠燈不能當證據
+```
+cd ../colab-gpu-bridge-wt-p3-E8 && uv run pytest tests/integration/test_model_library.py -q
+uv run python -c "import cgb; print(cgb.__file__)"
+→ /home/dev/projects/colab-gpu-bridge/src/cgb/__init__.py
 ```
 
 ## good example
