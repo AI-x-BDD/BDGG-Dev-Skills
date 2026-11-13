@@ -26,7 +26,8 @@ FR、NFR、SC 都在範疇內。範疇外的需求可以出現在需求覆蓋表
 10. 待測端點表「替身」欄不是「無」或「—」時,以 <br> 分隔的每個替身寫成「替身(代替的真元件)→ …」,
    → 後面指到至少一個有定義、驗證方式是「📏 量測」或「📏 人工」的案例 ID,或寫「無法實跑:」加原因
 11. 驗證方式是「📏 量測」或「📏 人工」的案例,「副作用與護欄」欄以「時機:節內」或「時機:整合」開頭
-12.(有給 --contracts 時)受測操作表「規格錨點」欄指到的每個合約操作(OpenAPI 的 `paths./<路徑>.<method>`、
+12.「### 測試指令」表有「快速層」與「全部」兩列,「指令」欄都不是空白也不是填位符號
+13.(有給 --contracts 時)受測操作表「規格錨點」欄指到的每個合約操作(OpenAPI 的 `paths./<路徑>.<method>`、
    AsyncAPI 的 `operations.<id>`),它底下名稱以 `x-` 開頭、含 error 或 failure 的欄位列出的每個錯誤碼,
    都有一個案例:受測操作對到這個操作,且案例那一列寫到這個代碼;或「不在本次範疇」表有一列同時寫到
    這個代碼與這個操作的 operationId,並寫了為什麼不測與之後怎麼驗。案例對到操作的方式:受測操作的某一段
@@ -57,7 +58,8 @@ R_NFR = "範疇內每條 NFR 都有標明驗證方式的案例"
 R_DOUBLE = "每個替身都指到一個 📏 實跑案例,或寫明無法實跑"
 R_TIMING = "📏 案例的副作用與護欄以實跑時機開頭"
 R_CONTRACT = "範疇內每個合約操作的每個錯誤碼都有案例,或寫明不在範疇"
-RULES = [R_REQ, R_EDGE, R_SCOPE, R_COVER, R_SEQ, R_OPS, R_THEN, R_VERIFY, R_NFR, R_DOUBLE, R_TIMING]
+R_CMDS = "測試指令表寫出快速層與全部的指令"
+RULES = [R_REQ, R_EDGE, R_SCOPE, R_COVER, R_SEQ, R_OPS, R_THEN, R_VERIFY, R_NFR, R_DOUBLE, R_TIMING, R_CMDS]
 
 VERIFY_KINDS = {"🔴🟢 行為測試", "📏 量測", "📏 人工"}
 REAL_RUN_KINDS = {"📏 量測", "📏 人工"}
@@ -491,7 +493,23 @@ def main() -> int:
                 {"item": case_id, "reason": f"「副作用與護欄」要以「時機:節內」或「時機:整合」開頭,實際是「{guard[:30]}」;不花錢、不改外部狀態、不需本人在場寫節內,否則寫整合"}
             )
 
-    # 12. 合約的操作 × 錯誤碼
+    # 12. 測試指令
+    command_section = section(plan, re.compile(r"^### 測試指令\s*$"))
+    layers: dict[str, str] = {}
+    for header, rows in tables(command_section or []):
+        if "層" in header and "指令" in header:
+            for cells in rows:
+                if len(cells) > max(header.index("層"), header.index("指令")):
+                    layers[cells[header.index("層")].strip()] = cells[header.index("指令")].strip()
+    if command_section is None:
+        violations[R_CMDS].append({"item": "### 測試指令", "reason": "找不到「### 測試指令」這一節;照 templates/testplan.md 在第 1 節寫出快速層與全部的指令"})
+    else:
+        for layer in ("快速層", "全部"):
+            command = layers.get(layer, "")
+            if not command or command in {"—", "-"} or "{{" in command:
+                violations[R_CMDS].append({"item": layer, "reason": f"「測試指令」表沒有「{layer}」這一列,或它的「指令」欄是空的;寫出可以直接執行的指令"})
+
+    # 13. 合約的操作 × 錯誤碼
     rules = RULES + ([R_CONTRACT] if args.contracts else [])
     violations.setdefault(R_CONTRACT, [])
     pair_count = 0
@@ -567,6 +585,7 @@ def main() -> int:
         R_NFR: f"範疇內 {len(required_nfrs)} 條 NFR 都有標明驗證方式的案例",
         R_DOUBLE: f"待測端點表的 {doubles} 個替身都指到 📏 實跑案例或寫明無法實跑",
         R_TIMING: f"{timed} 個 📏 案例的副作用與護欄都以實跑時機開頭",
+        R_CMDS: f"測試指令表的快速層是 {layers.get('快速層', '')[:60]},全部是 {layers.get('全部', '')[:60]}",
         R_CONTRACT: f"受測操作表指到的合約操作共 {pair_count} 組操作 × 錯誤碼,都有案例或寫明不在範疇",
     }
     checks = [

@@ -16,19 +16,20 @@ description: 要依 tasks.md 開始寫程式、把拆好的任務實作出來時
 
 ## Phase 2: 做完一個 phase
 1. Read **這個 phase 的任務依據**:每個任務 🧪 指到的 testplan.md 案例、⚙ 指到的規格元素與 📎 指到的段落;若這個 phase 不是使用者故事 → 跳至 Phase 2 Step 4。
-2. Delegate 依骨架 `templates/端點指示.md` 與範例 `templates/端點指示.example.md` **把每個端點節交給 subagent 平行實作**。
-3. Think 依 `rules/驗收-規範.md` **逐一驗收端點節做完的任務**;若有任務不過 → 跳至 Phase 2 Step 2。
+2. Delegate 依 `rules/worktree-規範.md`、骨架 `templates/端點指示.md` 與範例 `templates/端點指示.example.md` 把每個端點節交給 subagent **在各自的 worktree 平行實作**。
+3. Think 依 `rules/驗收-規範.md` 在各自的 worktree **逐一驗收端點節做完的任務**;若有任務不過 → 跳至 Phase 2 Step 2。
 4. Write 依 `rules/實作-規範.md` 照編號一次一個**做完由主 agent 做的任務**:不是使用者故事的 phase 的每個任務,或使用者故事的跨端點驗收任務。
 5. Think **逐一驗收主 agent 做完的任務**;若有任務不過 → 跳至 Phase 2 Step 4。
 6. Write **勾選驗收過的任務**。
-7. Delegate 依 `rules/提交-規範.md` 轉交 git-conventional-commit **commit 驗收過的一組任務**。
-8. Read 這個 phase 的 **Checkpoint 指令執行的結果**;若有和停下的任務無關的不過 → 跳至 Phase 2 Step 4。
-9. Delegate 執行 `uv run scripts/check_phase.py --tasks <tasks.md 的路徑> --phase <phase 序號> --plan <plan.md 的路徑>` **取得勾選與待決問題表的檢查結果**,描述開頭標 ⏸ 的延後任務列在 `paused_tasks`、不算沒勾;若有沒勾、也沒停下的任務,或待決問題表有格式不符的列 → 跳至 Phase 2 Step 4。
-10. Ask 依骨架 `templates/Checkpoint報告.md` 與範例 `templates/Checkpoint報告.example.md` **提出 Checkpoint 報告**,問使用者要手動確認的項目過了沒有、這個 phase 登記的待決問題怎麼決定、可不可以往下做。
-11. Write 把使用者的決定**寫回 plan.md 的待決問題**。
-12. Delegate 轉交 testplan **補上決定要補的測試案例**;若這次的決定沒有要補案例 → 跳至 Phase 2 Step 14。
-13. Delegate 轉交 tasks **補上新案例的任務**。
-14. Delegate 轉交 git-conventional-commit **commit 寫回決定的 plan.md** 與補上的 testplan.md、tasks.md;若有停下的任務、手動確認沒過、補了任務或範圍內還有下一個 phase → 跳至 Phase 2 Step 1。
+7. Delegate 依 `rules/提交-規範.md` 轉交 git-conventional-commit 在各自的 worktree **commit 驗收過的一組任務**。
+8. Write 把每個 worktree 的 commit **依序合併回目前的分支**。
+9. Read 這個 phase 的 **Checkpoint 指令執行的結果**;若有和停下的任務無關的不過 → 跳至 Phase 2 Step 4。
+10. Delegate 執行 `uv run scripts/check_phase.py --tasks <tasks.md 的路徑> --phase <phase 序號> --plan <plan.md 的路徑>` **取得勾選與待決問題表的檢查結果**,描述開頭標 ⏸ 的延後任務列在 `paused_tasks`、不算沒勾;若有沒勾、也沒停下的任務,或待決問題表有格式不符的列 → 跳至 Phase 2 Step 4。
+11. Ask 依骨架 `templates/Checkpoint報告.md` 與範例 `templates/Checkpoint報告.example.md` **提出 Checkpoint 報告**,問使用者要手動確認的項目過了沒有、這個 phase 登記的待決問題怎麼決定、可不可以往下做。
+12. Write 把使用者的決定**寫回 plan.md 的待決問題**。
+13. Delegate 轉交 testplan **補上決定要補的測試案例**;若這次的決定沒有要補案例 → 跳至 Phase 2 Step 15。
+14. Delegate 轉交 tasks **補上新案例的任務**。
+15. Delegate 轉交 git-conventional-commit **commit 寫回決定的 plan.md** 與補上的 testplan.md、tasks.md;若有停下的任務、手動確認沒過、補了任務或範圍內還有下一個 phase → 跳至 Phase 2 Step 1。
 
 ## Phase 3: 交出完成報告
 1. Think **對過範圍內每條 SC 的量測結果**:有數字的寫出數字,量不到的標未驗證。
@@ -54,7 +55,7 @@ flowchart TD
     subgraph P2["Phase 2: 做完一個 phase"]
         P2S1["1. Read：這個 phase 的任務依據"]
         G_P2S1_1{"這個 phase 不<br/>是使用者故事？"}
-        P2S2["2. Delegate：把每個端點<br/>節交給 subagent 平行實作"]
+        P2S2["2. Delegate：在各自<br/>的 worktree 平行實作"]
         P2S3["3. Think：逐一驗收端點節做完的任務"]
         G_P2S3_1{"有任務不過？"}
         P2S4["4. Write：做完由主 agent 做的任務"]
@@ -62,17 +63,18 @@ flowchart TD
         G_P2S5_1{"有任務不過？"}
         P2S6["6. Write：勾選驗收過的任務"]
         P2S7["7. Delegate：commit 驗收過的一組任務"]
-        P2S8["8. Read：Checkpoint 指令執行的結果"]
-        G_P2S8_1{"有和停下的任務<br/>無關的不過？"}
-        P2S9["9. Delegate：取得勾選<br/>與待決問題表的檢查結果"]
-        G_P2S9_1{"有沒勾、也沒停下的<br/>任務,或待決問題表<br/>有格式不符的列？"}
-        P2S10["10. Ask：提出 Checkpoint 報告"]
-        P2S11["11. Write：寫回 plan.md 的待決問題"]
-        P2S12["12. Delegate：補上決定要補的測試案例"]
-        G_P2S12_1{"這次的決定沒有要補案例？"}
-        P2S13["13. Delegate：補上新案例的任務"]
-        P2S14["14. Delegate：commit<br/>寫回決定的 plan.md"]
-        G_P2S14_1{"有停下的任務、手動確認<br/>沒過、補了任務或範圍內<br/>還有下一個 phase？"}
+        P2S8["8. Write：依序合併回目前的分支"]
+        P2S9["9. Read：Checkpoint 指令執行的結果"]
+        G_P2S9_1{"有和停下的任務<br/>無關的不過？"}
+        P2S10["10. Delegate：取得勾選<br/>與待決問題表的檢查結果"]
+        G_P2S10_1{"有沒勾、也沒停下的<br/>任務,或待決問題表<br/>有格式不符的列？"}
+        P2S11["11. Ask：提出 Checkpoint 報告"]
+        P2S12["12. Write：寫回 plan.md 的待決問題"]
+        P2S13["13. Delegate：補上決定要補的測試案例"]
+        G_P2S13_1{"這次的決定沒有要補案例？"}
+        P2S14["14. Delegate：補上新案例的任務"]
+        P2S15["15. Delegate：commit<br/>寫回決定的 plan.md"]
+        G_P2S15_1{"有停下的任務、手動確認<br/>沒過、補了任務或範圍內<br/>還有下一個 phase？"}
     end
     subgraph P3["Phase 3: 交出完成報告"]
         P3S1["1. Think：對過範圍內<br/>每條 SC 的量測結果"]
@@ -105,21 +107,22 @@ flowchart TD
     G_P2S5_1 -->|否| P2S6
     P2S6 --> P2S7
     P2S7 --> P2S8
-    P2S8 --> G_P2S8_1
-    G_P2S8_1 -->|是| P2S4
-    G_P2S8_1 -->|否| P2S9
+    P2S8 --> P2S9
     P2S9 --> G_P2S9_1
     G_P2S9_1 -->|是| P2S4
     G_P2S9_1 -->|否| P2S10
-    P2S10 --> P2S11
+    P2S10 --> G_P2S10_1
+    G_P2S10_1 -->|是| P2S4
+    G_P2S10_1 -->|否| P2S11
     P2S11 --> P2S12
-    P2S12 --> G_P2S12_1
-    G_P2S12_1 -->|是| P2S14
-    G_P2S12_1 -->|否| P2S13
-    P2S13 --> P2S14
-    P2S14 --> G_P2S14_1
-    G_P2S14_1 -->|是| P2S1
-    G_P2S14_1 -->|否| P3S1
+    P2S12 --> P2S13
+    P2S13 --> G_P2S13_1
+    G_P2S13_1 -->|是| P2S15
+    G_P2S13_1 -->|否| P2S14
+    P2S14 --> P2S15
+    P2S15 --> G_P2S15_1
+    G_P2S15_1 -->|是| P2S1
+    G_P2S15_1 -->|否| P3S1
     P3S1 --> P3S2
     P3S2 --> End
 ```
@@ -128,7 +131,7 @@ flowchart TD
 sequenceDiagram
     actor User
     participant Main as implement
-    participant Sub_1 as git-conventional-commit commit 驗收過的一組任務
+    participant Sub_1 as git-conventional-commit 在各自的 worktree commit 驗收過的一組任務
     participant Sub_2 as testplan 補上決定要補的測試案例
     participant Sub_3 as tasks 補上新案例的任務
     participant Sub_4 as git-conventional-commit commit 寫回決定的 plan.md 與補上的 testplan.md
@@ -139,15 +142,15 @@ sequenceDiagram
     Note over User,Sub_5: Phase 2: 做完一個 phase
     Main->>Sub_1: 7. Delegate：commit 驗收過的一組任務
     Sub_1-->>Main: 完成並交回產出
-    Main->>User: 10. Ask：提出 Checkpoint 報告
+    Main->>User: 11. Ask：提出 Checkpoint 報告
     User-->>Main: 回覆確認
-    Main->>Sub_2: 12. Delegate：補上決定要補的測試案例
+    Main->>Sub_2: 13. Delegate：補上決定要補的測試案例
     Sub_2-->>Main: 完成並交回產出
-    Main->>Sub_3: 13. Delegate：補上新案例的任務
+    Main->>Sub_3: 14. Delegate：補上新案例的任務
     Sub_3-->>Main: 完成並交回產出
-    Main->>Sub_4: 14. Delegate：commit 寫回決定的 plan.md
+    Main->>Sub_4: 15. Delegate：commit 寫回決定的 plan.md
     Sub_4-->>Main: 完成並交回產出
-    Main->>Sub_5: 14. Delegate：commit 寫回決定的 plan.md
+    Main->>Sub_5: 15. Delegate：commit 寫回決定的 plan.md
     Sub_5-->>Main: 完成並交回產出
     Note over User,Sub_5: Phase 3: 交出完成報告
     Main->>User: 2. Report：交出完成報告

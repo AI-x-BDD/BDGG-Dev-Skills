@@ -352,7 +352,7 @@
 | US5-BE-01~US5-BE-18 | T101a~T118a | T101b~T118b | T119 |
 | US5-AJ-01~US5-AJ-16 | T120a~T135a | T120b~T135b | T136 |
 
-**Checkpoint**: `uv run pytest`、`npx playwright test` 全綠;重構任務前後的測試結果相同
+**Checkpoint**: `uv run pytest backend/tests -q && npx playwright test` 全綠;重構任務前後的測試結果相同
 
 ---
 
