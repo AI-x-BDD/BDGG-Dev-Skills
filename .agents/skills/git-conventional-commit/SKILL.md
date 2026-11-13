@@ -8,7 +8,7 @@ description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交�
 ## Phase 1: 提交 commit
 1. Read **工作區與最近提交的現況**:`git status`、`git diff`、`git diff --staged` 與 `git log -n 15 --format='%h %s'` 的輸出。
 2. Think 依 `rules/提交計畫-規範.md` 把這批變更**分成一筆一筆的 commit** 並排出提交的順序。
-3. Write 依 `rules/index-規範.md` **把這一筆的變更 stage 進 index**;若這個 repo 沒有建置或測試指令 → 跳至 Phase 1 Step 5。
+3. Write 依 `rules/index-規範.md` **把這一筆的變更 stage 進 index**;若這個 repo 沒有建置或測試指令,或這一筆 stage 的檔案都沒有被建置或測試讀到 → 跳至 Phase 1 Step 5。
 4. Delegate 依 `rules/腳本執行-規範.md` 執行 `uv run scripts/verify_staged.py --repo <repo 根目錄> --link <被 gitignore 的建置相依> --cmd <建置與測試指令>` **取得這一筆單獨取出時的建置結果**;若建置或測試失敗 → 跳至 Phase 1 Step 2。
 5. Write 依 `rules/commit-message-規範.md`、骨架 `templates/commit-message.txt` 與範例 `templates/commit-message.example.txt` **把這一筆的 commit 訊息寫成訊息檔**。
 6. Delegate 執行 `uv run scripts/check_commit_msg.py --file <訊息檔>` **取得訊息的檢查結果**;若有 ERROR → 跳至 Phase 1 Step 5。
@@ -26,7 +26,7 @@ flowchart TD
         P1S1["1. Read：工作區與最近提交的現況"]
         P1S2["2. Think：分成一筆一筆的 commit"]
         P1S3["3. Write：把這一筆的<br/>變更 stage 進 index"]
-        G_P1S3_1{"這個 repo 沒有建<br/>置或測試指令？"}
+        G_P1S3_1{"這個 repo 沒有建置<br/>或測試指令,或這一筆<br/>stage 的檔案都沒有<br/>被建置或測試讀到？"}
         P1S4["4. Delegate：取得這一<br/>筆單獨取出時的建置結果"]
         G_P1S4_1{"建置或測試失敗？"}
         P1S5["5. Write：把這一筆的<br/>commit 訊息寫成訊息檔"]
