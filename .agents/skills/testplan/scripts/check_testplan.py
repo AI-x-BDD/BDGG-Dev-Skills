@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = []
+# dependencies = ["pyyaml>=6,<7"]
 # ///
 """檢查 testplan.md 有沒有涵蓋範疇內的每一條需求,測試案例的編號、歸屬、受測操作與驗證方式是否對得上,以及每個替身有沒有實跑案例。
 
@@ -25,6 +25,14 @@ FR、NFR、SC 都在範疇內。範疇外的需求可以出現在需求覆蓋表
 9. 範疇內每條 NFR(需求覆蓋表沒標不在範疇的)至少被一個有「驗證方式」欄的案例在「需求」欄列出
 10. 待測端點表「替身」欄不是「無」或「—」時,以 <br> 分隔的每個替身寫成「替身(代替的真元件)→ …」,
    → 後面指到至少一個有定義、驗證方式是「📏 量測」或「📏 人工」的案例 ID,或寫「無法實跑:」加原因
+11. 驗證方式是「📏 量測」或「📏 人工」的案例,「副作用與護欄」欄以「時機:節內」或「時機:整合」開頭
+12.(有給 --contracts 時)受測操作表「規格錨點」欄指到的每個合約操作(OpenAPI 的 `paths./<路徑>.<method>`、
+   AsyncAPI 的 `operations.<id>`),它底下名稱以 `x-` 開頭、含 error 或 failure 的欄位列出的每個錯誤碼,
+   都有一個案例:受測操作對到這個操作,且案例那一列寫到這個代碼;或「不在本次範疇」表有一列同時寫到
+   這個代碼與這個操作的 operationId,並寫了為什麼不測與之後怎麼驗。案例對到操作的方式:受測操作的某一段
+   以受測操作表某一列的寫法開頭;那一列只有一個操作時就是它,有好幾個操作時,用 › 後面的方法名比對
+   operationId(忽略大小寫與底線,`search_library` 對 `searchLibrary`)。一個案例串起好幾個操作時,錯誤碼只算給
+   同一段(<br> 分隔)也寫到那個方法名的操作。沒給 --contracts 時不做這一項
 
 結果以 JSON 寫到 stdout,第一行是摘要;有任何一項不過時 exit code 是 1。
 """
@@ -34,6 +42,8 @@ import json
 import re
 import sys
 from pathlib import Path
+
+import yaml
 
 R_REQ = "範疇內每條需求在需求覆蓋表都有一列,列上有存在的案例或明確不在範疇"
 R_EDGE = "每條邊界情況在需求覆蓋表都有一列"
@@ -45,10 +55,13 @@ R_THEN = "則依序編號,要抓的錯有寫"
 R_VERIFY = "驗證方式是三種之一"
 R_NFR = "範疇內每條 NFR 都有標明驗證方式的案例"
 R_DOUBLE = "每個替身都指到一個 📏 實跑案例,或寫明無法實跑"
-RULES = [R_REQ, R_EDGE, R_SCOPE, R_COVER, R_SEQ, R_OPS, R_THEN, R_VERIFY, R_NFR, R_DOUBLE]
+R_TIMING = "📏 案例的副作用與護欄以實跑時機開頭"
+R_CONTRACT = "範疇內每個合約操作的每個錯誤碼都有案例,或寫明不在範疇"
+RULES = [R_REQ, R_EDGE, R_SCOPE, R_COVER, R_SEQ, R_OPS, R_THEN, R_VERIFY, R_NFR, R_DOUBLE, R_TIMING]
 
 VERIFY_KINDS = {"🔴🟢 行為測試", "📏 量測", "📏 人工"}
 REAL_RUN_KINDS = {"📏 量測", "📏 人工"}
+TIMING = re.compile(r"^時機[::](節內|整合)(?:[;;,,]|$)")
 NO_DOUBLE = {"無", "—", "-", ""}
 CANNOT_RUN = re.compile(r"^無法實跑[::]\s*(\S.*)?$")
 SPEC_REQ = re.compile(r"\*\*((?:FR|NFR|SC)-\d+)\*\*")
@@ -56,6 +69,10 @@ REQ_REF = re.compile(r"\b((?:FR|NFR|SC)-\d+)\b")
 CASE_LIKE = re.compile(r"^(?:US\d+-[A-Z]+|[A-Z]+)-\d+$")
 CASE_ID = re.compile(r"^(US\d+-[A-Z]+|G)-(\d{2})$")
 ID_TOKEN = r"(?:US\d+-)?[A-Z]+"
+ERROR_CODE = re.compile(r"[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+")
+SPEC_FILE = re.compile(r"[\w./-]+\.(?:ya?ml)")
+OPENAPI_OP = re.compile(r"paths\.(/[^`\s、,,;]*?)\.(get|put|post|delete|patch|head|options)\b")
+ASYNCAPI_OP = re.compile(r"operations\.([A-Za-z_][\w-]*)")
 
 
 def read(path: Path, label: str) -> str:
@@ -113,6 +130,64 @@ def expand(text: str, prefixes: set[str]) -> set[str]:
     return found
 
 
+def error_codes(node: object, inside: bool = False, found: set[str] | None = None) -> set[str]:
+    """收集名稱以 x- 開頭、含 error 或 failure 的欄位底下的錯誤碼:字串清單的項目、字典的鍵、code: 的值與單一字串值。"""
+    found = set() if found is None else found
+    if isinstance(node, dict):
+        for key, value in node.items():
+            hit = inside or (isinstance(key, str) and key.startswith("x-") and ("error" in key or "failure" in key))
+            if hit and isinstance(key, str) and ERROR_CODE.fullmatch(key):
+                found.add(key)
+            if hit and isinstance(value, str) and ERROR_CODE.fullmatch(value.strip()):
+                found.add(value.strip())
+            error_codes(value, hit, found)
+    elif isinstance(node, list):
+        for value in node:
+            if inside and isinstance(value, str) and ERROR_CODE.fullmatch(value.strip()):
+                found.add(value.strip())
+            error_codes(value, inside, found)
+    return found
+
+
+def contract_ops(cell: str, contracts: Path, docs: dict[str, object]) -> tuple[list[tuple[str, str, set[str]]], list[str]]:
+    """規格錨點欄的一格 → ([(規格檔名, operationId, 錯誤碼)], [找不到的錨點])。"""
+    found: list[tuple[str, str, set[str]]] = []
+    missing: list[str] = []
+    files = list(SPEC_FILE.finditer(cell))
+    for index, match in enumerate(files):
+        name = Path(match.group(0)).name
+        segment = cell[match.end(): files[index + 1].start() if index + 1 < len(files) else len(cell)]
+        refs = [("openapi", m.group(1), m.group(2)) for m in OPENAPI_OP.finditer(segment)]
+        refs += [("asyncapi", m.group(1), "") for m in ASYNCAPI_OP.finditer(segment)]
+        if not refs:
+            continue
+        if name not in docs:
+            path = contracts / name
+            docs[name] = yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else None
+        doc = docs[name]
+        if not isinstance(doc, dict):
+            missing.append(f"{name}(--contracts 資料夾裡沒有這個檔)")
+            continue
+        for kind, key, method in refs:
+            if kind == "openapi":
+                op = (doc.get("paths") or {}).get(key, {}).get(method)
+                label = f"paths.{key}.{method}"
+            else:
+                op = (doc.get("operations") or {}).get(key)
+                label = f"operations.{key}"
+            if not isinstance(op, dict):
+                missing.append(f"{name} § {label}")
+                continue
+            op_id = op.get("operationId") or key
+            found.append((name, op_id, error_codes(op)))
+    return found, missing
+
+
+def squash(name: str) -> str:
+    """比對方法名與 operationId 用:去掉反引號、括號後的參數與底線,轉小寫。"""
+    return re.split(r"[(]", name.replace("`", "").strip())[0].replace("_", "").lower()
+
+
 def anchor(writing: str) -> str:
     """受測操作表一種寫法的開頭:› 之前那段;沒有 › 就取第一個 . 或 ( 之前那段。"""
     if "›" in writing:
@@ -154,6 +229,11 @@ def main() -> int:
     )
     parser.add_argument("--spec", required=True, type=Path, help="功能規格 spec.md 的路徑")
     parser.add_argument("--plan", required=True, type=Path, help="要檢查的 testplan.md 的路徑")
+    parser.add_argument(
+        "--contracts",
+        type=Path,
+        help="spec package 的 contracts 資料夾(放 OpenAPI/AsyncAPI 規格檔);給了才檢查合約的每個操作 × 錯誤碼都有案例或寫明不在範疇",
+    )
     args = parser.parse_args()
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
@@ -397,6 +477,83 @@ def main() -> int:
                     reason = f"指到的案例驗證方式是 {kinds},不是 📏 量測或 📏 人工;實跑案例要接真元件"
                 violations[R_DOUBLE].append({"item": item, "reason": reason})
 
+    # 11. 📏 案例的實跑時機
+    timed = 0
+    for case_id, header, cells in cases:
+        if "驗證方式" not in header or "副作用與護欄" not in header or len(cells) != len(header):
+            continue
+        if cells[header.index("驗證方式")] not in REAL_RUN_KINDS:
+            continue
+        timed += 1
+        guard = cells[header.index("副作用與護欄")].strip()
+        if not TIMING.match(guard):
+            violations[R_TIMING].append(
+                {"item": case_id, "reason": f"「副作用與護欄」要以「時機:節內」或「時機:整合」開頭,實際是「{guard[:30]}」;不花錢、不改外部狀態、不需本人在場寫節內,否則寫整合"}
+            )
+
+    # 12. 合約的操作 × 錯誤碼
+    rules = RULES + ([R_CONTRACT] if args.contracts else [])
+    violations.setdefault(R_CONTRACT, [])
+    pair_count = 0
+    if args.contracts:
+        if not args.contracts.is_dir():
+            print(f"錯誤: --contracts 指到的 {args.contracts} 不是資料夾。請給 spec package 底下的 contracts/。", file=sys.stderr)
+            return 2
+        docs: dict[str, object] = {}
+        catalog_rows: list[tuple[str, bool, list[tuple[str, str, set[str]]]]] = []
+        for header, rows in tables(catalog):
+            if "規格錨點" not in header or "寫法" not in header:
+                continue
+            at_anchor, at_writing = header.index("規格錨點"), header.index("寫法")
+            for cells in rows:
+                if len(cells) <= max(at_anchor, at_writing):
+                    continue
+                ops, missing = contract_ops(cells[at_anchor], args.contracts, docs)
+                for item in missing:
+                    violations[R_CONTRACT].append({"item": item, "reason": "受測操作表的規格錨點指到的操作在規格檔裡找不到;照規格檔的路徑與 method 或 operationId 寫"})
+                if ops:
+                    writing = cells[at_writing].strip()
+                    placeholder = "<" in writing
+                    catalog_rows.append((anchor(writing) if placeholder else writing, placeholder, ops))
+        covered: set[tuple[str, str, str]] = set()
+        for case_id, header, cells in cases:
+            at = header.index("受測操作") if "受測操作" in header else None
+            operation = cells[at] if at is not None and len(cells) > at else ""
+            targets: list[tuple[str, tuple[str, str, set[str]]]] = []
+            for segment in (part.strip() for part in operation.split("→")):
+                matches = [row for row in catalog_rows if row[0] and segment.startswith(row[0])]
+                if not matches:
+                    continue
+                longest = max(len(row[0]) for row in matches)
+                method = squash(segment.split("›", 1)[1]) if "›" in segment else ""
+                for prefix, placeholder, ops in (row for row in matches if len(row[0]) == longest):
+                    picked = [op for op in ops if squash(op[1]) == method] if len(ops) > 1 else ops
+                    targets += [(method, op) for op in picked]
+            if len({op[1] for _, op in targets}) == 1:
+                mentioned = set(ERROR_CODE.findall(" | ".join(cells)))
+                covered |= {(name, op_id, code) for _, (name, op_id, codes) in targets for code in codes & mentioned}
+                continue
+            # 一個案例串起好幾個操作時,錯誤碼只算給同一段(<br> 分隔)也寫到那個方法名的操作
+            for piece in " | ".join(cells).split("<br>"):
+                in_piece = set(ERROR_CODE.findall(piece))
+                flat = piece.replace("`", "").replace("_", "").lower()
+                for method, (name, op_id, codes) in targets:
+                    if method and method in flat:
+                        covered |= {(name, op_id, code) for code in codes & in_piece}
+        required_pairs = sorted({(name, op_id, code) for _, _, ops in catalog_rows for name, op_id, codes in ops for code in codes})
+        pair_count = len(required_pairs)
+        for name, op_id, code in required_pairs:
+            if (name, op_id, code) in covered:
+                continue
+            if any(code in row[0] and op_id in row[0] and len(row) >= 3 and row[1] and row[2] for row in excluded_rows):
+                continue
+            violations[R_CONTRACT].append(
+                {
+                    "item": f"{name} {op_id} × {code}",
+                    "reason": f"沒有案例的受測操作對到 {op_id} 而且寫到 {code};補案例,或在「不在本次範疇」表寫一列同時寫到 `{code}` 與 `{op_id}`,並寫為什麼不測與之後怎麼驗",
+                }
+            )
+
     scope_text = "全部故事" if full_scope else "故事 " + "、".join(str(n) for n in sorted(in_scope_stories))
     evidence = {
         R_REQ: f"範疇({scope_text})內的 {len(required)} 條 FR/NFR/SC 都在需求覆蓋表,且各有案例或明確不在範疇",
@@ -409,6 +566,8 @@ def main() -> int:
         R_VERIFY: f"{sum(1 for _, h, _ in cases if '驗證方式' in h)} 個非功能與全域案例的驗證方式都是三種之一",
         R_NFR: f"範疇內 {len(required_nfrs)} 條 NFR 都有標明驗證方式的案例",
         R_DOUBLE: f"待測端點表的 {doubles} 個替身都指到 📏 實跑案例或寫明無法實跑",
+        R_TIMING: f"{timed} 個 📏 案例的副作用與護欄都以實跑時機開頭",
+        R_CONTRACT: f"受測操作表指到的合約操作共 {pair_count} 組操作 × 錯誤碼,都有案例或寫明不在範疇",
     }
     checks = [
         {
@@ -417,9 +576,9 @@ def main() -> int:
             "evidence": "" if violations[rule] else evidence[rule],
             "violations": violations[rule],
         }
-        for rule in RULES
+        for rule in rules
     ]
-    total = sum(len(v) for v in violations.values())
+    total = sum(len(violations[rule]) for rule in rules)
     passed = total == 0
     print(f"檢查了 {len(cases)} 個案例、{doubles} 個替身與範疇({scope_text})內 {len(required)} 條需求,{total} 個不符項")
     print(json.dumps({"spec": str(args.spec), "plan": str(args.plan), "passed": passed, "checks": checks}, ensure_ascii=False, indent=2))
