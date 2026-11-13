@@ -20,7 +20,7 @@ description: 跑完 /testplan、要依測試計劃與系統分析的產出拆實
 
 ## Phase 3: 確認任務清單
 1. Ask **提出任務清單與新登記的待決問題**,問使用者每一題怎麼決定、任務要不要修改。
-2. Write 把使用者的決定**寫回 plan.md 與 tasks.md**;若改動了任務 → 跳至 Phase 2 Step 5。
+2. Write 依 `rules/決定-規範.md` 把使用者的決定**寫回 plan.md 與 tasks.md**;若決定和 spec.md、規格檔或先前的決定矛盾 → 跳至 Phase 3 Step 1;若改動了任務 → 跳至 Phase 2 Step 5。
 3. Report **交出 tasks.md**,附上憲法的對照結果:路徑、每個 phase 的任務數與每個端點節的任務數,以及下一步跑 `/analyze`。
 
 <details open>
@@ -47,7 +47,8 @@ flowchart TD
     subgraph P3["Phase 3: 確認任務清單"]
         P3S1["1. Ask：提出任務清單<br/>與新登記的待決問題"]
         P3S2["2. Write：寫回 plan.md 與 tasks.md"]
-        G_P3S2_1{"改動了任務？"}
+        G_P3S2_1{"決定和 spec.md、規格<br/>檔或先前的決定矛盾？"}
+        G_P3S2_2{"改動了任務？"}
         P3S3["3. Report：交出 tasks.md"]
     end
     End["結束"]
@@ -68,8 +69,10 @@ flowchart TD
     G_P2S6_1 -->|否| P3S1
     P3S1 --> P3S2
     P3S2 --> G_P3S2_1
-    G_P3S2_1 -->|是| P2S5
-    G_P3S2_1 -->|否| P3S3
+    G_P3S2_1 -->|是| P3S1
+    G_P3S2_1 -->|否| G_P3S2_2
+    G_P3S2_2 -->|是| P2S5
+    G_P3S2_2 -->|否| P3S3
     P3S3 --> End
 ```
 </details>

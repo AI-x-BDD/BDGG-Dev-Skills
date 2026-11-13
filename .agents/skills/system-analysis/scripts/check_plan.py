@@ -7,7 +7,7 @@
 檢查項目:端點編號不重複、沿用前一次迭代的編號且個數和敘述一致、每個端點在波段表恰好出現一次、步驟與 wave 的編號、
 「Planner」欄只有四支 planner 或「無合適的 planner」、「平行」欄和同一波的步驟一致、結尾的總數、
 Documentation 樹裡每一支指派的 planner 都有產出且步驟、端點與檔案種類對得上、同一波不共用產出路徑、
-「待決問題」表的編號與步驟都存在(「提出的步驟」可以是 S<步驟>、tasks、testplan 或 implement T<編號>(編號可帶小寫字尾,例如 T122b))、
+「待決問題」表的編號與步驟都存在;寫「取代 Q<n>:」的題目,Q<n> 在它前面且註明「已被 Q<新> 取代」(「提出的步驟」可以是 S<步驟>、tasks、testplan 或 implement T<編號>(編號可帶小寫字尾,例如 T122b))、
 Documentation 樹列出的產出檔裡引用的待決問題都登記在表裡,以及(給了 --spec 時)需求出處的編號都在 spec.md 裡。
 給了 --previous-plan 時,同名端點要沿用前一次的編號、新端點接在最大編號之後;沒給時端點要從 E1 連號。
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
@@ -256,6 +256,21 @@ def main() -> int:
                     bad(R_QUESTIONS, f"Q{m.group(1)} 的「擋住」欄是「{blocked}」,要是波段表裡的步驟或「—」", number)
         if not m.group(5).strip():
             bad(R_QUESTIONS, f"Q{m.group(1)} 的「決定」欄是空的,還沒決定要寫「待決」", number)
+
+    # 取代先前決定的題目:引用的題目要存在、編號比自己小,而且被取代的那一題註明了「已被 Q<新> 取代」
+    decided = {int(m.group(1)): m.group(5) for _, l in question_rows if (m := QUESTION_ROW.match(l))}
+    for number, line in question_rows:
+        m = QUESTION_ROW.match(line)
+        if not m:
+            continue
+        replace = re.match(r"\s*(?:\*\*)?取代 Q(\d+)[::]", m.group(3))
+        if not replace:
+            continue
+        new_q, old_q = int(m.group(1)), int(replace.group(1))
+        if old_q not in decided or old_q >= new_q:
+            bad(R_QUESTIONS, f"Q{new_q} 寫「取代 Q{old_q}」,但 Q{old_q} 不在它前面;取代的對象要是表裡更早的一題", number)
+        elif f"已被 Q{new_q} 取代" not in decided[old_q]:
+            bad(R_QUESTIONS, f"Q{new_q} 取代 Q{old_q},但 Q{old_q} 的「決定」欄沒有註明「(已被 Q{new_q} 取代)」;原文保留,在後面加上這句", number)
 
     # 規格檔引用的待決問題
     registered = {int(m.group(1)) for _, l in question_rows if (m := QUESTION_ROW.match(l))}
