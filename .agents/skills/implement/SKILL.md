@@ -26,7 +26,9 @@ description: 要依 tasks.md 開始寫程式、把拆好的任務實作出來時
 9. Delegate 執行 `uv run scripts/check_phase.py --tasks <tasks.md 的路徑> --phase <phase 序號> --plan <plan.md 的路徑>` **取得勾選與待決問題表的檢查結果**,描述開頭標 ⏸ 的延後任務列在 `paused_tasks`、不算沒勾;若有沒勾、也沒停下的任務,或待決問題表有格式不符的列 → 跳至 Phase 2 Step 4。
 10. Ask 依骨架 `templates/Checkpoint報告.md` 與範例 `templates/Checkpoint報告.example.md` **提出 Checkpoint 報告**,問使用者要手動確認的項目過了沒有、這個 phase 登記的待決問題怎麼決定、可不可以往下做。
 11. Write 把使用者的決定**寫回 plan.md 的待決問題**。
-12. Delegate 轉交 git-conventional-commit **commit 寫回決定的 plan.md**;若有停下的任務、手動確認沒過或範圍內還有下一個 phase → 跳至 Phase 2 Step 1。
+12. Delegate 轉交 testplan **補上決定要補的測試案例**;若這次的決定沒有要補案例 → 跳至 Phase 2 Step 14。
+13. Delegate 轉交 tasks **補上新案例的任務**。
+14. Delegate 轉交 git-conventional-commit **commit 寫回決定的 plan.md** 與補上的 testplan.md、tasks.md;若有停下的任務、手動確認沒過、補了任務或範圍內還有下一個 phase → 跳至 Phase 2 Step 1。
 
 ## Phase 3: 交出完成報告
 1. Think **對過範圍內每條 SC 的量測結果**:有數字的寫出數字,量不到的標未驗證。
@@ -66,8 +68,11 @@ flowchart TD
         G_P2S9_1{"有沒勾、也沒停下的<br/>任務,或待決問題表<br/>有格式不符的列？"}
         P2S10["10. Ask：提出 Checkpoint 報告"]
         P2S11["11. Write：寫回 plan.md 的待決問題"]
-        P2S12["12. Delegate：commit<br/>寫回決定的 plan.md"]
-        G_P2S12_1{"有停下的任務、手動<br/>確認沒過或範圍內還<br/>有下一個 phase？"}
+        P2S12["12. Delegate：補上決定要補的測試案例"]
+        G_P2S12_1{"這次的決定沒有要補案例？"}
+        P2S13["13. Delegate：補上新案例的任務"]
+        P2S14["14. Delegate：commit<br/>寫回決定的 plan.md"]
+        G_P2S14_1{"有停下的任務、手動確認<br/>沒過、補了任務或範圍內<br/>還有下一個 phase？"}
     end
     subgraph P3["Phase 3: 交出完成報告"]
         P3S1["1. Think：對過範圍內<br/>每條 SC 的量測結果"]
@@ -109,8 +114,12 @@ flowchart TD
     P2S10 --> P2S11
     P2S11 --> P2S12
     P2S12 --> G_P2S12_1
-    G_P2S12_1 -->|是| P2S1
-    G_P2S12_1 -->|否| P3S1
+    G_P2S12_1 -->|是| P2S14
+    G_P2S12_1 -->|否| P2S13
+    P2S13 --> P2S14
+    P2S14 --> G_P2S14_1
+    G_P2S14_1 -->|是| P2S1
+    G_P2S14_1 -->|否| P3S1
     P3S1 --> P3S2
     P3S2 --> End
 ```
@@ -120,18 +129,27 @@ sequenceDiagram
     actor User
     participant Main as implement
     participant Sub_1 as git-conventional-commit commit 驗收過的一組任務
-    participant Sub_2 as git-conventional-commit commit 寫回決定的 plan.md
-    Note over User,Sub_2: Phase 1: 確認執行計畫
+    participant Sub_2 as testplan 補上決定要補的測試案例
+    participant Sub_3 as tasks 補上新案例的任務
+    participant Sub_4 as git-conventional-commit commit 寫回決定的 plan.md 與補上的 testplan.md
+    participant Sub_5 as tasks.md
+    Note over User,Sub_5: Phase 1: 確認執行計畫
     Main->>User: 6. Ask：提出執行計畫與還沒決定的待決問題
     User-->>Main: 回覆確認
-    Note over User,Sub_2: Phase 2: 做完一個 phase
+    Note over User,Sub_5: Phase 2: 做完一個 phase
     Main->>Sub_1: 7. Delegate：commit 驗收過的一組任務
     Sub_1-->>Main: 完成並交回產出
     Main->>User: 10. Ask：提出 Checkpoint 報告
     User-->>Main: 回覆確認
-    Main->>Sub_2: 12. Delegate：commit 寫回決定的 plan.md
+    Main->>Sub_2: 12. Delegate：補上決定要補的測試案例
     Sub_2-->>Main: 完成並交回產出
-    Note over User,Sub_2: Phase 3: 交出完成報告
+    Main->>Sub_3: 13. Delegate：補上新案例的任務
+    Sub_3-->>Main: 完成並交回產出
+    Main->>Sub_4: 14. Delegate：commit 寫回決定的 plan.md
+    Sub_4-->>Main: 完成並交回產出
+    Main->>Sub_5: 14. Delegate：commit 寫回決定的 plan.md
+    Sub_5-->>Main: 完成並交回產出
+    Note over User,Sub_5: Phase 3: 交出完成報告
     Main->>User: 2. Report：交出完成報告
 ```
 </details>

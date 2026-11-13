@@ -5,7 +5,7 @@
 """檢查一份 tasks.md 的錨點與介面覆蓋。
 
 檢查項目:
-  任務編號      T 編號從 T001 起連號、不重複;一個編號可以拆成帶小寫字尾的子任務(T003a、T003b,跨 repo 各一個),
+  任務編號      T 編號依數字排序後從 T001 起不跳號、不重複,檔案裡的先後不限(補任務時新編號放進所屬的節);一個編號可以拆成帶小寫字尾的子任務(T003a、T003b,跨 repo 各一個),
                 字尾從 a 起連續,拆了就不再同時寫不帶字尾的同號任務
   錨點          每個 ⚙ 與 📎 的引用都寫成 `檔案` § 錨點,不只寫檔名
   ⚙ 錨點存在    ⚙ 指到的規格檔在 spec package 裡,錨點(operation、path、schema、Table、data-state、#id、.class、
@@ -21,7 +21,8 @@
                 不標步驟的任務只在 Setup
   紅綠成對      testplan.md 每個行為測試案例都有同一個三位數的 a(🔴)與 b(🟢),兩個的 🧪 都只指到這個案例
   量測任務      testplan.md 驗證方式為 📏 的每個案例,都有一個 📏 任務的 🧪 指到它
-  重構任務      每個有 🟢 任務的節(### 標題,沒有 ### 時是整個 phase)恰好有一個 🔵,排在這一節最後一個 🟢 之後
+  重構任務      每個有 🟢 任務的節(### 標題,沒有 ### 時是整個 phase),最後一個 🟢 之後有一個 🔵;補任務時節尾可以再接
+                一組 🟢 與一個 🔵,每個 🔵 前面都要有還沒重構過的 🟢
   🧪 引用       🔴、🟢、🔵、📏 任務都有 🧪,引用的案例 ID(X~Y 展開成範圍)都在 testplan.md 裡
 結果以 JSON 寫到 stdout;有任何一項不過時 exit code 是 1。
 """
@@ -66,7 +67,7 @@ PLAN_ID = re.compile(r"\bQ(\d+)\b")
 OPEN = "(("
 CLOSE = "))"
 
-C_IDS = "任務編號從 T001 起連號、不重複"
+C_IDS = "任務編號從 T001 起不跳號、不重複"
 C_ANCHOR = "每個 ⚙ 與 📎 的引用都寫到錨點"
 C_GEAR = "⚙ 的錨點在規格檔裡找得到"
 C_CLIP = "📎 的編號在依據文件裡找得到"
@@ -76,7 +77,7 @@ C_SC = "每條 SC 都在 SC 量測表上,量測任務存在、量測條件有寫
 C_STEP = "故事與全域任務都標了步驟,不標步驟的只在 Setup"
 C_PAIR = "每個行為測試案例都有同一個三位數的紅燈 a 與綠燈 b"
 C_MEASURE = "每個量測案例都有量測任務"
-C_REFACTOR = "每個有綠燈任務的節恰好有一個重構任務,排在最後一個綠燈之後"
+C_REFACTOR = "每個有綠燈任務的節,最後一個綠燈之後有重構任務,每個重構任務前面都有綠燈"
 C_FLASK = "步驟任務都有 🧪,引用的案例都在 testplan.md 裡"
 CHECKS = [C_IDS, C_ANCHOR, C_GEAR, C_CLIP, C_COVER, C_ROW, C_SC]
 PLAN_CHECKS = [C_STEP, C_PAIR, C_MEASURE, C_REFACTOR, C_FLASK]
@@ -463,11 +464,12 @@ def main() -> int:
                 else:
                     bad(C_GEAR, number, reference, f"{current} 的 ⚙ 錨點 `{anchor}` 在 `{resolved}` 裡找不到")
 
+    # 編號依數字排序後檢查連號;檔案裡的先後不限(補任務時新編號放進所屬的節,既有編號不動)
     previous: str | None = None
-    for index, task_id in enumerate(order, start=1):
+    for index, task_id in enumerate(sorted(order, key=lambda t: (int(t[1:4]), t[4:])), start=1):
         allowed = next_task_ids(previous)
         if task_id not in allowed:
-            bad(C_IDS, tasks[task_id]["line"], task_id, f"第 {index} 個任務應該是 {' 或 '.join(allowed)},實際是 {task_id}")
+            bad(C_IDS, tasks[task_id]["line"], task_id, f"編號排序後第 {index} 個應該是 {' 或 '.join(allowed)},實際是 {task_id};編號要從 T001 起不跳號,補的任務從最大編號 +1 起取號")
             break
         previous = task_id
 
@@ -574,15 +576,23 @@ def main() -> int:
                 for t in refactors:
                     bad(C_REFACTOR, tasks[t]["line"], t, f"「{name}」沒有任何綠燈任務,不該有重構任務 {t}")
                 continue
-            if len(refactors) != 1:
-                bad(C_REFACTOR, tasks[greens[-1]]["line"], name, f"「{name}」有 {len(greens)} 個綠燈任務,重構任務卻有 {len(refactors)} 個;要恰好一個")
-            elif ids.index(refactors[0]) < ids.index(greens[-1]):
-                bad(C_REFACTOR, tasks[refactors[0]]["line"], refactors[0], f"{refactors[0]} 排在「{name}」最後一個綠燈 {greens[-1]} 之前")
+            # 照檔案順序走:每個重構任務前面要有還沒被重構過的綠燈;最後一個綠燈之後要有重構任務。
+            # 補任務時,節尾會接一組新的紅綠燈與一個新的重構任務,所以一節可以有不只一個重構任務
+            pending = 0
+            for t in ids:
+                if tasks[t]["step"] == "green":
+                    pending += 1
+                elif tasks[t]["step"] == "refactor":
+                    if pending == 0:
+                        bad(C_REFACTOR, tasks[t]["line"], t, f"{t} 前面沒有還沒重構過的綠燈任務;「{name}」的重構任務要接在一組綠燈之後")
+                    pending = 0
+            if pending:
+                bad(C_REFACTOR, tasks[greens[-1]]["line"], name, f"「{name}」最後一個綠燈 {greens[-1]} 之後沒有重構任務")
 
     behavior = sum(1 for k in cases.values() if k == "behavior")
     measure = len(cases) - behavior
     evidence = {
-        C_IDS: f"{len(order)} 個任務從 T001 連號到 {order[-1] if order else 'T000'}",
+        C_IDS: f"{len(order)} 個任務的編號從 T001 到 {max(order, key=lambda t: (int(t[1:4]), t[4:])) if order else 'T000'} 不跳號、不重複",
         C_ANCHOR: "每個 ⚙ 與 📎 的引用都有 § 錨點",
         C_GEAR: f"{sum(len(t['gear']) for t in tasks.values())} 個 ⚙ 錨點都在規格檔裡找得到",
         C_CLIP: "📎 引用的 FR / NFR / SC、R、Q 編號都找得到",
@@ -592,7 +602,7 @@ def main() -> int:
         C_STEP: f"{sum(1 for t in tasks.values() if t['step'])} 個任務標了步驟,其餘 {sum(1 for t in tasks.values() if not t['step'])} 個都在 Setup",
         C_PAIR: f"testplan.md 的 {behavior} 個行為測試案例都有一組紅綠任務",
         C_MEASURE: f"testplan.md 的 {measure} 個量測案例都有量測任務",
-        C_REFACTOR: "每個有綠燈任務的節都恰好有一個重構任務,排在最後一個綠燈之後",
+        C_REFACTOR: "每個有綠燈任務的節,最後一個綠燈之後都有重構任務,每個重構任務前面都有綠燈",
         C_FLASK: "每個步驟任務的 🧪 都指到 testplan.md 裡的案例",
     }
     if args.testplan:
