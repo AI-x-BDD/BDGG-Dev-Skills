@@ -1,6 +1,6 @@
 ---
 name: deploy-plan
-description: 要分析這個功能怎麼部署、對外開哪些 port 與路徑,手上已經有功能規格或 plan.md 指派了部署這一步時,用這支 Skill 從需求與前幾步的規格檔盤點要跑的服務、對外入口與要掛載的檔案,交出通過驗證、可以直接交付的 compose.yaml 與它用到的 Dockerfile、.env.example、反向代理設定;使用者提到部署、deploy、docker compose、compose.yaml、Dockerfile、反向代理、reverse proxy、port、上線時使用。(未驗證)
+description: 要分析這個功能怎麼部署、對外開哪些 port 與路徑,手上已經有功能規格或 plan.md 指派了部署這一步時,用這支 Skill 從需求與前幾步的規格檔盤點要跑的服務、對外入口與要掛載的檔案,交出通過驗證、可以直接交付的 compose.yaml 與它用到的 Dockerfile、.env.example、反向代理設定;使用者提到部署、deploy、docker compose、compose.yaml、Dockerfile、反向代理、reverse proxy、port、上線時使用。
 ---
 
 # SOP

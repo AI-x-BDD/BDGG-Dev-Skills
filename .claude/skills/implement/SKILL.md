@@ -1,6 +1,6 @@
 ---
 name: implement
-description: 要依 tasks.md 開始寫程式、把拆好的任務實作出來時,用這支 Skill 確認範圍與待決問題,依 phase 由主 agent 與每個端點的 subagent 實作,逐一以 ⚙ 錨點與測試驗收、勾選並 commit,每個 Checkpoint 停下來交給使用者確認;使用者提到 implement、實作、開始寫程式、照 tasks 做、執行任務、speckit implement、開發這個功能時使用。(未驗證)
+description: 要依 tasks.md 開始寫程式、把拆好的任務實作出來時,用這支 Skill 確認範圍與待決問題,依 phase 由主 agent 與每個端點的 subagent 實作,逐一以 ⚙ 錨點與測試驗收、勾選並 commit,每個 Checkpoint 停下來交給使用者確認;使用者提到 implement、實作、開始寫程式、照 tasks 做、執行任務、speckit implement、開發這個功能時使用。
 ---
 
 # SOP

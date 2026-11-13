@@ -1,6 +1,6 @@
 ---
 name: trunk-based-development
-description: 開始做一個功能、要切分支或決定分支策略、要合併或推送到 remote、修復 production bug 或處理多日變更時,用這支 Skill 依主幹式開發(Trunk-Based Development)規範切分、驗證並整合程式碼;使用者提到主幹開發、trunk-based development、TBD、開 branch、開 PR、merge、push、切分支、長期分支、feature flag、branch by abstraction 時使用。(未驗證)
+description: 開始做一個功能、要切分支或決定分支策略、要合併或推送到 remote、修復 production bug 或處理多日變更時,用這支 Skill 依主幹式開發(Trunk-Based Development)規範切分、驗證並整合程式碼;使用者提到主幹開發、trunk-based development、TBD、開 branch、開 PR、merge、push、切分支、長期分支、feature flag、branch by abstraction 時使用。
 ---
 
 # SOP

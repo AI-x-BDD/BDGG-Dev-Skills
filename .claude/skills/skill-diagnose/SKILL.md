@@ -1,6 +1,6 @@
 ---
 name: skill-diagnose
-description: 既有 Skill 產出不符預期、有多種可疑原因無法確定、或 agent 宣稱完成卻漏做時,用這支 Skill 透過假說反證矩陣、transcript 採證與最小切片對照實驗找出真正根因;使用者提到排查原因、除錯、debug skill、為什麼漏做、找出根因、假說排除、對照實驗時使用。(未驗證)
+description: 既有 Skill 產出不符預期、有多種可疑原因無法確定、或 agent 宣稱完成卻漏做時,用這支 Skill 透過假說反證矩陣、transcript 採證與最小切片對照實驗找出真正根因;使用者提到排查原因、除錯、debug skill、為什麼漏做、找出根因、假說排除、對照實驗時使用。
 ---
 
 # SOP

@@ -1,6 +1,6 @@
 ---
 name: artifact-to-skill-engineering
-description: 手上有一份別人的 artifact 或規格格式、想做一支能穩定產出同款 artifact 的 Skill 時,用這支 Skill 先把參考範例客製化到滿意,再抽成骨架與範例,最後交給 skill-engineering 後設出 SOP 與規則;使用者提到 artifact、照這個範例做一支 skill、從範例反推 skill、抽樣板、artifact to skill 時使用。(未驗證)
+description: 手上有一份別人的 artifact 或規格格式、想做一支能穩定產出同款 artifact 的 Skill 時,用這支 Skill 先把參考範例客製化到滿意,再抽成骨架與範例,最後交給 skill-engineering 後設出 SOP 與規則;使用者提到 artifact、照這個範例做一支 skill、從範例反推 skill、抽樣板、artifact to skill 時使用。
 ---
 
 # SOP

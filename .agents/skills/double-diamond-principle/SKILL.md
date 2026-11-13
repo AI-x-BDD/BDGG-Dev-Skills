@@ -1,6 +1,6 @@
 ---
 name: double-diamond-principle
-description: 收到新的功能需求、需求模糊或有多種解讀、要在多個方案之間做選擇、或動手寫程式之前,用這支 Skill 依雙鑽石(Double Diamond)流程走過探查問題現況(Discover)、確立問題簡報(Define)、比較候選方案(Develop)與交付驗收成果(Deliver);使用者提到幫我開發、幫我做一個、我想加一個功能、這個要怎麼設計、雙鑽石、double diamond、需求探索、問題定義、先釐清需求時使用。(未驗證)
+description: 收到新的功能需求、需求模糊或有多種解讀、要在多個方案之間做選擇、或動手寫程式之前,用這支 Skill 依雙鑽石(Double Diamond)流程走過探查問題現況(Discover)、確立問題簡報(Define)、比較候選方案(Develop)與交付驗收成果(Deliver);使用者提到幫我開發、幫我做一個、我想加一個功能、這個要怎麼設計、雙鑽石、double diamond、需求探索、問題定義、先釐清需求時使用。
 ---
 
 # SOP

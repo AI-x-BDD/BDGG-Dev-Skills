@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: 要先寫測試再寫程式、用測試驅動新增功能或修 bug 時,用這支 Skill 先和使用者確認要測的接縫,再一次一個切片走紅燈到綠燈、在綠燈下重構,每個測試只透過公開介面驗證行為;呼叫方指定紅燈、綠燈或重構與 testplan.md 的案例時,只做那一步、接縫取自 testplan;使用者提到 TDD、測試驅動、test-first、先寫測試、紅綠燈、red-green-refactor、整合測試、integration test 時使用。(未驗證)
+description: 要先寫測試再寫程式、用測試驅動新增功能或修 bug 時,用這支 Skill 先和使用者確認要測的接縫,再一次一個切片走紅燈到綠燈、在綠燈下重構,每個測試只透過公開介面驗證行為;呼叫方指定紅燈、綠燈或重構與 testplan.md 的案例時,只做那一步、接縫取自 testplan;使用者提到 TDD、測試驅動、test-first、先寫測試、紅綠燈、red-green-refactor、整合測試、integration test 時使用。
 ---
 
 # SOP

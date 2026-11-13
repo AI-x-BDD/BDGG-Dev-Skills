@@ -1,6 +1,6 @@
 ---
 name: data-plan
-description: 要分析資料庫要存什麼、手上已經有功能規格或 plan.md 指派了資料庫這一步時,用這支 Skill 從需求與前一波的 API 規格盤點要持久化的實體,定下表、欄位、關聯與約束,交出通過驗證、可以直接交付的 DBML 檔;使用者提到資料庫設計、資料模型、資料表設計、schema、DBML、ER 圖、ERD、data model 時使用。(未驗證)
+description: 要分析資料庫要存什麼、手上已經有功能規格或 plan.md 指派了資料庫這一步時,用這支 Skill 從需求與前一波的 API 規格盤點要持久化的實體,定下表、欄位、關聯與約束,交出通過驗證、可以直接交付的 DBML 檔;使用者提到資料庫設計、資料模型、資料表設計、schema、DBML、ER 圖、ERD、data model 時使用。
 ---
 
 # SOP

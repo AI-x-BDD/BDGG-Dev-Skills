@@ -1,6 +1,6 @@
 ---
 name: git-conventional-commit
-description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交前把不相關的變更拆成不同的 commit。只要準備執行 git commit、要寫或改寫 commit message、要決定 type 或 scope、要判斷是不是 breaking change、手上有一堆混在一起的 diff 要整理、要 revert / amend / squash,或使用者說「幫我 commit」「提交」「寫 commit 訊息」「切 commit」「commit 一下」,都先讀這支 skill —— 即使使用者完全沒提到 Conventional Commits 也一樣。(未驗證)
+description: 依 Conventional Commits 1.0.0 寫 git commit 訊息,並在提交前把不相關的變更拆成不同的 commit。只要準備執行 git commit、要寫或改寫 commit message、要決定 type 或 scope、要判斷是不是 breaking change、手上有一堆混在一起的 diff 要整理、要 revert / amend / squash,或使用者說「幫我 commit」「提交」「寫 commit 訊息」「切 commit」「commit 一下」,都先讀這支 skill —— 即使使用者完全沒提到 Conventional Commits 也一樣。
 ---
 
 # SOP

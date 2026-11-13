@@ -1,6 +1,6 @@
 ---
 name: testplan
-description: 跑完 /system-analysis、要在 /tasks 之前替功能規格定好測試計劃時,用這支 Skill 照 plan.md 的端點盤點與規格檔列出待測端點,再以使用者故事為單位、依端點與跨端點驗收寫出 FR 與 NFR 的假如/當/則測試案例,跨故事的 NFR 整理成全域測試區,交出通過需求覆蓋檢查、可交給 /tasks 的 specs/<功能>/testplan.md;使用者提到 testplan、測試計劃、測試計畫、test plan、測試情境、測試案例、test case、NFR 驗證、先規劃測試時使用。(未驗證)
+description: 跑完 /system-analysis、要在 /tasks 之前替功能規格定好測試計劃時,用這支 Skill 照 plan.md 的端點盤點與規格檔列出待測端點,再以使用者故事為單位、依端點與跨端點驗收寫出 FR 與 NFR 的假如/當/則測試案例,跨故事的 NFR 整理成全域測試區,交出通過需求覆蓋檢查、可交給 /tasks 的 specs/<功能>/testplan.md;使用者提到 testplan、測試計劃、測試計畫、test plan、測試情境、測試案例、test case、NFR 驗證、先規劃測試時使用。
 ---
 
 # SOP

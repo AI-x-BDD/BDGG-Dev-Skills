@@ -1,6 +1,6 @@
 ---
 name: api-plan
-description: 要分析後端對外的 API(REST、WebSocket 訊息協定,或從 API 角度看第三方服務的介面)、手上已經有功能規格或 plan.md 指派了這一步時,用這支 Skill 從需求盤點操作與事件,交出通過驗證、可以直接交付的 OpenAPI 與 AsyncAPI 規格檔;使用者提到 API 設計、API 規劃、API contract、OpenAPI、Swagger、AsyncAPI、WebSocket 協定、訊息協定、REST API、endpoint 時使用。(未驗證)
+description: 要分析後端對外的 API(REST、WebSocket 訊息協定,或從 API 角度看第三方服務的介面)、手上已經有功能規格或 plan.md 指派了這一步時,用這支 Skill 從需求盤點操作與事件,交出通過驗證、可以直接交付的 OpenAPI 與 AsyncAPI 規格檔;使用者提到 API 設計、API 規劃、API contract、OpenAPI、Swagger、AsyncAPI、WebSocket 協定、訊息協定、REST API、endpoint 時使用。
 ---
 
 # SOP

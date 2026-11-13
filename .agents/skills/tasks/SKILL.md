@@ -1,6 +1,6 @@
 ---
 name: tasks
-description: 跑完 /testplan、要依測試計劃與系統分析的產出拆實作任務時,用這支 Skill 照 testplan.md 的使用者故事、端點節與跨端點驗收排出任務,每個行為測試案例一組 /tdd 紅燈與綠燈任務、每節一個 /tdd 重構任務、量測案例一個 📏 量測任務,每個任務以 🧪 指到案例、⚙ 綁到規格檔的錨點、📎 寫出依據,交出通過錨點、介面與案例覆蓋檢查的 tasks.md;使用者提到 tasks、tasks.md、任務清單、拆任務、實作任務、task breakdown、speckit tasks、工作分解時使用。(未驗證)
+description: 跑完 /testplan、要依測試計劃與系統分析的產出拆實作任務時,用這支 Skill 照 testplan.md 的使用者故事、端點節與跨端點驗收排出任務,每個行為測試案例一組 /tdd 紅燈與綠燈任務、每節一個 /tdd 重構任務、量測案例一個 📏 量測任務,每個任務以 🧪 指到案例、⚙ 綁到規格檔的錨點、📎 寫出依據,交出通過錨點、介面與案例覆蓋檢查的 tasks.md;使用者提到 tasks、tasks.md、任務清單、拆任務、實作任務、task breakdown、speckit tasks、工作分解時使用。
 ---
 
 # SOP
