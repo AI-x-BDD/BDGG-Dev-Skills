@@ -56,7 +56,7 @@ subagent E2:/home/dev/projects/colab-gpu-bridge(主 agent 同時在這裡跑 uv 
 - 每個 worktree 的 commit 驗收過之後,依端點序號由小到大,用 `git merge --ff-only` 合併回目前的分支;前一個合併之後,後面的分支先在它的 worktree 裡 `git rebase <目前的分支>` 再合併
 - rebase 或合併有衝突時,不自己挑一邊解;`git rebase --abort` 退回,停下這個端點節,在 Checkpoint 報告列出衝突的檔
 - 合併完成後,移除 worktree 與它的分支:`git worktree remove <路徑>`、`git branch -d impl/p<phase>-E<端點>`
-- 合併之後直接進 Checkpoint,不另外先跑一次全部測試;Checkpoint 的全部測試就是合併後的驗證
+- 合併之後不另外先跑一次全部測試;接著做主 agent 的任務(跨端點驗收要在主工作區看得到每個端點節的程式),這個 phase 的 Checkpoint 全部測試就是合併後的驗證
 - 為什麼:fast-forward 合併讓每一筆 commit 都保持驗收過的樣子;衝突時自己挑一邊,等於沒驗收就改了別人的程式;不移除 worktree,下一個 phase 開同名的分支會失敗;合併後先跑一次全部、Checkpoint 再跑一次,同一份程式跑兩次全部,colab-gpu-bridge 002 每次要 6 分鐘
 
 ## good example
