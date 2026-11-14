@@ -1,6 +1,6 @@
 # 道館四:AI x TDD Workflow
 
-[題目原文](題目.md)。作品是 [colab-gpu-bridge](https://github.com/YongRui0402/colab-gpu-bridge)(用 Colab 的 GPU 跑 Ollama,從區網呼叫;執行方式見其 README),跑了三次迭代(001~003)。
+[題目原文](題目.md)。繳交版本:tag [`task4-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task4-v1);這座道館的全部變更:[`task3-v1...task4-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/compare/task3-v1...task4-v1)。作品是 [colab-gpu-bridge](https://github.com/YongRui0402/colab-gpu-bridge)(用 Colab 的 GPU 跑 Ollama,從區網呼叫;執行方式見其 README),跑了三次迭代(001~003)。
 
 ## 完成條件
 
@@ -40,7 +40,7 @@ specify → clarify-over-specs → technical-research → system-analysis → te
 
 ## 第三題:改進
 
-從第二題的觀察紀錄(70 條)挑出問題,改寫 testplan、tdd、tasks、implement 與決定規範,**不新增 Skill**。對照[課程版](https://github.com/Waterball-Software-Academy/AI-x-BDD-Spec-Driven-100-Automation/tree/main/CH4-SDD-TDD-workflow/skills)(367d75a):下面三組共 12 項改動,10 項課程沒有,2 項(★)是在課程基礎上加嚴。
+從第二題的觀察紀錄(70 條)挑出問題,改寫 testplan、tdd、tasks、implement 與決定規範,**不新增 Skill**。對照課程版 `CH4-SDD-TDD-workflow/skills`(367d75a,課程 repo 僅限學員):下面三組共 12 項改動,10 項課程沒有,2 項(★)是在課程基礎上加嚴。
 
 ### 1. 測試計畫要逼出「替身驗不到的錯」
 
