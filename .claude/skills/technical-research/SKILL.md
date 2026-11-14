@@ -1,6 +1,6 @@
 ---
 name: technical-research
-description: 要依功能規格開始規劃實作、需要先研究技術選型與未知數時,用這支 Skill 依 spec.md 與使用者指定的技術方向列出研究項,逐項以實測、估算、查證或判斷取得證據並做出決策,交出通過結構檢查的 research.md 與總結技術堆疊的 techstack.md;使用者提到技術研究、技術選型、技術堆疊、tech stack、research.md、Phase 0、spike、可行性評估、先研究再規劃時使用。(未驗證)
+description: 要依功能規格開始規劃實作、需要先研究技術選型與未知數時,用這支 Skill 依 spec.md 與使用者指定的技術方向列出研究項,逐項以實測、估算、查證或判斷取得證據並做出決策,交出通過結構檢查的 research.md 與總結技術堆疊的 techstack.md;使用者提到技術研究、技術選型、技術堆疊、tech stack、research.md、Phase 0、spike、可行性評估、先研究再規劃時使用。
 ---
 
 # SOP

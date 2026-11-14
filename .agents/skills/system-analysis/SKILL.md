@@ -1,6 +1,6 @@
 ---
 name: system-analysis
-description: 要依功能規格與技術研究規劃並執行系統分析時,用這支 Skill 盤點涉及的技術端點(前端、後端、資料庫、第三方、硬體、手機、雲端)與各自對外的介面,排成可以平行分析的 wave,替每一步指派 ui-plan、data-plan、api-plan 或 deploy-plan,再一波一波交給 sub agent 執行,交出 plan.md 與各介面可以直接交付的規格檔和原型;使用者提到系統分析、system analysis、分析規劃、端點盤點、介面分析、wave、波段、平行分析、plan.md 時使用。(未驗證)
+description: 要依功能規格與技術研究規劃並執行系統分析時,用這支 Skill 盤點涉及的技術端點(前端、後端、資料庫、第三方、硬體、手機、雲端)與各自對外的介面,排成可以平行分析的 wave,替每一步指派 ui-plan、data-plan、api-plan 或 deploy-plan,再一波一波交給 sub agent 執行,交出 plan.md 與各介面可以直接交付的規格檔和原型;使用者提到系統分析、system analysis、分析規劃、端點盤點、介面分析、wave、波段、平行分析、plan.md 時使用。
 ---
 
 # SOP
@@ -24,7 +24,7 @@ description: 要依功能規格與技術研究規劃並執行系統分析時,用
 3. Write 依 `rules/待決問題-規範.md` 在 plan.md **登記待決問題**:每一題標出它擋住哪幾步。
 4. Delegate 執行 `uv run scripts/check_plan.py --plan <plan.md 的路徑> --spec <spec.md 的路徑>`(spec.md 註明建立在前一次迭代之上時,再加 `--previous-plan <前一次迭代的 plan.md 的路徑>`)**取得規格檔引用與待決問題表的檢查結果**;若有不過 → 跳至 Phase 3 Step 3;若有問題擋住下一波 → 跳至 Phase 3 Step 5;若還有下一波,或有理由欄依賴這一輪重做的步驟、已經完成的步驟 → 跳至 Phase 3 Step 1。
 5. Ask **提出還沒決定的待決問題**,問使用者每一題怎麼決定。
-6. Write **把使用者的決定寫回 plan.md**;若決定要改已經完成的產出,或還有下一波 → 跳至 Phase 3 Step 1。
+6. Write 依 `rules/決定-規範.md` **把使用者的決定寫回 plan.md**;若決定和 spec.md、規格檔或先前的決定矛盾 → 跳至 Phase 3 Step 5;若決定要改已經完成的產出,或還有下一波 → 跳至 Phase 3 Step 1。
 7. Report **交出所有產出**:每個檔的路徑,以及打開原型的方式。
 
 <details open>
@@ -61,7 +61,8 @@ flowchart TD
         G_P3S4_3{"還有下一波,或有理由<br/>欄依賴這一輪重做的步<br/>驟、已經完成的步驟？"}
         P3S5["5. Ask：提出還沒決定的待決問題"]
         P3S6["6. Write：把使用者的決定寫回 plan.md"]
-        G_P3S6_1{"決定要改已經完成的<br/>產出,或還有下一波？"}
+        G_P3S6_1{"決定和 spec.md、規格<br/>檔或先前的決定矛盾？"}
+        G_P3S6_2{"決定要改已經完成的<br/>產出,或還有下一波？"}
         P3S7["7. Report：交出所有產出"]
     end
     End["結束"]
@@ -98,8 +99,10 @@ flowchart TD
     G_P3S4_3 -->|否| P3S5
     P3S5 --> P3S6
     P3S6 --> G_P3S6_1
-    G_P3S6_1 -->|是| P3S1
-    G_P3S6_1 -->|否| P3S7
+    G_P3S6_1 -->|是| P3S5
+    G_P3S6_1 -->|否| G_P3S6_2
+    G_P3S6_2 -->|是| P3S1
+    G_P3S6_2 -->|否| P3S7
     P3S7 --> End
 ```
 </details>

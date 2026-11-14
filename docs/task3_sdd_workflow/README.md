@@ -38,7 +38,7 @@ specify → technical-research → system-analysis → verify-plan → tasks →
 | 任務拆解 | [tasks](../../.claude/skills/tasks/SKILL.md) |
 | 實作 | [implement](../../.claude/skills/implement/SKILL.md) |
 
-[deploy-plan](../../.claude/skills/deploy-plan/SKILL.md)補部署介面。[verify-plan](../../.claude/skills/verify-plan/SKILL.md)是第四題新增的真實環境驗收規劃。
+[deploy-plan](../../.claude/skills/deploy-plan/SKILL.md)補部署介面。[verify-plan](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task3-v1/.claude/skills/verify-plan/SKILL.md)是第四題新增的真實環境驗收規劃。
 
 ## 第二題:輔助 Skills
 
@@ -85,7 +85,7 @@ specify → technical-research → system-analysis → verify-plan → tasks →
 
 既有流程能規劃介面與任務,但缺少專門比較測試替身與真實元件差異的步驟,因此曾在最後瀏覽器驗收才發現導頁與 htmx 行為問題。
 
-新增的 [verify-plan](../../.claude/skills/verify-plan/SKILL.md)放在 system-analysis 之後、tasks 之前,讀取規格與分析產出,寫出真實元件、替身、樣本、操作、通過條件與副作用邊界。tasks 納入每一項實跑任務,analyze 一併交叉檢查。
+新增的 [verify-plan](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task3-v1/.claude/skills/verify-plan/SKILL.md)放在 system-analysis 之後、tasks 之前,讀取規格與分析產出,寫出真實元件、替身、樣本、操作、通過條件與副作用邊界。tasks 納入每一項實跑任務,analyze 一併交叉檢查。
 
 實際產出:[第五次迭代的 13 項驗收規劃](https://github.com/YongRui0402/watchlater-notes/blob/main/specs/005-correction-coverage/verify-plan.md)、[驗收結果與限制](https://github.com/YongRui0402/watchlater-notes/blob/main/specs/005-correction-coverage/research.md)。新增與優化的原因、預期、根因、修改與重跑結果保留在本 repo 的相關 commit 訊息。
 

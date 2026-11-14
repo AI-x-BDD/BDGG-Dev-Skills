@@ -1,6 +1,6 @@
 ---
 name: constitution
-description: 要替專案寫下或修改憲法、想約束 SDD 流程某個產出物(spec.md、OpenAPI、DBML、compose.yaml…)該長什麼樣子時,用這支 Skill 訪談使用者,只就這次需要的產出物寫出加嚴或取代 Skill 預設的條文,交出通過結構檢查的 `constitution/` 檔;使用者提到憲法、constitution、專案規範、產出物規範、API 風格、命名慣例、speckit constitution 時使用。(未驗證)
+description: 要替專案寫下或修改憲法、想約束 SDD 流程某個產出物(spec.md、OpenAPI、DBML、compose.yaml…)該長什麼樣子時,用這支 Skill 訪談使用者,只就這次需要的產出物寫出加嚴或取代 Skill 預設的條文,交出通過結構檢查的 `constitution/` 檔;使用者提到憲法、constitution、專案規範、產出物規範、API 風格、命名慣例、speckit constitution 時使用。
 ---
 
 # SOP

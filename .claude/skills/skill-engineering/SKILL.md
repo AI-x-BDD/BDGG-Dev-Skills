@@ -1,6 +1,6 @@
 ---
 name: skill-engineering
-description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出來的結果不滿意、要修改或優化它時,就必須使用此 Skill(未驗證)
+description: 要創建一支全新的 Skill,或使用者對既有 Skill 跑出來的結果不滿意、要修改或優化它時,就必須使用此 Skill
 ---
 
 # SOP

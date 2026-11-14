@@ -6,6 +6,8 @@
 
 範圍對齊:範圍碰到的 phase 一律整個納入,終點延到那個 phase 的 Checkpoint;因此多出來的任務列在 extended
 前置未完成:範圍第一個 phase 之前還沒勾選的任務列在 pending_before
+每個任務:step 是步驟標記(🔴 red、🟢 green、🔵 refactor、📏 measure,不標是 null),cases 是 🧪 指到的 testplan 案例 ID(X~Y 展開),
+         lane 是誰做:端點節(### E<序號> …)寫 `subagent E<序號>`,使用者故事的跨端點驗收節寫 `main-after-endpoints`,其餘寫 `main`
 同檔任務:這次要做的任務(範圍內與 pending_before)有兩個以上還沒勾選、描述裡寫了同一個檔案路徑的,列在 shared_files
 待決問題:範圍內任務的 📎 引用 plan.md § Q,而 plan.md 待決問題表的「決定」欄是 — 或空白的,列在 open_questions
 結果以 JSON 寫到 stdout;範圍寫錯或檔案讀不到時 exit code 是 2。
@@ -21,7 +23,11 @@ PHASE = re.compile(r"^## Phase (\d+):\s*(.+?)\s*$")
 STORY = re.compile(r"User Story (\d+)")
 SECTION = re.compile(r"^### (.+?)\s*$")
 SUBSECTION = re.compile(r"^#### (.+?)\s*$")
-TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b\s*(\[P\]\s*)?(\[US(\d+)\]\s*)?(.*)$")
+TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b\s*(?:\[P\]\s*)?(?:\[(?:US(\d+)|G)\]\s*)?(.*)$")
+STEPS = {"🔴": "red", "🟢": "green", "🔵": "refactor", "📏": "measure"}
+CASES_LINE = re.compile(r"^\s+- 🧪 (.*)$")
+CASE_ID = re.compile(r"((?:US\d+-[A-Z]+|G)-)(\d{2})(?:\s*[~～–]\s*(?:(?:US\d+-[A-Z]+|G)-)?(\d{2}))?")
+ENDPOINT_SECTION = re.compile(r"^E(\d+)\b")
 CLIP = re.compile(r"^\s+- 📎 (.*)$")
 CHECKPOINT = re.compile(r"^\*\*Checkpoint\*\*:\s*(.*)$")
 CODE = re.compile(r"`([^`]+)`")
@@ -60,6 +66,8 @@ def phase_kind(title: str) -> str:
         return "story"
     if lowered.startswith("polish"):
         return "polish"
+    if title.startswith("全域測試區"):
+        return "global"
     return "other"
 
 
@@ -84,6 +92,27 @@ def question_ids(clip: str) -> set[int]:
             ids.update(range(int(start), int(end) + 1))
         ids.update(int(q) for q in Q_ONE.findall(Q_RANGE.sub("", text)))
     return ids
+
+
+def case_ids(text: str) -> list[str]:
+    """取出 🧪 行裡的 testplan 案例 ID;`US5-BE-01~US5-BE-18` 這種範圍展開成每一個。"""
+    found: list[str] = []
+    for prefix, start, end in CASE_ID.findall(text):
+        for n in range(int(start), int(end or start) + 1):
+            case = f"{prefix}{n:02d}"
+            if case not in found:
+                found.append(case)
+    return found
+
+
+def lane_of(kind: str, section: str | None) -> str:
+    if kind == "story" and section:
+        endpoint = ENDPOINT_SECTION.match(section)
+        if endpoint:
+            return f"subagent E{endpoint.group(1)}"
+        if section.startswith("跨端點驗收"):
+            return "main-after-endpoints"
+    return "main"
 
 
 def parse_tasks(text: str) -> list[dict]:
@@ -125,10 +154,13 @@ def parse_tasks(text: str) -> list[dict]:
             continue
         task = TASK.match(line)
         if task:
-            mark, number, parallel, _, story, description = task.groups()
+            mark, number, story, description = task.groups()
+            step = next((name for icon, name in STEPS.items() if description.startswith(icon)), None)
             current_task = {
                 "id": f"T{number}",
-                "parallel": bool(parallel),
+                "step": step,
+                "cases": [],
+                "lane": lane_of(phase["kind"], section),
                 "story": f"US{story}" if story else None,
                 "section": section,
                 "subsection": subsection,
@@ -137,6 +169,10 @@ def parse_tasks(text: str) -> list[dict]:
                 "questions": [],
             }
             phase["tasks"].append(current_task)
+            continue
+        cases = CASES_LINE.match(line)
+        if cases and current_task:
+            current_task["cases"] = case_ids(cases.group(1))
             continue
         clip = CLIP.match(line)
         if clip and current_task:
@@ -190,13 +226,14 @@ def select_phases(phases: list[dict], scope: str | None) -> list[int]:
             hit = [i for i, p in enumerate(phases) if p["number"] == int(compact[5:])]
         elif re.fullmatch(r"us\d+", compact):
             hit = [i for i, p in enumerate(phases) if p["story"] == f"US{int(compact[2:])}"]
-        elif compact in ("setup", "foundational", "polish"):
-            hit = [i for i, p in enumerate(phases) if p["kind"] == compact]
+        elif compact in ("setup", "foundational", "polish", "global", "全域測試區", "全域"):
+            kind = "global" if compact in ("全域測試區", "全域") else compact
+            hit = [i for i, p in enumerate(phases) if p["kind"] == kind]
         elif re.fullmatch(r"t\d{1,3}[a-z]?", compact):
             wanted = task_id_of(compact)
             hit = [i for i, p in enumerate(phases) if any(t["id"] == wanted for t in p["tasks"])]
         else:
-            print(f"錯誤: --scope 裡的「{token}」看不懂。可以寫 `Phase 2`、`US1`、`T030`、`T001a`、`Setup`、`Foundational`、`Polish`,多個用逗號分開;省略代表全部。", file=sys.stderr)
+            print(f"錯誤: --scope 裡的「{token}」看不懂。可以寫 `Phase 2`、`US1`、`T030`、`T001a`、`Setup`、`Foundational`、`全域測試區`、`Polish`,多個用逗號分開;省略代表全部。", file=sys.stderr)
             sys.exit(2)
         if not hit:
             known = ", ".join(f"Phase {p['number']}" + (f"({p['story']})" if p["story"] else "") for p in phases)
@@ -210,7 +247,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--tasks", required=True, type=Path, help="tasks.md 的路徑")
     parser.add_argument("--plan", required=True, type=Path, help="plan.md 的路徑(讀它的「## 待決問題」表)")
-    parser.add_argument("--scope", help="這次要做的範圍:`Phase 2`、`US1`、`T030`、`Setup`、`Foundational`、`Polish`,多個用逗號分開;省略代表 tasks.md 的全部 phase")
+    parser.add_argument("--scope", help="這次要做的範圍:`Phase 2`、`US1`、`T030`、`Setup`、`Foundational`、`全域測試區`、`Polish`,多個用逗號分開;省略代表 tasks.md 的全部 phase")
     args = parser.parse_args()
 
     sys.stdout.reconfigure(encoding="utf-8")

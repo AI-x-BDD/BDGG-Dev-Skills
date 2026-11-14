@@ -1,6 +1,6 @@
 ---
 name: plan-with-class-diagram
-description: 寫程式之前,先用 Mermaid 類別圖提案這次開發的類別組織,使用者確認後才按圖依序開發。(未驗證)
+description: 寫程式之前,先用 Mermaid 類別圖提案這次開發的類別組織,使用者確認後才按圖依序開發。
 ---
 
 # SOP

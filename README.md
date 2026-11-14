@@ -1,6 +1,6 @@
 # BDGG-Dev-Skills
 
-我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 29 支。
+我在水球軟體學院《AI x BDD》課程做的 Agent Skills,目前 30 支。
 
 每一支都是同一種結構:`SKILL.md` 只放一段短的 SOP,規則、樣板與腳本拆成獨立的檔,走到用得到的那一步才載入。這個結構本身也由這裡的 Skill 把關,包含從產出物範例反推 Skill 的入口。
 
@@ -39,12 +39,14 @@ flowchart LR
 | [`trunk-based-development`](./.claude/skills/trunk-based-development/) | 把變更切小,本機建置通過後整合回 trunk,並確認 trunk 維持綠燈 |
 | [`git-conventional-commit`](./.claude/skills/git-conventional-commit/) | 把混在一起的變更拆成一筆一筆的 commit,依 Conventional Commits 1.0.0 寫訊息 |
 | [`plan-with-class-diagram`](./.claude/skills/plan-with-class-diagram/) | 寫程式之前先用 Mermaid 類別圖提案,確認後按圖實作 |
+| [`tdd`](./.claude/skills/tdd/) | 先和使用者確認要測的接縫,再一次一個切片走紅燈到綠燈、在綠燈下重構;也可以只做 tasks 指定的那一步 |
 
 前三支整理自公開的文獻,原文在這裡可以核對:
 
 - `double-diamond-principle`:Design Council 的 [Framework for Innovation](https://www.designcouncil.org.uk/resources/framework-for-innovation/) 與 [The Double Diamond](https://www.designcouncil.org.uk/resources/the-double-diamond/),以 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 授權。這支 Skill 是為軟體開發所做的轉譯,內容經過改寫,不代表 Design Council 的立場。
 - `trunk-based-development`:[trunkbaseddevelopment.com](https://trunkbaseddevelopment.com/)(作者 Paul Hammant 與貢獻者)。這支 Skill 是摘要與轉述,原文版權屬原作者。
 - `git-conventional-commit`:[Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/),以 [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) 授權;type 的定義另外參考 [Angular Commit Message Guidelines](https://github.com/angular/angular/blob/22b96b9/CONTRIBUTING.md#-commit-message-guidelines)。
+- `tdd`:改寫自 [mattpocock/skills](https://github.com/mattpocock/skills/tree/4ae2317ddb22b046e26455e4f9c9b3aaaf62212d/skills/engineering/tdd)(MIT,Copyright (c) 2026 Matt Pocock),出處見該 skill 的 `NOTICE.md`。
 
 改寫成 SOP 之前、逐頁標出處的版本留在 tag [`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1/.claude/skills)。
 
@@ -95,7 +97,7 @@ cp -r BDGG-Dev-Skills/.claude/skills/<Skill 名稱> <你的專案>/.claude/skill
 
 ## 驗證狀態
 
-各支的 `description` 仍標示「(未驗證)」。格式由檢查腳本把關;行為上實際跑過什麼、還沒跑過什麼,寫在各座道館的證據頁,不以格式通過宣稱全面驗證。
+道館四收尾時(2026-11-14),作者在實際使用過後拿掉了各支 `description` 的「(未驗證)」標記。格式由檢查腳本把關;行為上實際跑過什麼、還沒跑過什麼,寫在各座道館的證據頁,不以格式通過宣稱全面驗證。
 
 ## 交流
 

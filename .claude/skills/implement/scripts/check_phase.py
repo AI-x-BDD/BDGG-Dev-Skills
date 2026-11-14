@@ -6,12 +6,14 @@
 
 任務        這個 phase 的每個任務是否都勾成 [X];任務編號可以帶一個小寫字尾(T001a、T001b,跨 repo 拆出的子任務),
             T001、T001a、T001b 是不同的任務
-介面覆蓋    這個 phase 的介面覆蓋表,每一列的實作欄與測試欄寫的任務是否都勾了;
-            寫的是後面 phase 的任務時,那一列列在 deferred_rows(還沒輪到),不算不過
-⏸ 延後    描述開頭(在 [P]、[US1] 這類標籤之後)是 ⏸ 的未勾任務是排除或延後的任務,列在 paused_tasks,
+介面覆蓋    這個 phase 的介面覆蓋表,每一列的綠燈欄(實作)與紅燈欄(測試)寫的任務是否都勾了;
+            寫的是後面 phase 的任務時,那一列列在 deferred_rows(還沒輪到),不算不過;`T101a~T118a` 這種範圍展開成
+            tasks.md 裡編號介於兩端、字尾相同的每個任務
+案例覆蓋    這個 phase 的測試案例覆蓋表,每一列寫的紅燈、綠燈、重構或 📏 任務是否都勾了,沒勾的列在 open_case_rows
+⏸ 延後    描述開頭(在 [US1] 這類標籤與 🔴、🟢、🔵、📏 步驟標記之後)是 ⏸ 的未勾任務是排除或延後的任務,列在 paused_tasks,
             不算進 unchecked_tasks;覆蓋列沒勾的只有 ⏸ 任務時,那一列列在 paused_rows,不算不過
 待決問題    給了 --plan 時,plan.md「待決問題」表的每一列是否寫成
-            「| Q<序號> | S<步驟>、tasks 或 implement T<編號> | 問題 | 擋住 | 決定 |」;不符的列在 bad_question_rows
+            「| Q<序號> | S<步驟>、tasks、testplan 或 implement T<編號>(編號可帶小寫字尾,例如 T122b) | 問題 | 擋住 | 決定 |」;不符的列在 bad_question_rows
 結果以 JSON 寫到 stdout;這個 phase 或前面 phase 有沒勾的任務、覆蓋列,或待決問題表有不符的列時 exit code 是 1,
 參數或檔案有誤時是 2。
 """
@@ -27,11 +29,24 @@ TASK = re.compile(r"^- \[([ xX])\] T(\d{3}[a-z]?)\b\s*((?:\[[^\]]*\]\s*)*)(.*)$"
 PAUSED = "⏸"
 COVERAGE_HEADING = re.compile(r"^### 介面覆蓋[((](.+?)[))]")
 COVERAGE_ROW = re.compile(r"^\| (`.+?) \| (.*?) \| (.*?) \|$")
+CASE_HEADING = re.compile(r"^### 測試案例覆蓋[((](.+?)[))]")
+CASE_ROW = re.compile(r"^\| ((?:US\d+-[A-Z]+|G)-\d{2}.*?) \| (.*) \|$")
 TASK_ID = re.compile(r"T(\d{3}[a-z]?)(?![A-Za-z0-9])")
+TASK_RANGE = re.compile(r"T(\d{3})([a-z]?)\s*[~～–]\s*T(\d{3})([a-z]?)")
+STEP_MARK = re.compile(r"^(?:🔴|🟢|🔵|📏)[^::]*[::]\s*")
+
+
+def task_ids(cell: str, known: list[str]) -> list[str]:
+    """取出儲存格裡的任務編號;`T101a~T118a` 展開成 known 裡編號介於兩端、字尾相同的每個任務。"""
+    found: list[str] = []
+    for start, suffix, end, end_suffix in TASK_RANGE.findall(cell):
+        found += [t for t in known if int(start) <= int(t[1:4]) <= int(end) and t[4:] == suffix == end_suffix]
+    found += ["T" + i for i in TASK_ID.findall(TASK_RANGE.sub("", cell))]
+    return list(dict.fromkeys(found))
 QUESTION_HEADING = "## 待決問題"
 QUESTION_LINE = re.compile(r"\| Q\d")
-# 和 system-analysis 的 check_plan.py 同一個樣式:「提出的步驟」只能是一個 S<步驟>、tasks 或一個 implement T<編號>
-QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|implement T\d+) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
+# 和 system-analysis 的 check_plan.py 同一個樣式:「提出的步驟」只能是一個 S<步驟>、tasks、testplan 或一個 implement T<編號>(可帶小寫字尾)
+QUESTION_ROW = re.compile(r"^\| Q(\d+) \| (?:S(\d+)|tasks|testplan|implement T\d+[a-z]?) \|(.*)\|((?:\\.|[^|\\])*)\|((?:\\.|[^|\\])*)\|$")
 
 
 def main() -> int:
@@ -61,7 +76,8 @@ def main() -> int:
     phases: list[int] = []
     title = None
     current: int | None = None
-    in_table = False
+    in_table = in_cases = False
+    case_rows: list[dict] = []
     for line in lines:
         heading = PHASE.match(line)
         if heading:
@@ -78,7 +94,7 @@ def main() -> int:
         if task:
             task_id = f"T{task.group(2)}"
             checked[task_id] = task.group(1) in "xX"
-            if not checked[task_id] and task.group(4).startswith(PAUSED):
+            if not checked[task_id] and STEP_MARK.sub("", task.group(4)).startswith(PAUSED):
                 paused.add(task_id)
             task_phase[task_id] = current
             if current == args.phase:
@@ -86,22 +102,37 @@ def main() -> int:
             continue
         if COVERAGE_HEADING.match(line):
             in_table = current == args.phase
+            in_cases = False
+            continue
+        if CASE_HEADING.match(line):
+            in_cases = current == args.phase
+            in_table = False
             continue
         if line.startswith("#"):
-            in_table = False
+            in_table = in_cases = False
+            continue
+        case_row = CASE_ROW.match(line) if in_cases else None
+        if case_row:
+            case_rows.append({"cases": case_row.group(1), "cells": case_row.group(2)})
             continue
         row = COVERAGE_ROW.match(line) if in_table else None
         if row:
-            rows.append({
-                "element": row.group(1),
-                "implement": ["T" + i for i in TASK_ID.findall(row.group(2))],
-                "test": ["T" + i for i in TASK_ID.findall(row.group(3))],
-            })
+            rows.append({"element": row.group(1), "implement": row.group(2), "test": row.group(3)})
 
     if title is None:
         known = "、".join(str(n) for n in phases) or "沒有"
         print(f"錯誤: tasks.md 裡沒有 Phase {args.phase}。這份 tasks.md 的 phase 序號有:{known}。", file=sys.stderr)
         return 2
+
+    known = list(checked)
+    rows = [{**r, "implement": task_ids(r["implement"], known), "test": task_ids(r["test"], known)} for r in rows]
+    open_case_rows = []
+    for row in case_rows:
+        listed = task_ids(row["cells"], known)
+        missing = [t for t in listed if t in checked and not checked[t] and t not in paused]
+        unknown = [t for t in listed if t not in checked]
+        if missing or unknown or not listed:
+            open_case_rows.append({"cases": row["cases"], "tasks": listed, "unchecked": missing, "unknown": unknown})
 
     unchecked_tasks = [t for t in phase_tasks if not checked[t] and t not in paused]
     paused_tasks = [t for t in phase_tasks if t in paused]
@@ -138,7 +169,7 @@ def main() -> int:
             if in_questions and QUESTION_LINE.match(row) and not QUESTION_ROW.match(row):
                 bad_question_rows.append({"line": number, "row": row[:120]})
 
-    passed = not unchecked_tasks and not open_rows and not bad_question_rows
+    passed = not unchecked_tasks and not open_rows and not open_case_rows and not bad_question_rows
     result = {
         "tasks": str(args.tasks),
         "phase": args.phase,
@@ -151,12 +182,15 @@ def main() -> int:
         "open_rows": open_rows,
         "deferred_rows": deferred_rows,
         "paused_rows": paused_rows,
+        "case_rows": len(case_rows),
+        "open_case_rows": open_case_rows,
         "bad_question_rows": bad_question_rows,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
     print(
         f"Phase {args.phase}:{len(phase_tasks)} 個任務 {len(unchecked_tasks)} 個沒勾、{len(paused_tasks)} 個 ⏸ 延後;"
-        f"介面覆蓋 {len(rows)} 列 {len(open_rows)} 列還有沒勾的任務、{len(deferred_rows)} 列等後面的 phase、{len(paused_rows)} 列只缺 ⏸ 延後任務"
+        f"介面覆蓋 {len(rows)} 列 {len(open_rows)} 列還有沒勾的任務、{len(deferred_rows)} 列等後面的 phase、{len(paused_rows)} 列只缺 ⏸ 延後任務;"
+        f"案例覆蓋 {len(case_rows)} 列 {len(open_case_rows)} 列還有沒勾的任務"
         + (f";待決問題表 {len(bad_question_rows)} 列格式不符" if args.plan is not None else ""),
         file=sys.stderr,
     )

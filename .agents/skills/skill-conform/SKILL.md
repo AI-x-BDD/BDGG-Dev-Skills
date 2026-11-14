@@ -1,6 +1,6 @@
 ---
 name: skill-conform
-description: 改了 skill-form-sop、skill-form-rule、skill-form-template 或 skill-form-script 的規範之後,要讓既有的 Skill 符合現行規範時,用這支 Skill 檢查指定的 Skill、把不過的部位轉交對應的 form skill 改寫並重新檢查;使用者提到規範遷移、符合規範、重新處理 SKILL.md、檢查所有 skill、conform、migrate 時使用。(未驗證)
+description: 改了 skill-form-sop、skill-form-rule、skill-form-template 或 skill-form-script 的規範之後,要讓既有的 Skill 符合現行規範時,用這支 Skill 檢查指定的 Skill、把不過的部位轉交對應的 form skill 改寫並重新檢查;使用者提到規範遷移、符合規範、重新處理 SKILL.md、檢查所有 skill、conform、migrate 時使用。
 ---
 
 # SOP

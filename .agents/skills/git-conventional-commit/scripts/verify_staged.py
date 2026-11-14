@@ -5,7 +5,7 @@
 """把 repo 的 index(已經 stage 的內容)匯出到暫存目錄,在那裡執行建置與測試指令。
 
 用來確認「即將提交的這一筆」單獨取出時建置與測試會通過:匯出的目錄只有 index 裡的檔案,
-不含工作目錄裡還沒 stage 的變更。不會動到工作目錄與 index,跑完就刪掉暫存目錄。
+不含工作目錄裡還沒 stage 的變更;匯出後會 `git init` 並加入匯出的檔,讓測試裡的 `git ls-files` 列得出這一筆的內容。不會動到工作目錄與 index,跑完就刪掉暫存目錄。
 
 結果以一份 JSON 寫到 stdout:
   passed     true 代表 --cmd 以 exit code 0 結束
@@ -61,6 +61,12 @@ def main():
                              capture_output=True, text=True, encoding="utf-8")
         if out.returncode != 0:
             fail(f"匯出 index 失敗({out.stderr.strip()})。先確認 {root} 的 index 沒有未解決的衝突。")
+        # 匯出的資料夾本來不是 git repo;測試裡用到 `git ls-files` 這類指令時會失敗。
+        # 在連入相依之前初始化並加入全部匯出的檔,讓它的 index 就是這一筆要提交的內容
+        for git_args in (["init", "-q"], ["add", "-A"]):
+            init = subprocess.run(["git", "-C", str(export), *git_args], capture_output=True, text=True, encoding="utf-8")
+            if init.returncode != 0:
+                fail(f"在匯出的資料夾執行 git {' '.join(git_args)} 失敗({init.stderr.strip()})。確認這台機器的 git 可以正常使用。")
         for rel in links:
             dest = export / rel
             if dest.exists() or dest.is_symlink():

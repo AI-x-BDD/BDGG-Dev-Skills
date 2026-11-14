@@ -1,6 +1,6 @@
 ---
 name: clarify-over-specs
-description: specify 交出 spec.md 之後、要在技術研究之前把規格裡的缺口問清楚時,用這支 Skill 逐個面向盤點 spec.md 的缺口,轉交 clarify 問答,把拍板的決策改寫進對應的章節並通過結構檢查,交出含覆蓋表的澄清報告;使用者提到澄清規格、規格有缺口、spec 審查、檢查 spec.md、clarify spec、speckit clarify 時使用。(未驗證)
+description: specify 交出 spec.md 之後、要在技術研究之前把規格裡的缺口問清楚時,用這支 Skill 逐個面向盤點 spec.md 的缺口,轉交 clarify 問答,把拍板的決策改寫進對應的章節並通過結構檢查,交出含覆蓋表的澄清報告;使用者提到澄清規格、規格有缺口、spec 審查、檢查 spec.md、clarify spec、speckit clarify 時使用。
 ---
 
 # SOP

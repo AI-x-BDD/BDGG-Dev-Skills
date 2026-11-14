@@ -1,6 +1,6 @@
 ---
 name: specify
-description: 要把一段功能描述寫成功能規格、開始做一個新功能之前,用這支 Skill 釐清需求、切出使用者故事並把 FR 與 NFR 歸到故事底下,交出通過結構檢查的 spec.md;使用者提到 specify、speckit、spec-kit、寫規格、功能規格、需求規格、spec.md、user story、使用者故事時使用。(未驗證)
+description: 要把一段功能描述寫成功能規格、開始做一個新功能之前,用這支 Skill 釐清需求、切出使用者故事並把 FR 與 NFR 歸到故事底下,交出通過結構檢查的 spec.md;使用者提到 specify、speckit、spec-kit、寫規格、功能規格、需求規格、spec.md、user story、使用者故事時使用。
 ---
 
 # SOP

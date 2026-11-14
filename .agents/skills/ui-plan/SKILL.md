@@ -1,6 +1,6 @@
 ---
 name: ui-plan
-description: 要分析前端畫面與互動、想先看到介面長什麼樣子,手上已經有功能規格或 plan.md 指派了前端這一步時,用這支 Skill 從使用者故事盤點畫面與流程,定下審美方向,交出含假資料、點開就能操作的 HTML 原型;使用者提到 UI 設計、UX、畫面設計、wireframe、mockup、原型、prototype、介面長什麼樣子、做個畫面給我看時使用。(未驗證)
+description: 要分析前端畫面與互動、想先看到介面長什麼樣子,手上已經有功能規格或 plan.md 指派了前端這一步時,用這支 Skill 從使用者故事盤點畫面與流程,定下審美方向,交出含假資料、點開就能操作的 HTML 原型;使用者提到 UI 設計、UX、畫面設計、wireframe、mockup、原型、prototype、介面長什麼樣子、做個畫面給我看時使用。
 ---
 
 # SOP
