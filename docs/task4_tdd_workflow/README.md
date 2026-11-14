@@ -1,6 +1,6 @@
 # 道館四:AI x TDD Workflow
 
-[題目原文](題目.md)。作品是 colab-gpu-bridge(用 Colab 的 GPU 跑 Ollama,從區網呼叫),跑了三次迭代(001~003)。
+[題目原文](題目.md)。作品是 [colab-gpu-bridge](https://github.com/YongRui0402/colab-gpu-bridge)(用 Colab 的 GPU 跑 Ollama,從區網呼叫;執行方式見其 README),跑了三次迭代(001~003)。
 
 ## 完成條件
 
@@ -36,12 +36,7 @@ specify → clarify-over-specs → technical-research → system-analysis → te
 
 每次迭代的 `specs/00N-*/` 裡有 testplan.md、tasks.md 與完成報告。
 
-> **證據待公開**:作品 repo 依 D3 決定放自己的 GitHub,所有作業做完才推,目前**尚未公開,本頁沒有可點開的作品 repo 位址**。上表的任務數與測試數是作者本機紀錄的摘要,讀者暫時無法在本 repo 驗證。待補項:
->
-> - 作品 repo 位址(最好固定到 tag 或 commit)
-> - 各迭代 `specs/00N-*/` 的 testplan.md、tasks.md、完成報告的實際連結
-> - 作品 README(執行方式)與測試指令的實測輸出
-> - `docs/觀察紀錄.md`、`docs/耗時與用量紀錄-003.md`(第三題引用,同樣在作品 repo,尚未公開)
+作品 repo:[YongRui0402/colab-gpu-bridge](https://github.com/YongRui0402/colab-gpu-bridge)。各迭代的規格、testplan、tasks 與完成報告:[001](https://github.com/YongRui0402/colab-gpu-bridge/tree/main/specs/001-session-model-catalog)、[002](https://github.com/YongRui0402/colab-gpu-bridge/tree/main/specs/002-library-error-handling)、[003](https://github.com/YongRui0402/colab-gpu-bridge/tree/main/specs/003-download-dedup-model-cache);第三題引用的[觀察紀錄](https://github.com/YongRui0402/colab-gpu-bridge/blob/main/docs/觀察紀錄.md)與[耗時紀錄](https://github.com/YongRui0402/colab-gpu-bridge/blob/main/docs/耗時與用量紀錄-003.md)。
 
 ## 第三題:改進
 
@@ -85,10 +80,10 @@ specify → clarify-over-specs → technical-research → system-analysis → te
 | 問題 | 回答 | 證據 |
 |---|---|---|
 | AI 還要自己猜嗎? | 仍會遇到規格沒寫的細節,但不再默默猜:端點節把它們登記成待決問題,決定後才寫測試 | 003 testplan 登記 Q7~Q22 共 16 題 |
-| 換新對話還做得到嗎? | 可以。003 每個階段都交給不帶脈絡的 subagent,只讀 spec package 就完成;漏的是前一次迭代的護欄,已補進決定規範 | 觀察紀錄 #59;CH4 `8762c5e` |
+| 換新對話還做得到嗎? | 可以。003 每個階段都交給不帶脈絡的 subagent,只讀 spec package 就完成;漏的是前一次迭代的護欄,已補進決定規範 | 觀察紀錄 #59;CH4 [`9f812a3`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/commit/9f812a3) |
 | 測試通過 = 功能做到了嗎? | 不一定。001 替身全綠,實跑才抓到 4 個錯;003 全綠,上 Tower 第一次使用就發現「結束後不能再開」(testplan 沒有這個案例) | 觀察紀錄 #41、#42、#71 |
 | 這次成功,哪些是 AI 自己想到的? | clarify 自己讀前一次的合約抓到 null 的矛盾、analyze 自己追原始碼抓到護欄衝突;後者已寫進 skill | 觀察紀錄 #46、#59 |
-| 改進真的有幫助嗎? | 實作變快、紅燈可信;規劃變慢。也刪掉了重複:verify-plan 退場,併進 testplan | 下表;CH4 `8668517` |
+| 改進真的有幫助嗎? | 實作變快、紅燈可信;規劃變慢。也刪掉了重複:verify-plan 退場,併進 testplan | 下表;CH4 [`cc8a49f`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/commit/cc8a49f) |
 
 ### 實際結果(003 和 002 比)
 
@@ -98,4 +93,4 @@ specify → clarify-over-specs → technical-research → system-analysis → te
 | implement 每任務 | 0.51 分 | 0.66 分 |
 | analyze | — | 第 1 輪攔下 2 個決定矛盾,第 2 輪通過 |
 
-規劃變慢是這次的代價:多了 clarify-over-specs 與 analyze 回修。細節在作品 repo 的 `docs/耗時與用量紀錄-003.md`(作品 repo 待公開,見第二題的待補項,本頁數字暫無法對照原檔)。
+規劃變慢是這次的代價:多了 clarify-over-specs 與 analyze 回修。細節在作品 repo 的[耗時紀錄](https://github.com/YongRui0402/colab-gpu-bridge/blob/main/docs/耗時與用量紀錄-003.md)。
