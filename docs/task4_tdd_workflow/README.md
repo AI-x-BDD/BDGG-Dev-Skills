@@ -36,6 +36,13 @@ specify → clarify-over-specs → technical-research → system-analysis → te
 
 每次迭代的 `specs/00N-*/` 裡有 testplan.md、tasks.md 與完成報告。
 
+> **證據待公開**:作品 repo 依 D3 決定放自己的 GitHub,所有作業做完才推,目前**尚未公開,本頁沒有可點開的作品 repo 位址**。上表的任務數與測試數是作者本機紀錄的摘要,讀者暫時無法在本 repo 驗證。待補項:
+>
+> - 作品 repo 位址(最好固定到 tag 或 commit)
+> - 各迭代 `specs/00N-*/` 的 testplan.md、tasks.md、完成報告的實際連結
+> - 作品 README(執行方式)與測試指令的實測輸出
+> - `docs/觀察紀錄.md`、`docs/耗時與用量紀錄-003.md`(第三題引用,同樣在作品 repo,尚未公開)
+
 ## 第三題:改進
 
 從第二題的觀察紀錄(70 條)挑出問題,改寫 testplan、tdd、tasks、implement 與決定規範,**不新增 Skill**。對照[課程版](https://github.com/Waterball-Software-Academy/AI-x-BDD-Spec-Driven-100-Automation/tree/main/CH4-SDD-TDD-workflow/skills)(367d75a):下面三組共 12 項改動,10 項課程沒有,2 項(★)是在課程基礎上加嚴。
@@ -81,4 +88,4 @@ specify → clarify-over-specs → technical-research → system-analysis → te
 | implement 每任務 | 0.51 分 | 0.66 分 |
 | analyze | — | 第 1 輪攔下 2 個決定矛盾,第 2 輪通過 |
 
-規劃變慢是這次的代價:多了 clarify-over-specs 與 analyze 回修。細節在作品 repo 的 `docs/耗時與用量紀錄-003.md`。
+規劃變慢是這次的代價:多了 clarify-over-specs 與 analyze 回修。細節在作品 repo 的 `docs/耗時與用量紀錄-003.md`(作品 repo 待公開,見第二題的待補項,本頁數字暫無法對照原檔)。
