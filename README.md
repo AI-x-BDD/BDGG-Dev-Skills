@@ -56,7 +56,9 @@ flowchart LR
 |---|---|
 | `invoke-codex` · `invoke-agy` · `invoke-copilot` | 2026-10-28 起搬到獨立的 agent-ops-skills 儲存庫(本家自訂,不屬於課程內容);歷史留在本 repo |
 
-### SDD workflow
+### SDD × TDD workflow
+
+道館四在 SDD 流程裡接上測試計畫與 TDD:`specify → clarify-over-specs → technical-research → system-analysis → testplan → tasks → analyze → implement(→ tdd)`。完整說明、三次作品迭代與第三題的改進集中在 [作業四說明](./docs/task4_tdd_workflow/README.md);作品為 [colab-gpu-bridge](https://github.com/YongRui0402/colab-gpu-bridge)。
 
 道館三的完整流程、Skills 索引、五次作品迭代與公開證據集中在 [作業三說明](./docs/task3_sdd_workflow/README.md)。作品為 [watchlater-notes](https://github.com/YongRui0402/watchlater-notes),公開版本保留匿名化的迭代歷史與規格。
 
@@ -94,6 +96,7 @@ cp -r BDGG-Dev-Skills/.claude/skills/<Skill 名稱> <你的專案>/.claude/skill
 | 一:組合三支 Skills(git / TBD / 雙菱形) | [`task1-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task1-v1) | [`docs/task1_skill_creator/`](./docs/task1_skill_creator/) |
 | 二:自己做出 Skill Engineering,再用它優化道館一的三支 Skills | [`task2-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task2-v1) | [`docs/task2_skill_engineering/`](./docs/task2_skill_engineering/) |
 | 三:SDD workflow、五次作品迭代與新 Skill | [`task3-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task3-v1) | [`docs/task3_sdd_workflow/`](./docs/task3_sdd_workflow/) |
+| 四:AI x TDD Workflow、三次作品迭代與測試計畫的改進 | [`task4-v1`](https://github.com/AI-x-BDD/BDGG-Dev-Skills/tree/task4-v1) | [`docs/task4_tdd_workflow/`](./docs/task4_tdd_workflow/) |
 
 ## 驗證狀態
 
